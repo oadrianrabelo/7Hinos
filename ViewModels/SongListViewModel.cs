@@ -9,6 +9,7 @@ namespace SevenHinos.ViewModels;
 public partial class SongListViewModel : ViewModelBase
 {
     private readonly ISongService _songService;
+    private readonly PlayerViewModel _player;
 
     [ObservableProperty]
     private string _searchQuery = string.Empty;
@@ -16,13 +17,21 @@ public partial class SongListViewModel : ViewModelBase
     [ObservableProperty]
     private Song? _selectedSong;
 
+    public bool CanPlaySong => SelectedSong?.AudioFilePath is not null;
+
     public ObservableCollection<Song> Songs { get; } = [];
 
-    public SongListViewModel(ISongService songService)
+    public SongListViewModel(ISongService songService, PlayerViewModel player)
     {
         _songService = songService;
+        _player = player;
         _ = LoadAsync();
     }
+
+    partial void OnSelectedSongChanged(Song? value)
+        => OnPropertyChanged(nameof(CanPlaySong));
+
+    public async Task ReloadAsync() => await LoadAsync();
 
     private async Task LoadAsync()
     {
@@ -41,6 +50,13 @@ public partial class SongListViewModel : ViewModelBase
         foreach (var s in results)
             Songs.Add(s);
         SelectedSong = Songs.FirstOrDefault();
+    }
+
+    [RelayCommand]
+    private void PlaySong(Song? song)
+    {
+        if (song is null) return;
+        _player.Play(song);
     }
 
     [RelayCommand]

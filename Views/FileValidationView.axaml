@@ -1,0 +1,180 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SevenHinos.ViewModels"
+             x:Class="SevenHinos.Views.FileValidationView"
+             x:DataType="vm:FileValidationViewModel"
+             Background="{DynamicResource AppBg}">
+
+    <DockPanel>
+
+        <!-- ── Top toolbar ── -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource AppSidebarBg}"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                Padding="16,12">
+            <StackPanel Spacing="10">
+
+                <!-- Title row -->
+                <TextBlock Text="Validação de Arquivos"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextPrimary}"/>
+
+                <!-- Manifest URL -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0"
+                               Text="Manifesto:"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource AppTextSecondary}"
+                               Margin="0,0,8,0"/>
+                    <TextBox Grid.Column="1"
+                             Text="{Binding ManifestUrl}"
+                             Watermark="https://..."
+                             CornerRadius="6"
+                             Padding="10,6"
+                             Background="{DynamicResource AppInputBg}"
+                             Foreground="{DynamicResource AppTextPrimary}"
+                             BorderBrush="{DynamicResource AppBorderBrush}"/>
+                    <Button Grid.Column="2"
+                            Content="Buscar Manifesto"
+                            Command="{Binding FetchManifestCommand}"
+                            Margin="8,0,0,0"
+                            Padding="14,7"
+                            CornerRadius="6"
+                            Background="{DynamicResource AppAccent}"
+                            Foreground="{DynamicResource AppAccentFg}"
+                            FontWeight="SemiBold"/>
+                </Grid>
+
+                <!-- Action buttons row -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="⟳ Verificar Arquivos"
+                            Command="{Binding ValidateFilesCommand}"
+                            Padding="12,7"
+                            CornerRadius="6"
+                            Background="{DynamicResource AppInputBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"/>
+                    <Button Content="⬇ Baixar Faltantes"
+                            Command="{Binding DownloadMissingCommand}"
+                            Padding="12,7"
+                            CornerRadius="6"
+                            Background="{DynamicResource AppAccent}"
+                            Foreground="{DynamicResource AppAccentFg}"
+                            FontWeight="SemiBold"/>
+                    <Button Content="⬇ Baixar Todos"
+                            Command="{Binding DownloadAllCommand}"
+                            Padding="12,7"
+                            CornerRadius="6"
+                            Background="{DynamicResource AppInputBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"/>
+                    <Button Content="✕ Cancelar"
+                            Command="{Binding CancelCommand}"
+                            Padding="12,7"
+                            CornerRadius="6"
+                            Background="{DynamicResource AppError}"
+                            Foreground="{DynamicResource AppAccentFg}"
+                            IsVisible="{Binding CanCancel}"/>
+                </StackPanel>
+
+            </StackPanel>
+        </Border>
+
+        <!-- ── Status / progress bar ── -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource AppSidebarBg}"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                Padding="16,10">
+            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+
+                <!-- Status text -->
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="{Binding StatusMessage}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextSecondary}"
+                           TextWrapping="Wrap"/>
+
+                <!-- Counts -->
+                <StackPanel Grid.Row="0" Grid.Column="1"
+                            Orientation="Horizontal" Spacing="16">
+                    <TextBlock Foreground="{DynamicResource AppSuccess}"
+                               FontWeight="SemiBold">
+                        <Run Text="✓ "/>
+                        <Run Text="{Binding OkCount}"/>
+                    </TextBlock>
+                    <TextBlock Foreground="{DynamicResource AppError}"
+                               FontWeight="SemiBold">
+                        <Run Text="✗ "/>
+                        <Run Text="{Binding MissingCount}"/>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Overall progress bar -->
+                <ProgressBar Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                             Value="{Binding OverallProgress}"
+                             Minimum="0" Maximum="1"
+                             Height="4"
+                             Margin="0,8,0,0"
+                             IsVisible="{Binding IsBusy}"
+                             CornerRadius="2"/>
+            </Grid>
+        </Border>
+
+        <!-- ── File list ── -->
+        <ListBox ItemsSource="{Binding Assets}"
+                 Background="Transparent"
+                 Padding="8">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:AssetItemViewModel">
+                    <Grid ColumnDefinitions="24,*,140,100"
+                          Margin="4,4" VerticalAlignment="Center">
+
+                        <!-- Status icon -->
+                        <TextBlock Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   FontSize="14"
+                                   Text="{Binding Status,
+                                       Converter={x:Static vm:AssetStatusIconConverter.Instance}}"/>
+
+                        <!-- File name + category -->
+                        <StackPanel Grid.Column="1"
+                                    Spacing="2"
+                                    VerticalAlignment="Center"
+                                    Margin="6,0">
+                            <TextBlock Text="{Binding FileName}"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource AppTextPrimary}"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding Category}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource AppTextSecondary}"
+                                       IsVisible="{Binding Category, Converter={x:Static vm:NullOrEmptyToBoolConverter.Instance}}"/>
+                        </StackPanel>
+
+                        <!-- Per-file progress bar (only while downloading) -->
+                        <ProgressBar Grid.Column="2"
+                                     Value="{Binding DownloadProgress}"
+                                     Minimum="0" Maximum="1"
+                                     Height="6"
+                                     VerticalAlignment="Center"
+                                     Margin="8,0"
+                                     CornerRadius="3"
+                                     IsVisible="{Binding Status,
+                                         Converter={x:Static vm:AssetDownloadingConverter.Instance}}"/>
+
+                        <!-- Status label -->
+                        <TextBlock Grid.Column="3"
+                                   Text="{Binding StatusText}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Right"
+                                   Foreground="{Binding Status,
+                                       Converter={x:Static vm:AssetStatusColorConverter.Instance}}"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+    </DockPanel>
+</UserControl>

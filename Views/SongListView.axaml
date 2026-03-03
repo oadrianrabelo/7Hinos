@@ -61,7 +61,7 @@
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource AppTextPrimary}"
                                                TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding Artist}"
+                                    <TextBlock Text="{Binding Album}"
                                                FontSize="12"
                                                Foreground="{DynamicResource AppTextSecondary}"
                                                TextTrimming="CharacterEllipsis"/>
@@ -127,10 +127,27 @@
                     </Grid>
 
                     <!-- Artist -->
-                    <TextBlock Text="{Binding SelectedSong.Artist}"
+                    <TextBlock Text="{Binding SelectedSong.Album}"
                                FontSize="15"
                                Foreground="{DynamicResource AppAccent}"
                                FontStyle="Italic"/>
+
+                    <!-- Play button -->
+                    <Button Command="{Binding PlaySongCommand}"
+                            CommandParameter="{Binding SelectedSong}"
+                            IsEnabled="{Binding CanPlaySong}"
+                            HorizontalAlignment="Left"
+                            Padding="20,10"
+                            CornerRadius="8"
+                            Background="{DynamicResource AppAccent}"
+                            Foreground="{DynamicResource AppAccentFg}"
+                            FontSize="14"
+                            ToolTip.Tip="Reproduzir a música selecionada">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="▶" VerticalAlignment="Center"/>
+                            <TextBlock Text="Reproduzir" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
 
                     <!-- Divider -->
                     <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,4"/>

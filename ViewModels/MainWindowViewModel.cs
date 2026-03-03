@@ -9,17 +9,21 @@ namespace SevenHinos.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     public SongListViewModel SongList { get; }
+    public PlayerViewModel Player { get; }
+    public FileValidationViewModel FileValidation { get; }
 
-    [ObservableProperty]
-    private ViewModelBase _currentPage;
+    [ObservableProperty] private ViewModelBase _currentPage;
+    [ObservableProperty] private bool _isDarkMode = true;
 
-    [ObservableProperty]
-    private bool _isDarkMode = true;
-
-    public MainWindowViewModel(ISongService songService)
+    public MainWindowViewModel(
+        ISongService songService,
+        PlayerViewModel player,
+        FileValidationViewModel fileValidation)
     {
-        SongList = new SongListViewModel(songService);
-        _currentPage = SongList;
+        Player         = player;
+        SongList       = new SongListViewModel(songService, player);
+        FileValidation = fileValidation;
+        _currentPage   = SongList;
     }
 
     [RelayCommand]
