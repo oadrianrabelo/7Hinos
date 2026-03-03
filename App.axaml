@@ -2,13 +2,50 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SevenHinos.App"
              xmlns:local="using:SevenHinos"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             RequestedThemeVariant="Dark">
 
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-  
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppBg"            Color="#1E1E2E"/>
+                    <SolidColorBrush x:Key="AppSidebarBg"     Color="#181825"/>
+                    <SolidColorBrush x:Key="AppBorderBrush"   Color="#313244"/>
+                    <SolidColorBrush x:Key="AppInputBg"       Color="#313244"/>
+                    <SolidColorBrush x:Key="AppNavButtonBg"   Color="#313244"/>
+                    <SolidColorBrush x:Key="AppTextPrimary"   Color="#CDD6F4"/>
+                    <SolidColorBrush x:Key="AppTextSecondary" Color="#6C7086"/>
+                    <SolidColorBrush x:Key="AppTextMuted"     Color="#45475A"/>
+                    <SolidColorBrush x:Key="AppAccent"        Color="#89B4FA"/>
+                    <SolidColorBrush x:Key="AppAccentFg"      Color="#1E1E2E"/>
+                    <SolidColorBrush x:Key="AppFavorite"      Color="#F38BA8"/>
+                    <SolidColorBrush x:Key="AppLyricsBrush"   Color="#BAC2DE"/>
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppBg"            Color="#EFF1F5"/>
+                    <SolidColorBrush x:Key="AppSidebarBg"     Color="#E6E9EF"/>
+                    <SolidColorBrush x:Key="AppBorderBrush"   Color="#BCC0CC"/>
+                    <SolidColorBrush x:Key="AppInputBg"       Color="#DCE0E8"/>
+                    <SolidColorBrush x:Key="AppNavButtonBg"   Color="#DCE0E8"/>
+                    <SolidColorBrush x:Key="AppTextPrimary"   Color="#4C4F69"/>
+                    <SolidColorBrush x:Key="AppTextSecondary" Color="#8C8FA1"/>
+                    <SolidColorBrush x:Key="AppTextMuted"     Color="#9CA0B0"/>
+                    <SolidColorBrush x:Key="AppAccent"        Color="#1E66F5"/>
+                    <SolidColorBrush x:Key="AppAccentFg"      Color="#EFF1F5"/>
+                    <SolidColorBrush x:Key="AppFavorite"      Color="#D20F39"/>
+                    <SolidColorBrush x:Key="AppLyricsBrush"   Color="#5C5F77"/>
+                </ResourceDictionary>
+
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
