@@ -1,0 +1,151 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SevenHinos.ViewModels"
+             xmlns:models="using:SevenHinos.Models"
+             x:Class="SevenHinos.Views.SongListView"
+             x:DataType="vm:SongListViewModel"
+             Background="{DynamicResource AppBg}">
+
+    <Grid ColumnDefinitions="300,*">
+
+        <!-- Left panel: search + list -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource AppSidebarBg}"
+                BorderThickness="0,0,1,0"
+                BorderBrush="{DynamicResource AppBorderBrush}">
+            <DockPanel>
+
+                <!-- Search bar -->
+                <Border DockPanel.Dock="Top"
+                        Padding="12,12,12,8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding SearchQuery}"
+                                 Watermark="Buscar música..."
+                                 CornerRadius="8"
+                                 Padding="10,8"
+                                 Background="{DynamicResource AppInputBg}"
+                                 Foreground="{DynamicResource AppTextPrimary}"
+                                 BorderBrush="{DynamicResource AppBorderBrush}"/>
+                        <Button Grid.Column="1"
+                                Content="↵"
+                                Command="{Binding SearchCommand}"
+                                Margin="6,0,0,0"
+                                Width="36" Height="36"
+                                CornerRadius="8"
+                                Background="{DynamicResource AppAccent}"
+                                Foreground="{DynamicResource AppAccentFg}"
+                                FontSize="16"
+                                HorizontalContentAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Song count -->
+                <TextBlock DockPanel.Dock="Top"
+                           Text="{Binding Songs.Count, StringFormat='{}{0} músicas'}"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppTextSecondary}"
+                           Margin="16,0,16,8"/>
+
+                <!-- Song list -->
+                <ListBox ItemsSource="{Binding Songs}"
+                         SelectedItem="{Binding SelectedSong}"
+                         Background="Transparent"
+                         Padding="8,0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="models:Song">
+                            <Grid ColumnDefinitions="*,Auto" Margin="4,6">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="{Binding Title}"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource AppTextPrimary}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Artist}"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AppTextSecondary}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1"
+                                           Text="♥"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource AppFavorite}"
+                                           IsVisible="{Binding IsFavorite}"
+                                           VerticalAlignment="Center"
+                                           Margin="6,0,0,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+            </DockPanel>
+        </Border>
+
+        <!-- Right panel: song detail -->
+        <Grid Grid.Column="1">
+
+            <!-- Placeholder when nothing is selected -->
+            <StackPanel IsVisible="{Binding SelectedSong, Converter={x:Static ObjectConverters.IsNull}}"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Spacing="12">
+                <TextBlock Text="🎵"
+                           FontSize="48"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Selecione uma música"
+                           FontSize="16"
+                           Foreground="{DynamicResource AppTextSecondary}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Song detail -->
+            <ScrollViewer IsVisible="{Binding SelectedSong, Converter={x:Static ObjectConverters.IsNotNull}}"
+                          Padding="32,28">
+                <StackPanel Spacing="16">
+
+                    <!-- Title + favorite -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding SelectedSong.Title}"
+                                   FontSize="26"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimary}"
+                                   TextWrapping="Wrap"/>
+                        <Button Grid.Column="1"
+                                Command="{Binding ToggleFavoriteCommand}"
+                                CommandParameter="{Binding SelectedSong}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="8"
+                                VerticalAlignment="Top"
+                                ToolTip.Tip="Favoritar">
+                            <TextBlock FontSize="22"
+                                       Foreground="{DynamicResource AppFavorite}"
+                                       IsVisible="{Binding SelectedSong.IsFavorite}"
+                                       Text="♥"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Artist -->
+                    <TextBlock Text="{Binding SelectedSong.Artist}"
+                               FontSize="15"
+                               Foreground="{DynamicResource AppAccent}"
+                               FontStyle="Italic"/>
+
+                    <!-- Divider -->
+                    <Border Height="1" Background="{DynamicResource AppBorderBrush}" Margin="0,4"/>
+
+                    <!-- Lyrics -->
+                    <TextBlock Text="{Binding SelectedSong.Lyrics}"
+                               FontSize="14"
+                               Foreground="{DynamicResource AppLyricsBrush}"
+                               TextWrapping="Wrap"
+                               LineHeight="22"/>
+
+                </StackPanel>
+            </ScrollViewer>
+
+        </Grid>
+
+    </Grid>
+</UserControl>

@@ -1,5 +1,4 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
 commit_msg=$(cat "$1")
 pattern="^(feat|fix|chore|docs|style|refactor|test|ci)(\(.+\))?: .{1,100}$"
@@ -34,5 +33,3 @@ fi
 
 ## or put your custom commands -------------------
 #echo 'Husky.Net is awesome!'
-
-dotnet husky run

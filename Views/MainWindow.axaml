@@ -1,20 +1,90 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:SevenHinos.ViewModels"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="SevenHinos.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="SevenHinos">
+        Title="7Hinos"
+        Width="1100" Height="700"
+        MinWidth="800" MinHeight="500"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource AppBg}">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
+    <Grid ColumnDefinitions="220,*">
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <!-- Sidebar -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource AppSidebarBg}"
+                Padding="0,0,0,16">
+            <DockPanel>
+
+                <!-- Logo / App name -->
+                <Border DockPanel.Dock="Top"
+                        Padding="24,28,24,20"
+                        BorderThickness="0,0,0,1"
+                        BorderBrush="{DynamicResource AppBorderBrush}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="7Hinos"
+                                   FontSize="22"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimary}"/>
+                        <TextBlock Text="Hinário Digital"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AppTextSecondary}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Navigation -->
+                <StackPanel DockPanel.Dock="Top"
+                            Margin="12,16,12,0"
+                            Spacing="4">
+
+                    <Button Content="🎵  Músicas"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="{Binding SongList}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="16,10"
+                            CornerRadius="8"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"
+                            FontSize="14"/>
+
+                </StackPanel>
+
+                <!-- Theme toggle -->
+                <Button DockPanel.Dock="Bottom"
+                        Command="{Binding ToggleThemeCommand}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Margin="12,0,12,8"
+                        Padding="16,10"
+                        CornerRadius="8"
+                        Background="Transparent"
+                        Foreground="{DynamicResource AppTextSecondary}"
+                        FontSize="13">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="☀️" IsVisible="{Binding IsDarkMode}"/>
+                        <TextBlock Text="🌙" IsVisible="{Binding IsDarkMode, Converter={x:Static BoolConverters.Not}}"/>
+                        <TextBlock Text="Modo Claro" IsVisible="{Binding IsDarkMode}"/>
+                        <TextBlock Text="Modo Escuro" IsVisible="{Binding IsDarkMode, Converter={x:Static BoolConverters.Not}}"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Footer version -->
+                <TextBlock DockPanel.Dock="Bottom"
+                           Text="v0.1.0"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppTextMuted}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,4"/>
+
+            </DockPanel>
+        </Border>
+
+        <!-- Main content -->
+        <ContentControl Grid.Column="1"
+                        Content="{Binding CurrentPage}"/>
+
+    </Grid>
 
 </Window>
