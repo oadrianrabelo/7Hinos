@@ -1,0 +1,170 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SevenHinos.ViewModels"
+             x:Class="SevenHinos.Views.ImportView"
+             x:DataType="vm:ImportViewModel">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="620"
+                    Margin="40,32"
+                    HorizontalAlignment="Left"
+                    Spacing="0">
+
+            <!-- ── Header ── -->
+            <TextBlock Text="Importar do LouvorJA"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource AppTextPrimary}"
+                       Margin="0,0,0,6"/>
+            <TextBlock Text="Lê o banco de dados do LouvorJA instalado nesta máquina e importa todas as músicas e slides para o 7Hinos."
+                       FontSize="13"
+                       Foreground="{DynamicResource AppTextSecondary}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,28"/>
+
+            <!-- ── DB path ── -->
+            <TextBlock Text="Banco de dados (database.db)"
+                       FontSize="12"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AppTextSecondary}"
+                       Margin="0,0,0,6"/>
+            <Grid ColumnDefinitions="*,10,Auto" Margin="0,0,0,4">
+                <TextBox Grid.Column="0"
+                         Text="{Binding DbPath}"
+                         FontSize="13"
+                         Padding="10,8"
+                         CornerRadius="6"/>
+                <!-- Found badge -->
+                <Border Grid.Column="2"
+                        CornerRadius="6" Padding="10,8"
+                        Background="#1A3A1A"
+                        IsVisible="{Binding DbFound}">
+                    <TextBlock Text="✓  Encontrado"
+                               FontSize="12" FontWeight="SemiBold"
+                               Foreground="#88EE88"/>
+                </Border>
+                <!-- Not found badge -->
+                <Border Grid.Column="2"
+                        CornerRadius="6" Padding="10,8"
+                        Background="#3A1A1A"
+                        IsVisible="{Binding DbFound, Converter={x:Static BoolConverters.Not}}">
+                    <TextBlock Text="✗  Não encontrado"
+                               FontSize="12" FontWeight="SemiBold"
+                               Foreground="#EE8888"/>
+                </Border>
+            </Grid>
+
+            <!-- ── Musicas folder ── -->
+            <TextBlock Text="Pasta de áudios (musicas/)"
+                       FontSize="12"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AppTextSecondary}"
+                       Margin="0,16,0,6"/>
+            <TextBox Text="{Binding MusicasFolder}"
+                     FontSize="13"
+                     Padding="10,8"
+                     CornerRadius="6"
+                     Margin="0,0,0,24"/>
+
+            <!-- ── Info callout ── -->
+            <Border Background="#1A2A3A"
+                    CornerRadius="8"
+                    Padding="14,12"
+                    BorderThickness="1"
+                    BorderBrush="#2A4A6A"
+                    Margin="0,0,0,28">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="ℹ️  O que será importado"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="#89B4FA"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#AAAAAA">
+                        Todas as músicas e slides (colunas MUSICAS + MUSICAS_LETRA). Músicas já existentes
+                        no banco do 7Hinos (mesmo título e álbum) são ignoradas automaticamente.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Import button ── -->
+            <Button Content="⬇  Importar músicas"
+                    Command="{Binding ImportCommand}"
+                    HorizontalAlignment="Left"
+                    Padding="20,12"
+                    CornerRadius="8"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    Background="#4477FF"
+                    Foreground="White"
+                    IsVisible="{Binding IsImporting, Converter={x:Static BoolConverters.Not}}"
+                    Margin="0,0,0,20"/>
+
+            <!-- ── Progress ── -->
+            <StackPanel Spacing="8"
+                        IsVisible="{Binding IsImporting}"
+                        Margin="0,0,0,20">
+                <ProgressBar Value="{Binding Progress}"
+                             Minimum="0" Maximum="100"
+                             Height="8"
+                             CornerRadius="4"/>
+                <TextBlock Text="{Binding StatusText}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextSecondary}"
+                           TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+
+            <!-- ── Result ── -->
+            <StackPanel Spacing="12"
+                        IsVisible="{Binding IsDone}">
+
+                <Border Background="#1A2A1A"
+                        CornerRadius="8"
+                        Padding="16,12"
+                        BorderThickness="1"
+                        BorderBrush="#2A5A2A">
+                    <TextBlock Text="{Binding ResultText}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#AAFFAA"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Error list (collapsible) -->
+                <StackPanel Spacing="8"
+                            IsVisible="{Binding HasErrors}">
+                    <TextBlock Text="Erros encontrados:"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="#FFAAAA"/>
+                    <Border Background="#1A0000"
+                            CornerRadius="6"
+                            Padding="12"
+                            MaxHeight="160">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding ErrorLines}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}"
+                                                   FontSize="11"
+                                                   Foreground="#FF8888"
+                                                   TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </StackPanel>
+
+                <Button Content="Reimportar"
+                        Command="{Binding ResetResultCommand}"
+                        HorizontalAlignment="Left"
+                        Padding="14,8"
+                        CornerRadius="6"
+                        FontSize="13"
+                        Background="{DynamicResource AppNavButtonBg}"
+                        Foreground="{DynamicResource AppTextSecondary}"/>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

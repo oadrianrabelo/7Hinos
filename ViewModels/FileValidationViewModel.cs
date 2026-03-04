@@ -77,7 +77,8 @@ public sealed partial class FileValidationViewModel : ViewModelBase
 
     [ObservableProperty] private string _manifestUrl = DefaultManifestUrl;
     [ObservableProperty] private bool _isBusy;
-    [ObservableProperty] private string _statusMessage = "Pronto.";
+    [ObservableProperty] private string _statusMessage =
+        "Nenhum arquivo no catálogo. Clique em 'Buscar Manifesto' para carregar a lista.";
     [ObservableProperty] private double _overallProgress; // 0–1
     [ObservableProperty] private bool _canCancel;
     [ObservableProperty] private int _missingCount;
@@ -94,6 +95,16 @@ public sealed partial class FileValidationViewModel : ViewModelBase
     public FileValidationViewModel(IFileAssetService assetService)
     {
         _assetService = assetService;
+        // Auto-load whatever assets are already in the DB so the list isn't blank on first open
+        _ = ReloadAndUpdateStatusAsync();
+    }
+
+    private async Task ReloadAndUpdateStatusAsync()
+    {
+        await ReloadListAsync();
+        StatusMessage = Assets.Count == 0
+            ? "Nenhum arquivo no catálogo. Clique em 'Buscar Manifesto' para carregar a lista."
+            : $"{Assets.Count} arquivo(s) no catálogo — {OkCount} verificados, {MissingCount} faltando.";
     }
 
     // ── Commands ─────────────────────────────────────────────────────────────

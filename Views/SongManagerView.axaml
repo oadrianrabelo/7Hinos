@@ -1,0 +1,336 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SevenHinos.ViewModels"
+             xmlns:models="using:SevenHinos.Models"
+             x:Class="SevenHinos.Views.SongManagerView"
+             x:DataType="vm:SongManagerViewModel">
+
+    <Grid ColumnDefinitions="280,*">
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             LEFT — Song list
+        ══════════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource AppSidebarBg}"
+                BorderThickness="0,0,1,0"
+                BorderBrush="{DynamicResource AppBorderBrush}">
+            <DockPanel>
+
+                <!-- Toolbar -->
+                <Border DockPanel.Dock="Top"
+                        Padding="12,10"
+                        BorderThickness="0,0,0,1"
+                        BorderBrush="{DynamicResource AppBorderBrush}">
+                    <StackPanel Spacing="8">
+                        <TextBox Text="{Binding SearchQuery}"
+                                 Watermark="Buscar música..."
+                                 FontSize="13"
+                                 Padding="10,7"
+                                 CornerRadius="6"/>
+                        <Button Content="+ Nova música"
+                                Command="{Binding AddNewCommand}"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Padding="0,8"
+                                CornerRadius="6"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Background="#4477FF"
+                                Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Delete confirmation bar -->
+                <Border DockPanel.Dock="Bottom"
+                        Background="#3A1A1A"
+                        BorderThickness="0,1,0,0"
+                        BorderBrush="#882222"
+                        Padding="12,10"
+                        IsVisible="{Binding IsConfirmingDelete}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Excluir esta música?"
+                                   FontSize="12" FontWeight="SemiBold"
+                                   Foreground="#FFAAAA"
+                                   TextWrapping="Wrap"/>
+                        <Grid ColumnDefinitions="*,8,*">
+                            <Button Grid.Column="0"
+                                    Content="✓ Sim, excluir"
+                                    Command="{Binding ConfirmDeleteCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    Padding="0,7" CornerRadius="6"
+                                    FontSize="12" Background="#882222" Foreground="White"/>
+                            <Button Grid.Column="2"
+                                    Content="Cancelar"
+                                    Command="{Binding CancelDeleteCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    Padding="0,7" CornerRadius="6"
+                                    FontSize="12"
+                                    Background="{DynamicResource AppNavButtonBg}"
+                                    Foreground="{DynamicResource AppTextSecondary}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Song tree — grouped by album -->
+                <TreeView ItemsSource="{Binding Albums}"
+                          SelectedItem="{Binding TreeSelectedItem, Mode=TwoWay}"
+                          Background="Transparent"
+                          Padding="4"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <TreeView.DataTemplates>
+                        <TreeDataTemplate DataType="{x:Type vm:AlbumGroup}"
+                                          ItemsSource="{Binding Songs}">
+                            <TextBlock Text="{Binding AlbumName}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7A9ABF"
+                                       TextTrimming="CharacterEllipsis"
+                                       Padding="2,4,0,4"/>
+                        </TreeDataTemplate>
+                        <DataTemplate DataType="{x:Type models:Song}">
+                            <TextBlock Text="{Binding Title}"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource AppTextPrimary}"
+                                       TextTrimming="CharacterEllipsis"
+                                       Padding="0,2"/>
+                        </DataTemplate>
+                    </TreeView.DataTemplates>
+                </TreeView>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             RIGHT — Empty / detail state (when editor is closed)
+        ══════════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Column="1"
+              IsVisible="{Binding EditorIsOpen, Converter={x:Static BoolConverters.Not}}">
+
+            <!-- No songs at all -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Spacing="12"
+                        IsVisible="{Binding SelectedSong, Converter={x:Static ObjectConverters.IsNull}}">
+                <TextBlock Text="Nenhuma música no catálogo"
+                           FontSize="18" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextSecondary}"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Clique em '+ Nova música' para começar."
+                           FontSize="13"
+                           Foreground="{DynamicResource AppTextMuted}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Song detail + action bar -->
+            <DockPanel IsVisible="{Binding SelectedSong, Converter={x:Static ObjectConverters.IsNotNull}}">
+
+                <!-- Action bar -->
+                <Border DockPanel.Dock="Bottom"
+                        Padding="24,12"
+                        BorderThickness="0,1,0,0"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
+                        Background="{DynamicResource AppSidebarBg}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="✏  Editar"
+                                Command="{Binding EditSelectedCommand}"
+                                Padding="16,8" CornerRadius="6"
+                                FontSize="13" FontWeight="SemiBold"
+                                Background="#4477FF" Foreground="White"/>
+                        <Button Content="🗑  Excluir"
+                                Command="{Binding RequestDeleteCommand}"
+                                Padding="16,8" CornerRadius="6"
+                                FontSize="13"
+                                Background="{DynamicResource AppNavButtonBg}"
+                                Foreground="#EE8888"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Song info -->
+                <ScrollViewer Padding="32,28">
+                    <StackPanel Spacing="6" MaxWidth="640" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding SelectedSong.Title}"
+                                   FontSize="26" FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimary}"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding SelectedSong.Album}"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource AppTextSecondary}"
+                                   Margin="0,0,0,20"/>
+                        <TextBlock Text="{Binding SelectedSong.Lyrics}"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource AppTextPrimary}"
+                                   TextWrapping="Wrap"
+                                   LineHeight="22"
+                                   Opacity="0.85"/>
+                    </StackPanel>
+                </ScrollViewer>
+
+            </DockPanel>
+        </Grid>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             RIGHT — Editor (when EditorIsOpen = true)
+        ══════════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Column="1"
+              IsVisible="{Binding EditorIsOpen}">
+            <DockPanel>
+
+                <!-- Editor toolbar -->
+                <Border DockPanel.Dock="Top"
+                        Padding="24,14"
+                        BorderThickness="0,0,0,1"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
+                        Background="{DynamicResource AppSidebarBg}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding Editor.EditorTitle}"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppTextPrimary}"
+                                   VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                            <Button Content="✓  Salvar"
+                                    Command="{Binding Editor.SaveCommand}"
+                                    Padding="16,8" CornerRadius="6"
+                                    FontSize="13" FontWeight="SemiBold"
+                                    Background="#44BB55" Foreground="White"/>
+                            <Button Content="Cancelar"
+                                    Command="{Binding Editor.CancelCommand}"
+                                    Padding="16,8" CornerRadius="6"
+                                    FontSize="13"
+                                    Background="{DynamicResource AppNavButtonBg}"
+                                    Foreground="{DynamicResource AppTextSecondary}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Error -->
+                <Border DockPanel.Dock="Top"
+                        Background="#3A1A1A" Padding="16,10"
+                        IsVisible="{Binding Editor.ErrorText,
+                            Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="{Binding Editor.ErrorText}"
+                               FontSize="13" Foreground="#FFAAAA"/>
+                </Border>
+
+                <!-- Form body -->
+                <ScrollViewer Padding="24,20" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="20" MaxWidth="680" HorizontalAlignment="Left">
+
+                        <!-- Título -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Título *"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppTextSecondary}"/>
+                            <TextBox Text="{Binding Editor.Title}"
+                                     FontSize="15" Padding="12,10" CornerRadius="6"/>
+                        </StackPanel>
+
+                        <!-- Álbum -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Álbum / Coletânea"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppTextSecondary}"/>
+                            <TextBox Text="{Binding Editor.Album}"
+                                     FontSize="14" Padding="12,10" CornerRadius="6"/>
+                        </StackPanel>
+
+                        <!-- YouTube URL -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="URL do YouTube (opcional)"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppTextSecondary}"/>
+                            <TextBox Text="{Binding Editor.YoutubeUrl}"
+                                     Watermark="https://youtube.com/watch?v=..."
+                                     FontSize="13" Padding="12,10" CornerRadius="6"/>
+                        </StackPanel>
+
+                        <!-- Slides -->
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="Slides"
+                                           FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppTextSecondary}"
+                                           VerticalAlignment="Center"/>
+                                <Button Grid.Column="1"
+                                        Content="+ Slide"
+                                        Command="{Binding Editor.AddSlideCommand}"
+                                        Padding="12,6" CornerRadius="6"
+                                        FontSize="12"
+                                        Background="{DynamicResource AppNavButtonBg}"
+                                        Foreground="{DynamicResource AppTextPrimary}"/>
+                            </Grid>
+
+                            <ItemsControl ItemsSource="{Binding Editor.Slides}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:SlideEditorItemViewModel">
+                                        <Border Background="{DynamicResource AppSidebarBg}"
+                                                BorderBrush="{DynamicResource AppBorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Margin="0,0,0,8"
+                                                Padding="12,10">
+                                            <Grid ColumnDefinitions="*,8,Auto">
+
+                                                <TextBox Grid.Column="0"
+                                                         Text="{Binding Text}"
+                                                         AcceptsReturn="True"
+                                                         MinHeight="80"
+                                                         FontSize="13"
+                                                         Padding="10,8"
+                                                         TextWrapping="Wrap"
+                                                         CornerRadius="6"/>
+
+                                                <StackPanel Grid.Column="2"
+                                                            Spacing="4"
+                                                            VerticalAlignment="Top">
+                                                    <Button Content="▲"
+                                                            Command="{Binding MoveUpCommand}"
+                                                            Width="32" Height="28"
+                                                            Padding="0"
+                                                            HorizontalContentAlignment="Center"
+                                                            CornerRadius="4"
+                                                            FontSize="12"
+                                                            Background="{DynamicResource AppNavButtonBg}"
+                                                            Foreground="{DynamicResource AppTextSecondary}"
+                                                            ToolTip.Tip="Mover para cima"/>
+                                                    <Button Content="▼"
+                                                            Command="{Binding MoveDownCommand}"
+                                                            Width="32" Height="28"
+                                                            Padding="0"
+                                                            HorizontalContentAlignment="Center"
+                                                            CornerRadius="4"
+                                                            FontSize="12"
+                                                            Background="{DynamicResource AppNavButtonBg}"
+                                                            Foreground="{DynamicResource AppTextSecondary}"
+                                                            ToolTip.Tip="Mover para baixo"/>
+                                                    <Button Content="✕"
+                                                            Command="{Binding DeleteCommand}"
+                                                            Width="32" Height="28"
+                                                            Padding="0"
+                                                            HorizontalContentAlignment="Center"
+                                                            CornerRadius="4"
+                                                            FontSize="12"
+                                                            Background="Transparent"
+                                                            Foreground="#EE8888"
+                                                            ToolTip.Tip="Remover slide"/>
+                                                </StackPanel>
+
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                        </StackPanel>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+            </DockPanel>
+        </Grid>
+
+    </Grid>
+
+</UserControl>

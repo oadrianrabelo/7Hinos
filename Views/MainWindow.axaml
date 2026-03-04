@@ -5,105 +5,125 @@
         x:Class="SevenHinos.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="7Hinos"
-        Width="1100" Height="700"
-        MinWidth="800" MinHeight="500"
+        Width="960" Height="660"
+        MinWidth="720" MinHeight="500"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource AppBg}">
 
-    <Grid RowDefinitions="*,Auto">
+    <!-- Single-row layout: sidebar + content -->
+    <Grid ColumnDefinitions="220,*">
 
-        <!-- App body: sidebar + content -->
-        <Grid Grid.Row="0" ColumnDefinitions="220,*">
+        <!-- Sidebar -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource AppSidebarBg}"
+                Padding="0,0,0,16">
+            <DockPanel>
 
-            <!-- Sidebar -->
-            <Border Grid.Column="0"
-                    Background="{DynamicResource AppSidebarBg}"
-                    Padding="0,0,0,16">
-                <DockPanel>
-
-                    <!-- Logo / App name -->
-                    <Border DockPanel.Dock="Top"
-                            Padding="24,28,24,20"
-                            BorderThickness="0,0,0,1"
-                            BorderBrush="{DynamicResource AppBorderBrush}">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="7Hinos"
-                                       FontSize="22"
-                                       FontWeight="Bold"
-                                       Foreground="{DynamicResource AppTextPrimary}"/>
-                            <TextBlock Text="Hinário Digital"
-                                       FontSize="11"
-                                       Foreground="{DynamicResource AppTextSecondary}"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Navigation -->
-                    <StackPanel DockPanel.Dock="Top"
-                                Margin="12,16,12,0"
-                                Spacing="4">
-
-                        <Button Content="🎵  Músicas"
-                                Command="{Binding NavigateCommand}"
-                                CommandParameter="{Binding SongList}"
-                                HorizontalAlignment="Stretch"
-                                HorizontalContentAlignment="Left"
-                                Padding="16,10"
-                                CornerRadius="8"
-                                Background="{DynamicResource AppNavButtonBg}"
-                                Foreground="{DynamicResource AppTextPrimary}"
-                                FontSize="14"/>
-
-                        <Button Content="📁  Arquivos"
-                                Command="{Binding NavigateCommand}"
-                                CommandParameter="{Binding FileValidation}"
-                                HorizontalAlignment="Stretch"
-                                HorizontalContentAlignment="Left"
-                                Padding="16,10"
-                                CornerRadius="8"
-                                Background="{DynamicResource AppNavButtonBg}"
-                                Foreground="{DynamicResource AppTextPrimary}"
-                                FontSize="14"/>
-
+                <!-- Logo / App name -->
+                <Border DockPanel.Dock="Top"
+                        Padding="24,28,24,20"
+                        BorderThickness="0,0,0,1"
+                        BorderBrush="{DynamicResource AppBorderBrush}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="7Hinos"
+                                   FontSize="22"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimary}"/>
+                        <TextBlock Text="Hinário Digital"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AppTextSecondary}"/>
                     </StackPanel>
+                </Border>
 
-                    <!-- Theme toggle -->
-                    <Button DockPanel.Dock="Bottom"
-                            Command="{Binding ToggleThemeCommand}"
+                <!-- Navigation -->
+                <StackPanel DockPanel.Dock="Top"
+                            Margin="12,16,12,0"
+                            Spacing="4">
+
+                    <Button Content="📝  Catálogo"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="{Binding SongManager}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
-                            Margin="12,0,12,8"
                             Padding="16,10"
                             CornerRadius="8"
-                            Background="Transparent"
-                            Foreground="{DynamicResource AppTextSecondary}"
-                            FontSize="13">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="☀️" IsVisible="{Binding IsDarkMode}"/>
-                            <TextBlock Text="🌙" IsVisible="{Binding IsDarkMode, Converter={x:Static BoolConverters.Not}}"/>
-                            <TextBlock Text="Modo Claro" IsVisible="{Binding IsDarkMode}"/>
-                            <TextBlock Text="Modo Escuro" IsVisible="{Binding IsDarkMode, Converter={x:Static BoolConverters.Not}}"/>
-                        </StackPanel>
-                    </Button>
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"
+                            FontSize="14"/>
 
-                    <!-- Footer version -->
-                    <TextBlock DockPanel.Dock="Bottom"
-                               Text="v0.1.0"
-                               FontSize="11"
-                               Foreground="{DynamicResource AppTextMuted}"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,4"/>
+                    <Button Content="📁  Arquivos"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="{Binding FileValidation}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="16,10"
+                            CornerRadius="8"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"
+                            FontSize="14"/>
 
-                </DockPanel>
-            </Border>
+                    <Button Content="⬇  Importar LJA"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="{Binding Import}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="16,10"
+                            CornerRadius="8"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"
+                            FontSize="14"/>
 
-            <!-- Main content -->
-            <ContentControl Grid.Column="1"
-                            Content="{Binding CurrentPage}"/>
+                    <!-- Separator -->
+                    <Border Height="1" Margin="4,6" Background="{DynamicResource AppBorderBrush}"/>
 
-        </Grid>
+                    <!-- Opens PresentationWindow as a separate window -->
+                    <Button Content="🎬  Apresentação"
+                            Command="{Binding OpenPresentationCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="16,10"
+                            CornerRadius="8"
+                            Background="#1A3355"
+                            Foreground="#88CCFF"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            ToolTip.Tip="Abre a janela de controle da apresentação"/>
 
-        <!-- Player bar -->
-        <views:PlayerView Grid.Row="1" DataContext="{Binding Player}"/>
+                </StackPanel>
+
+                <!-- Theme toggle -->
+                <Button DockPanel.Dock="Bottom"
+                        Command="{Binding ToggleThemeCommand}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Margin="12,0,12,8"
+                        Padding="16,10"
+                        CornerRadius="8"
+                        Background="Transparent"
+                        Foreground="{DynamicResource AppTextSecondary}"
+                        FontSize="13">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="☀️" IsVisible="{Binding IsDarkMode}"/>
+                        <TextBlock Text="🌙" IsVisible="{Binding IsDarkMode, Converter={x:Static BoolConverters.Not}}"/>
+                        <TextBlock Text="Modo Claro" IsVisible="{Binding IsDarkMode}"/>
+                        <TextBlock Text="Modo Escuro" IsVisible="{Binding IsDarkMode, Converter={x:Static BoolConverters.Not}}"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Footer version -->
+                <TextBlock DockPanel.Dock="Bottom"
+                           Text="v0.1.0"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppTextMuted}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,4"/>
+
+            </DockPanel>
+        </Border>
+
+        <!-- Main content -->
+        <ContentControl Grid.Column="1"
+                        Content="{Binding CurrentPage}"/>
 
     </Grid>
 

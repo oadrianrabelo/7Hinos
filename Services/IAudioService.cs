@@ -11,7 +11,8 @@ public interface IAudioService : IDisposable
     void Pause();
     void Resume();
     void Stop();
-    void Seek(double fraction); // 0.0 – 1.0
+    void Seek(double fraction);    // 0.0 – 1.0
+    void SeekToTime(TimeSpan time); // absolute position
 
     event EventHandler<TimeSpan>? PositionChanged;
     event EventHandler? PlaybackStarted;

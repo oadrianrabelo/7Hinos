@@ -1,0 +1,84 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SevenHinos.ViewModels"
+        x:Class="SevenHinos.Views.ConfidenceMonitorWindow"
+        x:DataType="vm:PresentationState"
+        Title="7Hinos — Monitor do Pregador"
+        Background="Black"
+        ShowInTaskbar="False"
+        CanResize="False"
+        SystemDecorations="None">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header: song info + slide counter ── -->
+        <Border Grid.Row="0"
+                Background="#111111"
+                Padding="24,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock
+                        Text="{Binding CurrentSlideContent.SongTitle}"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="White"
+                        TextTrimming="CharacterEllipsis"/>
+                    <TextBlock
+                        Text="{Binding CurrentSlideContent.Album}"
+                        FontSize="12"
+                        Foreground="#888888"/>
+                </StackPanel>
+                <!-- Slide counter -->
+                <Border Grid.Column="1"
+                        Background="#333333"
+                        CornerRadius="6"
+                        Padding="12,6"
+                        VerticalAlignment="Center">
+                    <TextBlock FontSize="14" Foreground="#AAAAAA">
+                        <Run Text="{Binding CurrentSlideContent.Index}"/>
+                        <Run Text=" / "/>
+                        <Run Text="{Binding CurrentSlideContent.Total}"/>
+                    </TextBlock>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ── Current slide (large, centered) — always visible ── -->
+        <Grid Grid.Row="1" Background="#0D0D0D">
+            <TextBlock
+                Text="{Binding CurrentSlideContent.Text}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                TextAlignment="Center"
+                TextWrapping="Wrap"
+                FontSize="52"
+                FontWeight="SemiBold"
+                Foreground="White"
+                Margin="60"/>
+        </Grid>
+
+        <!-- ── Next slide preview (dim cue for the preacher) ── -->
+        <Border Grid.Row="2"
+                Background="#1A1A1A"
+                BorderThickness="0,1,0,0"
+                BorderBrush="#333333"
+                Padding="24,16">
+            <StackPanel Spacing="4">
+                <TextBlock
+                    Text="— PRÓXIMO —"
+                    FontSize="10"
+                    LetterSpacing="2"
+                    Foreground="#444444"
+                    FontWeight="Bold"/>
+                <TextBlock
+                    Text="{Binding NextSlideText}"
+                    FontSize="22"
+                    Foreground="#555555"
+                    TextWrapping="Wrap"
+                    MaxLines="3"
+                    TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</Window>

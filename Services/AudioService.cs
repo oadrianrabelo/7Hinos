@@ -58,6 +58,13 @@ public sealed class AudioService : IAudioService
             _player.Position = (float)Math.Clamp(fraction, 0.0, 1.0);
     }
 
+    public void SeekToTime(TimeSpan time)
+    {
+        if (_player.IsSeekable && _player.Length > 0)
+            _player.Position = (float)Math.Clamp(
+                time.TotalMilliseconds / _player.Length, 0.0, 1.0);
+    }
+
     private void StartTimer()
     {
         StopTimer();

@@ -17,6 +17,19 @@ public class SongService : ISongService
 
     public Task<Song> AddAsync(Song song) { _songs.Add(song); return Task.FromResult(song); }
 
+    public Task<Song?> GetWithSlidesAsync(int id) =>
+        Task.FromResult<Song?>(_songs.FirstOrDefault(s => s.Id == id));
+
+    public Task SaveWithSlidesAsync(Song song, IReadOnlyList<string> slideTexts)
+    {
+        song.Lyrics = string.Join("\n\n", slideTexts);
+        song.Slides = slideTexts.Select((t, i) =>
+            new SongSlide { Order = i, Content = t, ShowSlide = true }).ToList();
+        if (song.Id == 0) _songs.Add(song);
+        else { var i = _songs.FindIndex(s => s.Id == song.Id); if (i >= 0) _songs[i] = song; }
+        return Task.CompletedTask;
+    }
+
     public Task UpdateAsync(Song song)
     {
         var i = _songs.FindIndex(s => s.Id == song.Id);

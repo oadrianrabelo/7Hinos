@@ -1,4 +1,7 @@
+using System;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SevenHinos.Models;
 
 namespace SevenHinos.Data;
@@ -8,6 +11,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Song> Songs => Set<Song>();
     public DbSet<SongSlide> SongSlides => Set<SongSlide>();
     public DbSet<FileAsset> FileAssets => Set<FileAsset>();
+
+    // Stores TimeSpan as total milliseconds (long) — unambiguous, no date-confusion.
+    private static readonly ValueConverter<TimeSpan, long> _timeSpanConverter = new(
+        v => v.Ticks / TimeSpan.TicksPerMillisecond,
+        v => new TimeSpan(v * TimeSpan.TicksPerMillisecond));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +44,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.HasKey(sl => sl.Id);
             e.Property(sl => sl.Id).ValueGeneratedOnAdd();
+            e.Property(sl => sl.Time).HasConversion(_timeSpanConverter);
             e.HasIndex(sl => new { sl.SongId, sl.Order }).IsUnique();
         });
     }

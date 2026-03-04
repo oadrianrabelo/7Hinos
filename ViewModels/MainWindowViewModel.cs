@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -8,26 +9,35 @@ namespace SevenHinos.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    public SongListViewModel SongList { get; }
-    public PlayerViewModel Player { get; }
+    public PlayerViewModel         Player         { get; }
     public FileValidationViewModel FileValidation { get; }
+    public ImportViewModel         Import         { get; }
+    public SongManagerViewModel    SongManager    { get; }
 
     [ObservableProperty] private ViewModelBase _currentPage;
     [ObservableProperty] private bool _isDarkMode = true;
 
+    /// <summary>Raised when the user clicks "Apresentação". View opens the PresentationWindow.</summary>
+    public event Action? OpenPresentationRequested;
+
     public MainWindowViewModel(
-        ISongService songService,
         PlayerViewModel player,
-        FileValidationViewModel fileValidation)
+        FileValidationViewModel fileValidation,
+        ImportViewModel import,
+        SongManagerViewModel songManager)
     {
         Player         = player;
-        SongList       = new SongListViewModel(songService, player);
         FileValidation = fileValidation;
-        _currentPage   = SongList;
+        Import         = import;
+        SongManager    = songManager;
+        _currentPage   = SongManager;
     }
 
     [RelayCommand]
     private void Navigate(ViewModelBase page) => CurrentPage = page;
+
+    [RelayCommand]
+    private void OpenPresentation() => OpenPresentationRequested?.Invoke();
 
     [RelayCommand]
     private void ToggleTheme()

@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SevenHinos.ViewModels"
+        xmlns:views="using:SevenHinos.Views"
+        x:Class="SevenHinos.Views.PresentationWindow"
+        x:DataType="vm:PresentationViewModel"
+        Title="7Hinos — Apresentação"
+        Width="1360" Height="820"
+        MinWidth="960" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource AppBg}">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <!-- Main presentation operator panel -->
+        <views:PresentationView Grid.Row="0"/>
+
+        <!-- Player bar — bound to the Player property exposed by PresentationViewModel -->
+        <views:PlayerView Grid.Row="1" DataContext="{Binding Player}"/>
+
+    </Grid>
+</Window>

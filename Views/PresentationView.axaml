@@ -1,0 +1,603 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SevenHinos.ViewModels"
+             xmlns:models="using:SevenHinos.Models"
+             x:Class="SevenHinos.Views.PresentationView"
+             x:DataType="vm:PresentationViewModel">
+    <Grid ColumnDefinitions="250,*,270"
+          RowDefinitions="*"
+          Background="{DynamicResource AppBg}">
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             LEFT ── Song list
+        ══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource AppSidebarBg}"
+                BorderThickness="0,0,1,0"
+                BorderBrush="{DynamicResource AppBorderBrush}">
+            <DockPanel>
+
+                <Border DockPanel.Dock="Top"
+                        BorderThickness="0,0,0,1"
+                        BorderBrush="{DynamicResource AppBorderBrush}">
+                    <StackPanel>
+
+                        <!-- ── Section button grid ── -->
+                        <Border Padding="8,8,8,0">
+                            <WrapPanel Orientation="Horizontal">
+                                <!-- Hinário Adventista -->
+                                <RadioButton GroupName="LibSection"
+                                             IsChecked="{Binding ActiveSection,
+                                                 Converter={x:Static vm:IsEqualConverter.Instance},
+                                                 ConverterParameter={x:Static vm:LibrarySection.Hymnal},
+                                                 Mode=TwoWay}"
+                                             Margin="0,0,4,4" Padding="0" Width="111" Height="46"
+                                             CornerRadius="5">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="♩" FontSize="13" HorizontalAlignment="Center" Foreground="#7B8FD8"/>
+                                        <TextBlock Text="Hinário Adventista" FontSize="9" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </RadioButton>
+                                <!-- Hinário Adv. 1996 -->
+                                <RadioButton GroupName="LibSection"
+                                             IsChecked="{Binding ActiveSection,
+                                                 Converter={x:Static vm:IsEqualConverter.Instance},
+                                                 ConverterParameter={x:Static vm:LibrarySection.Hymnal1996},
+                                                 Mode=TwoWay}"
+                                             Margin="0,0,4,4" Padding="0" Width="111" Height="46"
+                                             CornerRadius="5">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="♩" FontSize="13" HorizontalAlignment="Center" Foreground="#7B8FD8"/>
+                                        <TextBlock Text="Hinário Adv. 1996" FontSize="9" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </RadioButton>
+                                <!-- JA / Min. Música -->
+                                <RadioButton GroupName="LibSection"
+                                             IsChecked="{Binding ActiveSection,
+                                                 Converter={x:Static vm:IsEqualConverter.Instance},
+                                                 ConverterParameter={x:Static vm:LibrarySection.JA},
+                                                 Mode=TwoWay}"
+                                             Margin="0,0,4,4" Padding="0" Width="111" Height="46"
+                                             CornerRadius="5">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="★" FontSize="13" HorizontalAlignment="Center" Foreground="#5CB86C"/>
+                                        <TextBlock Text="JA / Min. Música" FontSize="9" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </RadioButton>
+                                <!-- Adoradores -->
+                                <RadioButton GroupName="LibSection"
+                                             IsChecked="{Binding ActiveSection,
+                                                 Converter={x:Static vm:IsEqualConverter.Instance},
+                                                 ConverterParameter={x:Static vm:LibrarySection.Adoradores},
+                                                 Mode=TwoWay}"
+                                             Margin="0,0,4,4" Padding="0" Width="111" Height="46"
+                                             CornerRadius="5">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="♪" FontSize="13" HorizontalAlignment="Center" Foreground="#E8A44D"/>
+                                        <TextBlock Text="Adoradores" FontSize="9" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+                                <!-- Cantores -->
+                                <RadioButton GroupName="LibSection"
+                                             IsChecked="{Binding ActiveSection,
+                                                 Converter={x:Static vm:IsEqualConverter.Instance},
+                                                 ConverterParameter={x:Static vm:LibrarySection.Cantores},
+                                                 Mode=TwoWay}"
+                                             Margin="0,0,4,4" Padding="0" Width="111" Height="46"
+                                             CornerRadius="5">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="🎤" FontSize="13" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Cantores" FontSize="9" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+                                <!-- Celebra SP -->
+                                <RadioButton GroupName="LibSection"
+                                             IsChecked="{Binding ActiveSection,
+                                                 Converter={x:Static vm:IsEqualConverter.Instance},
+                                                 ConverterParameter={x:Static vm:LibrarySection.CelebradeSP},
+                                                 Mode=TwoWay}"
+                                             Margin="0,0,4,4" Padding="0" Width="111" Height="46"
+                                             CornerRadius="5">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="🎶" FontSize="13" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Celebra SP" FontSize="9" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+                                <!-- Diversas -->
+                                <RadioButton GroupName="LibSection"
+                                             IsChecked="{Binding ActiveSection,
+                                                 Converter={x:Static vm:IsEqualConverter.Instance},
+                                                 ConverterParameter={x:Static vm:LibrarySection.Diversas},
+                                                 Mode=TwoWay}"
+                                             Margin="0,0,4,4" Padding="0" Width="111" Height="46"
+                                             CornerRadius="5">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="☰" FontSize="13" HorizontalAlignment="Center" Foreground="#8888AA"/>
+                                        <TextBlock Text="Diversas" FontSize="9" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+                            </WrapPanel>
+                        </Border>
+
+                        <!-- ── Search ── -->
+                        <Border Padding="8,4,8,8">
+                            <TextBox Text="{Binding SearchQuery}"
+                                     Watermark="Buscar..."
+                                     FontSize="12"
+                                     Padding="8,6"
+                                     CornerRadius="5"/>
+                        </Border>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- Song tree — grouped by album in the active section -->
+                <TreeView ItemsSource="{Binding Albums}"
+                          SelectedItem="{Binding TreeSelectedItem, Mode=TwoWay}"
+                          Background="Transparent"
+                          Padding="4"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <!-- Auto-expand all album nodes so user never needs to click to open -->
+                    <TreeView.Styles>
+                        <Style Selector="TreeViewItem">
+                            <Setter Property="IsExpanded" Value="True"/>
+                        </Style>
+                    </TreeView.Styles>
+                    <TreeView.DataTemplates>
+                        <TreeDataTemplate DataType="{x:Type vm:AlbumGroup}"
+                                          ItemsSource="{Binding Songs}">
+                            <!-- Album name hidden for single-album sections (Hinários) -->
+                            <TextBlock Text="{Binding AlbumName}"
+                                       IsVisible="{Binding ShowAlbumHeader}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7A9ABF"
+                                       TextTrimming="CharacterEllipsis"
+                                       Padding="0,4"/>
+                        </TreeDataTemplate>
+                        <DataTemplate DataType="{x:Type models:Song}">
+                            <TextBlock Text="{Binding Title}"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource AppTextPrimary}"
+                                       TextTrimming="CharacterEllipsis"
+                                       Padding="0,2"/>
+                        </DataTemplate>
+                    </TreeView.DataTemplates>
+                </TreeView>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             CENTER ── Slide manager
+        ══════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Column="1"
+              RowDefinitions="Auto,Auto,*,Auto"
+              Margin="0">
+
+            <!-- ── Preview strip (ATUAL + PRÓXIMO) ── -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource AppSidebarBg}"
+                    BorderThickness="0,0,0,1"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    Padding="16,12">
+                <Grid ColumnDefinitions="*,12,*">
+
+                    <!-- ATUAL -->
+                    <StackPanel Grid.Column="0" Spacing="6">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="ATUAL"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       LetterSpacing="2"
+                                       Foreground="{DynamicResource AppTextSecondary}"
+                                       VerticalAlignment="Center"/>
+                            <!-- Auto-sync indicator -->
+                            <Border Grid.Column="1"
+                                    Background="#225577"
+                                    CornerRadius="4"
+                                    Padding="6,2"
+                                    IsVisible="{Binding IsAutoSync}">
+                                <TextBlock Text="⧐ SYNC"
+                                           FontSize="9" FontWeight="Bold"
+                                           LetterSpacing="1"
+                                           Foreground="#55BBDD"/>
+                            </Border>
+                        </Grid>
+                        <Border Background="#111111" CornerRadius="6" Padding="12,12,12,6">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{Binding State.CurrentSlideContent.Text}"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           FontSize="13"
+                                           Foreground="White"
+                                           MaxLines="4"
+                                           TextTrimming="CharacterEllipsis"
+                                           Height="58"/>
+                                <!-- Slide timing progress bar -->
+                                <ProgressBar Minimum="0" Maximum="1"
+                                             Value="{Binding CurrentSlideProgress}"
+                                             Height="3"
+                                             Background="#222222"
+                                             Foreground="#4499FF"
+                                             IsVisible="{Binding HasTimings}"
+                                             CornerRadius="2"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- PRÓXIMO -->
+                    <StackPanel Grid.Column="2" Spacing="6">
+                        <TextBlock Text="PRÓXIMO"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   LetterSpacing="2"
+                                   Foreground="{DynamicResource AppTextSecondary}"/>
+                        <Border Background="#0D0D0D"
+                                CornerRadius="6"
+                                Height="90"
+                                Padding="12">
+                            <TextBlock Text="{Binding State.NextSlideText}"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       FontSize="13"
+                                       Foreground="#888888"
+                                       MaxLines="4"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                    </StackPanel>
+
+                </Grid>
+            </Border>
+
+            <!-- ── Play mode selector ── -->
+            <Border Grid.Row="1"
+                    Background="{DynamicResource AppSidebarBg}"
+                    BorderThickness="0,0,0,1"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    Padding="10,7"
+                    IsVisible="{Binding SelectedSong, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="MODO"
+                               FontSize="9"
+                               FontWeight="Bold"
+                               LetterSpacing="2"
+                               Foreground="{DynamicResource AppTextSecondary}"/>
+                    <WrapPanel Orientation="Horizontal">
+                        <RadioButton GroupName="PlayMode"
+                                     Content="Slide Cantado"
+                                     IsChecked="{Binding SelectedPlayMode,
+                                         Converter={x:Static vm:IsEqualConverter.Instance},
+                                         ConverterParameter={x:Static models:PlayMode.SlideWithAudio},
+                                         Mode=TwoWay}"
+                                     FontSize="11" Padding="7,4" Margin="0,0,4,4" CornerRadius="4"/>
+                        <RadioButton GroupName="PlayMode"
+                                     Content="Slide Playback"
+                                     IsChecked="{Binding SelectedPlayMode,
+                                         Converter={x:Static vm:IsEqualConverter.Instance},
+                                         ConverterParameter={x:Static models:PlayMode.SlideWithPlayback},
+                                         Mode=TwoWay}"
+                                     FontSize="11" Padding="7,4" Margin="0,0,4,4" CornerRadius="4"/>
+                        <RadioButton GroupName="PlayMode"
+                                     Content="Slide s/ Áudio"
+                                     IsChecked="{Binding SelectedPlayMode,
+                                         Converter={x:Static vm:IsEqualConverter.Instance},
+                                         ConverterParameter={x:Static models:PlayMode.SlideOnly},
+                                         Mode=TwoWay}"
+                                     FontSize="11" Padding="7,4" Margin="0,0,4,4" CornerRadius="4"/>
+                        <RadioButton GroupName="PlayMode"
+                                     Content="Só Áudio"
+                                     IsChecked="{Binding SelectedPlayMode,
+                                         Converter={x:Static vm:IsEqualConverter.Instance},
+                                         ConverterParameter={x:Static models:PlayMode.AudioOnly},
+                                         Mode=TwoWay}"
+                                     FontSize="11" Padding="7,4" Margin="0,0,4,4" CornerRadius="4"/>
+                        <RadioButton GroupName="PlayMode"
+                                     Content="Só Playback"
+                                     IsChecked="{Binding SelectedPlayMode,
+                                         Converter={x:Static vm:IsEqualConverter.Instance},
+                                         ConverterParameter={x:Static models:PlayMode.PlaybackOnly},
+                                         Mode=TwoWay}"
+                                     FontSize="11" Padding="7,4" Margin="0,0,4,4" CornerRadius="4"/>
+                        <RadioButton GroupName="PlayMode"
+                                     Content="Letra"
+                                     IsChecked="{Binding SelectedPlayMode,
+                                         Converter={x:Static vm:IsEqualConverter.Instance},
+                                         ConverterParameter={x:Static models:PlayMode.LyricsOnly},
+                                         Mode=TwoWay}"
+                                     FontSize="11" Padding="7,4" Margin="0,0,4,4" CornerRadius="4"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Slide list ── -->
+            <ListBox x:Name="SlideList"
+                     Grid.Row="2"
+                     ItemsSource="{Binding Slides}"
+                     SelectedItem="{Binding SelectedSlide, Mode=TwoWay}"
+                     Background="Transparent"
+                     Padding="8">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="vm:SlideItemViewModel">
+                        <Grid ColumnDefinitions="28,*,Auto" Margin="0,1">
+                            <!-- Slide number bubble -->
+                            <Border Grid.Column="0"
+                                    Background="#333333"
+                                    CornerRadius="4"
+                                    Width="22" Height="22"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Index}"
+                                           FontSize="10"
+                                           Foreground="#AAAAAA"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                            <!-- Slide text -->
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding ShortText}"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource AppTextPrimary}"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"
+                                       Margin="6,0,4,0"/>
+                            <!-- Timecode badge -->
+                            <Border Grid.Column="2"
+                                    Background="#222244"
+                                    CornerRadius="3"
+                                    Padding="5,2"
+                                    VerticalAlignment="Center"
+                                    IsVisible="{Binding HasTime}">
+                                <TextBlock Text="{Binding TimeText}"
+                                           FontSize="10"
+                                           Foreground="#6699CC"
+                                           FontFamily="Consolas, Monospace"/>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- ── Navigation bar ── -->
+            <Border Grid.Row="3"
+                    Background="{DynamicResource AppSidebarBg}"
+                    BorderThickness="0,1,0,0"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    Padding="12,10">
+                <Grid ColumnDefinitions="Auto,6,*,8,Auto,8,*">
+                    <!-- Restart -->
+                    <Button Grid.Column="0"
+                            Content="⏮"
+                            Command="{Binding RestartSongCommand}"
+                            ToolTip.Tip="Reiniciar música do início"
+                            Width="40"
+                            HorizontalContentAlignment="Center"
+                            Padding="4,8" CornerRadius="6" FontSize="16"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"/>
+                    <Button Grid.Column="2"
+                            Content="◄  Anterior"
+                            Command="{Binding PreviousSlideCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="12,8" CornerRadius="6" FontSize="14"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"/>
+                    <!-- Auto-sync toggle -->
+                    <ToggleButton Grid.Column="4"
+                                  IsChecked="{Binding IsAutoSync, Mode=TwoWay}"
+                                  Width="72" Padding="6,8" CornerRadius="6"
+                                  ToolTip.Tip="Sincronizar slides com a música automaticamente">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="⧐" FontSize="13"/>
+                            <TextBlock Text="{Binding IsAutoSync,
+                                           Converter={x:Static vm:BoolToSyncLabelConverter.Instance}}"
+                                       FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ToggleButton>
+                    <Button Grid.Column="6"
+                            Content="Próximo  ►"
+                            Command="{Binding NextSlideCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="12,8" CornerRadius="6" FontSize="14"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"/>
+                </Grid>
+            </Border>
+
+        </Grid>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             RIGHT ── Control panel
+        ══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Column="2"
+                Background="{DynamicResource AppSidebarBg}"
+                BorderThickness="1,0,0,0"
+                BorderBrush="{DynamicResource AppBorderBrush}">
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="16" Spacing="14">
+
+                    <!-- ── Live status badge ── -->
+                    <Border Background="#22FF5555"
+                            CornerRadius="8"
+                            Padding="12,8"
+                            IsVisible="{Binding State.IsActive}">
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                            <Ellipse Width="10" Height="10" Fill="#FF5555"/>
+                            <TextBlock Text="TRANSMITINDO"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       LetterSpacing="2"
+                                       Foreground="#FF5555"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── Screen picker overlay ── -->
+                    <Border Background="#1A1A2E"
+                            CornerRadius="10"
+                            Padding="14"
+                            BorderThickness="1"
+                            BorderBrush="#334488"
+                            IsVisible="{Binding IsPickingScreens}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Selecione os monitores"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center"/>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Público"
+                                           FontSize="11"
+                                           Foreground="#AAAAAA"/>
+                                <ComboBox ItemsSource="{Binding AvailableScreens}"
+                                          SelectedIndex="{Binding SelectedPublicScreenIndex}"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate DataType="vm:ScreenItemViewModel">
+                                            <TextBlock Text="{Binding Label}" FontSize="12"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Pregador (opcional)"
+                                           FontSize="11"
+                                           Foreground="#AAAAAA"/>
+                                <ComboBox ItemsSource="{Binding AvailableScreens}"
+                                          SelectedIndex="{Binding SelectedPreacherScreenIndex}"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate DataType="vm:ScreenItemViewModel">
+                                            <TextBlock Text="{Binding Label}" FontSize="12"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <Button Content="✔  Confirmar"
+                                    Command="{Binding ConfirmStartPresentationCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    Padding="10,8"
+                                    CornerRadius="6"
+                                    Background="#4477FF"
+                                    Foreground="White"
+                                    FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── Output controls (only when not picking screens) ── -->
+                    <StackPanel Spacing="14"
+                                IsVisible="{Binding IsPickingScreens,
+                                    Converter={x:Static BoolConverters.Not}}">
+
+                        <!-- Modo Público -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="MODO PÚBLICO"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       LetterSpacing="2"
+                                       Foreground="{DynamicResource AppTextSecondary}"/>
+                            <ComboBox ItemsSource="{Binding PublicModes}"
+                                      SelectedItem="{Binding State.PublicMode, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={x:Static vm:OutputModeToLabelConverter.Instance}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Modo Pregador -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="MODO PREGADOR"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       LetterSpacing="2"
+                                       Foreground="{DynamicResource AppTextSecondary}"/>
+                            <ComboBox ItemsSource="{Binding PreacherModes}"
+                                      SelectedItem="{Binding State.PreacherMode, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={x:Static vm:OutputModeToLabelConverter.Instance}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Transição -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="TRANSIÇÃO"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       LetterSpacing="2"
+                                       Foreground="{DynamicResource AppTextSecondary}"/>
+                            <ComboBox ItemsSource="{Binding Transitions}"
+                                      SelectedItem="{Binding State.Transition, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={x:Static vm:TransitionTypeToLabelConverter.Instance}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Divider -->
+                        <Border Height="1" Background="{DynamicResource AppBorderBrush}"/>
+
+                        <!-- Start / Stop buttons -->
+                        <Button Content="▶  Iniciar Apresentação"
+                                Command="{Binding RequestStartPresentationCommand}"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Padding="12,10"
+                                CornerRadius="8"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Background="#44BB55"
+                                Foreground="White"
+                                IsVisible="{Binding State.IsActive,
+                                    Converter={x:Static BoolConverters.Not}}"/>
+
+                        <Button Content="■  Parar Apresentação"
+                                Command="{Binding StopPresentationCommand}"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Padding="12,10"
+                                CornerRadius="8"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Background="#BB4444"
+                                Foreground="White"
+                                IsVisible="{Binding State.IsActive}"/>
+
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+    </Grid>
+
+</UserControl>

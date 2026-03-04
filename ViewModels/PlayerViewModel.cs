@@ -1,3 +1,4 @@
+using System.IO;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -30,9 +31,40 @@ public partial class PlayerViewModel : ViewModelBase
     public void Play(Song song)
     {
         if (string.IsNullOrWhiteSpace(song.AudioFilePath)) return;
+        if (!File.Exists(song.AudioFilePath)) return;
         CurrentSong = song;
         _audio.Play(song.AudioFilePath);
     }
+
+    /// <summary>
+    /// Called from PresentationViewModel with a pre-resolved audio path.
+    /// Updates the currently-displayed song info and starts playback.
+    /// </summary>
+    public void PlayPath(Song song, string resolvedPath)
+    {
+        CurrentSong = song;
+        _audio.Play(resolvedPath);
+    }
+
+    /// <summary>Updates the currently-displayed song without starting playback.</summary>
+    public void SetCurrentSong(Song? song) => CurrentSong = song;
+
+    /// <summary>Programmatic stop — same as pressing the stop button.</summary>
+    public void StopPlayback()
+    {
+        _audio.Stop();
+        IsPlaying = false;
+        _updatingFromAudio = true;
+        Position = 0;
+        _updatingFromAudio = false;
+        CurrentTimeText = "0:00";
+    }
+
+    /// <summary>
+    /// Seeks the audio to an absolute time position.
+    /// Called by PresentationViewModel when the operator clicks a timed slide.
+    /// </summary>
+    public void SeekToTime(TimeSpan time) => _audio.SeekToTime(time);
 
     [RelayCommand]
     private void TogglePlayPause()
@@ -42,17 +74,7 @@ public partial class PlayerViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void Stop()
-    {
-        _audio.Stop();
-        IsPlaying = false;
-
-        _updatingFromAudio = true;
-        Position = 0;
-        _updatingFromAudio = false;
-
-        CurrentTimeText = "0:00";
-    }
+    private void Stop() => StopPlayback();
 
     // When the user drags the slider OnPositionChanged fires → seek audio
     partial void OnPositionChanged(double value)
