@@ -1,14 +1,16 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:SevenHinos.ViewModels"
+        xmlns:views="using:SevenHinos.Views"
         x:Class="SevenHinos.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="7Hinos"
-        Width="1100" Height="700"
-        MinWidth="800" MinHeight="500"
+        Width="960" Height="660"
+        MinWidth="720" MinHeight="500"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource AppBg}">
 
+    <!-- Single-row layout: sidebar + content -->
     <Grid ColumnDefinitions="220,*">
 
         <!-- Sidebar -->
@@ -38,9 +40,9 @@
                             Margin="12,16,12,0"
                             Spacing="4">
 
-                    <Button Content="🎵  Músicas"
+                    <Button Content="📝  Catálogo"
                             Command="{Binding NavigateCommand}"
-                            CommandParameter="{Binding SongList}"
+                            CommandParameter="{Binding SongManager}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="16,10"
@@ -48,6 +50,44 @@
                             Background="{DynamicResource AppNavButtonBg}"
                             Foreground="{DynamicResource AppTextPrimary}"
                             FontSize="14"/>
+
+                    <Button Content="📁  Arquivos"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="{Binding FileValidation}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="16,10"
+                            CornerRadius="8"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"
+                            FontSize="14"/>
+
+                    <Button Content="▶  Vídeos"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="{Binding Videos}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="16,10"
+                            CornerRadius="8"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"
+                            FontSize="14"/>
+
+                    <!-- Separator -->
+                    <Border Height="1" Margin="4,6" Background="{DynamicResource AppBorderBrush}"/>
+
+                    <!-- Opens PresentationWindow as a separate window -->
+                    <Button Content="🎬  Apresentação"
+                            Command="{Binding OpenPresentationCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="16,10"
+                            CornerRadius="8"
+                            Background="#1A3355"
+                            Foreground="#88CCFF"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            ToolTip.Tip="Abre a janela de controle da apresentação"/>
 
                 </StackPanel>
 

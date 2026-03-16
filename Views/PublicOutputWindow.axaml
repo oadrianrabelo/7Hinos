@@ -1,0 +1,75 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SevenHinos.ViewModels"
+        x:Class="SevenHinos.Views.PublicOutputWindow"
+        x:DataType="vm:PresentationState"
+        Title="7Hinos — Saída Pública"
+        Background="Black"
+        ShowInTaskbar="False"
+        CanResize="False"
+        SystemDecorations="None">
+
+    <Grid>
+
+        <!-- ── Slide layer (always rendered — transitions animate here) ── -->
+        <TransitioningContentControl
+            Content="{Binding CurrentSlideContent}"
+            IsVisible="{Binding PublicMode,
+                Converter={x:Static vm:OutputModeToVisibleConverter.Instance},
+                ConverterParameter='Lyrics,Playback'}">
+            <TransitioningContentControl.PageTransition>
+                <!-- Swapped at runtime from code-behind based on Transition enum -->
+                <CrossFade Duration="0:0:0.5"/>
+            </TransitioningContentControl.PageTransition>
+            <TransitioningContentControl.ContentTemplate>
+                <DataTemplate DataType="vm:SlideContent">
+                    <Grid Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <TextBlock
+                            Text="{Binding Text}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap"
+                            FontSize="72"
+                            FontWeight="SemiBold"
+                            Foreground="White"
+                            Margin="80"/>
+                    </Grid>
+                </DataTemplate>
+            </TransitioningContentControl.ContentTemplate>
+        </TransitioningContentControl>
+
+        <!-- ── Playback badge — rendered over the slide in Playback mode ── -->
+        <Border
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Background="#CC000000"
+            CornerRadius="0,0,0,12"
+            Padding="20,10"
+            IsVisible="{Binding PublicMode,
+                Converter={x:Static vm:OutputModeToVisibleConverter.Instance},
+                ConverterParameter='Playback'}">
+            <TextBlock
+                Text="♪  PLAYBACK"
+                FontSize="18"
+                FontWeight="Bold"
+                Foreground="#89B4FA"
+                LetterSpacing="3"/>
+        </Border>
+
+        <!-- ── Black overlay ── -->
+        <Border
+            Background="Black"
+            IsVisible="{Binding PublicMode,
+                Converter={x:Static vm:OutputModeToVisibleConverter.Instance},
+                ConverterParameter='Black'}"/>
+
+        <!-- ── White/Blank overlay ── -->
+        <Border
+            Background="White"
+            IsVisible="{Binding PublicMode,
+                Converter={x:Static vm:OutputModeToVisibleConverter.Instance},
+                ConverterParameter='Blank'}"/>
+
+    </Grid>
+</Window>

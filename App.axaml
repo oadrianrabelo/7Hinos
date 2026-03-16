@@ -25,6 +25,8 @@
                     <SolidColorBrush x:Key="AppAccentFg"      Color="#1E1E2E"/>
                     <SolidColorBrush x:Key="AppFavorite"      Color="#F38BA8"/>
                     <SolidColorBrush x:Key="AppLyricsBrush"   Color="#BAC2DE"/>
+                    <SolidColorBrush x:Key="AppSuccess"        Color="#A6E3A1"/>
+                    <SolidColorBrush x:Key="AppError"          Color="#F38BA8"/>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Light">
@@ -40,6 +42,8 @@
                     <SolidColorBrush x:Key="AppAccentFg"      Color="#EFF1F5"/>
                     <SolidColorBrush x:Key="AppFavorite"      Color="#D20F39"/>
                     <SolidColorBrush x:Key="AppLyricsBrush"   Color="#5C5F77"/>
+                    <SolidColorBrush x:Key="AppSuccess"        Color="#40A02B"/>
+                    <SolidColorBrush x:Key="AppError"          Color="#D20F39"/>
                 </ResourceDictionary>
 
             </ResourceDictionary.ThemeDictionaries>

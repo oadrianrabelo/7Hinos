@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SevenHinos.ViewModels"
+             x:Class="SevenHinos.Views.PlayerView"
+             x:DataType="vm:PlayerViewModel">
+
+    <Border Background="{DynamicResource AppSidebarBg}"
+            BorderThickness="0,1,0,0"
+            BorderBrush="{DynamicResource AppBorderBrush}"
+            Padding="20,10"
+            IsVisible="{Binding CurrentSong, Converter={x:Static ObjectConverters.IsNotNull}}">
+
+        <Grid ColumnDefinitions="250,*,220">
+
+            <!-- Left: current song info -->
+            <StackPanel Grid.Column="0"
+                        VerticalAlignment="Center"
+                        Spacing="3">
+                <TextBlock Text="{Binding CurrentSong.Title}"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextPrimary}"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding CurrentSong.Album}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppTextSecondary}"
+                           TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+
+            <!-- Center: controls + progress bar -->
+            <StackPanel Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Spacing="6"
+                        Margin="16,0">
+
+                <!-- Play/Stop buttons -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="8">
+
+                    <Button Command="{Binding StopCommand}"
+                            Content="⏹"
+                            FontSize="15"
+                            Width="36" Height="36"
+                            CornerRadius="18"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextSecondary}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            BorderThickness="0"
+                            ToolTip.Tip="Parar"/>
+
+                    <Button Command="{Binding TogglePlayPauseCommand}"
+                            FontSize="18"
+                            Width="44" Height="44"
+                            CornerRadius="22"
+                            Background="{DynamicResource AppAccent}"
+                            Foreground="{DynamicResource AppAccentFg}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            BorderThickness="0">
+                        <Panel>
+                            <TextBlock Text="⏸" IsVisible="{Binding IsPlaying}"/>
+                            <TextBlock Text="▶" IsVisible="{Binding IsPlaying, Converter={x:Static BoolConverters.Not}}"/>
+                        </Panel>
+                    </Button>
+
+                </StackPanel>
+
+                <!-- Progress bar -->
+                <Grid ColumnDefinitions="44,*,44">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding CurrentTimeText}"
+                               FontSize="11"
+                               Foreground="{DynamicResource AppTextSecondary}"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center"
+                               Margin="0,0,6,0"/>
+
+                    <Slider Grid.Column="1"
+                            Value="{Binding Position}"
+                            Minimum="0" Maximum="1"
+                            VerticalAlignment="Center"/>
+
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding TotalTimeText}"
+                               FontSize="11"
+                               Foreground="{DynamicResource AppTextSecondary}"
+                               HorizontalAlignment="Left"
+                               VerticalAlignment="Center"
+                               Margin="6,0,0,0"/>
+                </Grid>
+
+            </StackPanel>
+
+            <!-- Right: volume -->
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Right"
+                        Spacing="8">
+                <TextBlock Text="🔊"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource AppTextSecondary}"/>
+                <Slider Value="{Binding Volume}"
+                        Minimum="0" Maximum="1"
+                        Width="110"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Volume"/>
+            </StackPanel>
+
+        </Grid>
+
+    </Border>
+</UserControl>
