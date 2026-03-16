@@ -19,12 +19,12 @@ dotnet watch run
 
 ## Importar hinos
 
-O catalogo possui um botao `Import Hymns`.
+O catalogo possui um botao `Importar hinos`.
 
 Ao clicar nele, o aplicativo abre um dialogo com duas origens offline:
 
-- `Import from native library`: usa o catalogo local incluido com o 7Hinos a partir do `manifest.json` empacotado com o aplicativo. Quando os arquivos de audio ja estiverem disponiveis localmente, os caminhos sao vinculados automaticamente.
-- `Import from LouvorJA installation`: importa musicas, letras e slides de uma instalacao local do LouvorJA, sem depender de internet.
+- `Importar da biblioteca nativa`: usa o catalogo local incluido com o 7Hinos a partir do `manifest.json` empacotado com o aplicativo. Quando os arquivos de audio ja estiverem disponiveis localmente, os caminhos sao vinculados automaticamente.
+- `Importar da instalacao do LouvorJA`: importa musicas, letras e slides de uma instalacao local do LouvorJA, sem depender de internet.
 
 Observacoes:
 
@@ -76,3 +76,23 @@ Assinatura de MSI (opcional no CI):
 - defina `WINDOWS_CODESIGN_CERT_PASSWORD` com a senha do certificado
 
 Se os dois secrets existirem, o workflow assina o MSI antes do upload.
+
+## Build automatizado (GitHub Actions)
+
+O workflow de CI em [.github/workflows/ci.yml](.github/workflows/ci.yml):
+
+- restaura dependencias e compila o projeto em push/pull request
+- executa testes quando houver projetos de teste no repositorio
+- gera pacote portatil + MSI
+- calcula a versao de build automaticamente com base no numero da execucao do workflow
+- publica MSI/ZIP/SHA256 como artefatos do build
+- opcionalmente anexa os arquivos na GitHub Release quando o gatilho for uma tag
+
+## Atualizacao automatica no aplicativo
+
+Ao iniciar, o aplicativo verifica silenciosamente se existe uma versao mais nova no GitHub.
+
+- se nao houver internet, a verificacao falha sem interromper o uso
+- se houver nova versao, o app pergunta se voce deseja atualizar
+- a atualizacao e opcional
+- ao aceitar, o app baixa o MSI mais recente e abre o instalador

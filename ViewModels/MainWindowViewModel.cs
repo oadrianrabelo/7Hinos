@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Reflection;
 
 namespace SevenHinos.ViewModels;
 
@@ -12,6 +13,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public FileValidationViewModel FileValidation { get; }
     public VideosViewModel         Videos         { get; }
     public SongManagerViewModel    SongManager    { get; }
+    public string                  AppVersion     { get; } = ResolveAppVersion();
 
     [ObservableProperty] private ViewModelBase _currentPage;
     [ObservableProperty] private bool _isDarkMode = true;
@@ -44,5 +46,19 @@ public partial class MainWindowViewModel : ViewModelBase
         IsDarkMode = !IsDarkMode;
         Application.Current!.RequestedThemeVariant =
             IsDarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
+    }
+
+    private static string ResolveAppVersion()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        var informational = asm
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
+
+        var clean = informational?.Split('+')[0];
+        if (string.IsNullOrWhiteSpace(clean))
+            clean = asm.GetName().Version?.ToString(3);
+
+        return $"v{(string.IsNullOrWhiteSpace(clean) ? "0.0.0" : clean)}";
     }
 }

@@ -1,6 +1,8 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Platform;
 using LibVLCSharp.Shared;
 
@@ -8,9 +10,21 @@ namespace SevenHinos.Views;
 
 public partial class VideoOutputWindow : Window
 {
+    public event EventHandler? EscapePressed;
+
     public VideoOutputWindow()
     {
         InitializeComponent();
+        AddHandler(KeyDownEvent, OnWindowKeyDown, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
+    }
+
+    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape)
+            return;
+
+        e.Handled = true;
+        EscapePressed?.Invoke(this, EventArgs.Empty);
     }
 
     public void AttachPlayer(MediaPlayer? mediaPlayer)

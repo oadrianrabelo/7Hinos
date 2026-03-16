@@ -10,12 +10,14 @@ namespace SevenHinos.Services;
 
 public sealed class VideoOutputService : IVideoOutputService
 {
-    private sealed record OutputSession(VideoOutputWindow Window, MediaPlayer Player);
+    private sealed record OutputSession(VideoOutputWindow Window, MediaPlayer Player, bool HasAudio);
 
     private readonly LibVLC _libVlc;
     private readonly Dictionary<int, OutputSession> _sessions = [];
 
     public bool IsActive => _sessions.Count > 0;
+
+    public event Action? OutputsStopped;
 
     public VideoOutputService()
     {
@@ -64,7 +66,8 @@ public sealed class VideoOutputService : IVideoOutputService
         if (screens.Count == 0)
             throw new InvalidOperationException("Nenhum monitor disponível para saída de vídeo.");
 
-        var unmutedAssigned = false;
+        var audioAssigned = false;
+        var orderedSessions = new List<OutputSession>(monitorIndices.Count);
 
         foreach (var index in monitorIndices)
         {
@@ -72,13 +75,15 @@ public sealed class VideoOutputService : IVideoOutputService
                 continue;
 
             var screen = screens[index];
+            var hasAudio = !audioAssigned;
+
             var player = new MediaPlayer(_libVlc)
             {
                 EnableHardwareDecoding = true,
-                Mute = unmutedAssigned
+                Mute = !hasAudio
             };
 
-            if (!unmutedAssigned)
+            if (hasAudio)
                 player.Volume = 100;
 
             var window = new VideoOutputWindow
@@ -91,19 +96,46 @@ public sealed class VideoOutputService : IVideoOutputService
             window.PlaceOnScreen(screen);
             window.Show();
             window.AttachPlayer(player);
+            window.EscapePressed += OnWindowEscapePressed;
 
-            _sessions[index] = new OutputSession(window, player);
-            unmutedAssigned = true;
+            var session = new OutputSession(window, player, hasAudio);
+            _sessions[index] = session;
+            orderedSessions.Add(session);
+            audioAssigned = true;
         }
 
         if (_sessions.Count == 0)
             throw new InvalidOperationException("As telas selecionadas não estão disponíveis no momento.");
 
-        foreach (var session in _sessions.Values)
+        // Start silent outputs first, then the audio source.
+        foreach (var session in orderedSessions.Where(s => !s.HasAudio))
+            PlaySession(session, absolutePath);
+
+        var audioSession = orderedSessions.FirstOrDefault(s => s.HasAudio);
+        if (audioSession is not null)
+            PlaySession(audioSession, absolutePath);
+    }
+
+    private void PlaySession(OutputSession session, string absolutePath)
+    {
+        using var media = new Media(_libVlc, new Uri(absolutePath));
+
+        // Secondary outputs should never compete for the audio device.
+        if (!session.HasAudio)
+            media.AddOption(":no-audio");
+
+        session.Player.Play(media);
+
+        if (session.HasAudio)
         {
-            using var media = new Media(_libVlc, new Uri(absolutePath));
-            session.Player.Play(media);
+            session.Player.Mute = false;
+            session.Player.Volume = 100;
         }
+    }
+
+    private void OnWindowEscapePressed(object? sender, EventArgs e)
+    {
+        StopAll();
     }
 
     private static IReadOnlyList<Screen> GetScreens()
@@ -127,6 +159,8 @@ public sealed class VideoOutputService : IVideoOutputService
 
         foreach (var session in sessions)
         {
+            session.Window.EscapePressed -= OnWindowEscapePressed;
+
             // Detach the native video surface before closing/disposal to avoid
             // LibVLC access violations in VideoView.Detach on Windows.
             try { session.Window.DetachPlayer(); } catch { }
@@ -163,6 +197,8 @@ public sealed class VideoOutputService : IVideoOutputService
                 DisposePlayer();
             }
         }
+
+        OutputsStopped?.Invoke();
     }
 
     public void Dispose()

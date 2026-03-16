@@ -2,7 +2,8 @@ param(
     [string] $Configuration = "Release",
     [string] $Runtime = "win-x64",
     [string] $PublishDir = ".artifacts/publish/win-x64-portable",
-    [string] $InstallerDir = ".artifacts/installer"
+    [string] $InstallerDir = ".artifacts/installer",
+    [string] $VersionOverride = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -38,13 +39,26 @@ $generatedFile = Join-Path $generatedDir "BuildVariables.wxi"
 $publishDirFull = Resolve-FullPath -BasePath $projectRoot -PathValue $PublishDir
 $installerDirFull = Resolve-FullPath -BasePath $projectRoot -PathValue $InstallerDir
 
-& (Join-Path $PSScriptRoot "Publish-Portable.ps1") `
-    -Configuration $Configuration `
-    -Runtime $Runtime `
-    -OutputDir $PublishDir
+$publishArgs = @{
+    Configuration = $Configuration
+    Runtime = $Runtime
+    OutputDir = $PublishDir
+}
 
-$versionOutput = @(dotnet msbuild $appProject -nologo -getProperty:Version)
-$rawVersion = ($versionOutput | Where-Object { $_ } | Select-Object -Last 1).Trim()
+if (-not [string]::IsNullOrWhiteSpace($VersionOverride)) {
+    $publishArgs["VersionOverride"] = $VersionOverride
+}
+
+& (Join-Path $PSScriptRoot "Publish-Portable.ps1") @publishArgs
+
+$rawVersion = if (-not [string]::IsNullOrWhiteSpace($VersionOverride)) {
+    $VersionOverride.Trim()
+}
+else {
+    $versionOutput = @(dotnet msbuild $appProject -nologo -getProperty:Version)
+    ($versionOutput | Where-Object { $_ } | Select-Object -Last 1).Trim()
+}
+
 $msiVersion = Convert-ToMsiVersion -VersionText $rawVersion
 
 New-Item -ItemType Directory -Path $generatedDir -Force | Out-Null

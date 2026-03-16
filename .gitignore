@@ -393,6 +393,10 @@ FodyWeavers.xsd
 # Local History for Visual Studio Code
 .history/
 
+# 7Hinos packaging outputs
+.artifacts/
+Installer/Generated/
+
 # Windows Installer files from build outputs
 *.cab
 *.msi

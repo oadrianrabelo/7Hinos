@@ -1,7 +1,8 @@
 param(
     [string] $Configuration = "Release",
     [string] $Runtime = "win-x64",
-    [string] $OutputDir = ".artifacts/publish/win-x64-portable"
+    [string] $OutputDir = ".artifacts/publish/win-x64-portable",
+    [string] $VersionOverride = ""
 )
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -13,15 +14,24 @@ if (Test-Path $publishDir) {
     Remove-Item $publishDir -Recurse -Force
 }
 
-dotnet publish $projectFile `
-    -c $Configuration `
-    -r $Runtime `
-    --self-contained true `
-    -p:PublishSingleFile=false `
-    -p:PublishTrimmed=false `
-    -p:DebugType=None `
-    -p:DebugSymbols=false `
-    -o $publishDir
+$publishArgs = @(
+    "publish",
+    $projectFile,
+    "-c", $Configuration,
+    "-r", $Runtime,
+    "--self-contained", "true",
+    "-p:PublishSingleFile=false",
+    "-p:PublishTrimmed=false",
+    "-p:DebugType=None",
+    "-p:DebugSymbols=false",
+    "-o", $publishDir
+)
+
+if (-not [string]::IsNullOrWhiteSpace($VersionOverride)) {
+    $publishArgs += "-p:Version=$VersionOverride"
+}
+
+dotnet @publishArgs
 
 if (Test-Path $zipPath) {
     Remove-Item $zipPath -Force

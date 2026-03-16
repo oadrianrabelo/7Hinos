@@ -79,8 +79,8 @@ public sealed class AlbumGroup
         new(LibrarySection.Hymnal1996,  "Hinário\nAdv. 1996",  "♩"),
         new(LibrarySection.JA,          "JA /\nMin. Música",   "★"),
         new(LibrarySection.Adoradores,  "Adoradores",          "♪"),
-        new(LibrarySection.Cantores,    "Cantores",            "🎤"),
-        new(LibrarySection.CelebradeSP, "Celebra SP",          "🎶"),
+        new(LibrarySection.Cantores,    "Cantores",            "♬"),
+        new(LibrarySection.CelebradeSP, "Celebra SP",          "♫"),
         new(LibrarySection.Diversas,    "Diversas",            "☰"),
     ];
 

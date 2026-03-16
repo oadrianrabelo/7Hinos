@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SevenHinos.Models;
@@ -268,6 +269,7 @@ public sealed partial class VideosViewModel : ViewModelBase
     {
         _videoConfigService = videoConfigService;
         _videoOutputService = videoOutputService;
+        _videoOutputService.OutputsStopped += OnVideoOutputsStopped;
 
         Videos.CollectionChanged += OnVideosCollectionChanged;
         CategoryManagementOptions.CollectionChanged += OnCategoryManagementCollectionChanged;
@@ -771,6 +773,20 @@ public sealed partial class VideosViewModel : ViewModelBase
             card.SetPlaying(videoId is not null && card.VideoId == videoId.Value);
 
         OnPropertyChanged(nameof(IsAnyVideoPlaying));
+    }
+
+    private void OnVideoOutputsStopped()
+    {
+        void ApplyStoppedState()
+        {
+            SetPlayingCard(null);
+            StatusText = "Exibição de vídeo parada.";
+        }
+
+        if (Dispatcher.UIThread.CheckAccess())
+            ApplyStoppedState();
+        else
+            Dispatcher.UIThread.Post(ApplyStoppedState);
     }
 
     private void ApplyFilter()

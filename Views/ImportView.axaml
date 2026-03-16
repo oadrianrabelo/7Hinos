@@ -10,7 +10,7 @@
                     HorizontalAlignment="Left"
                     Spacing="0">
 
-            <TextBlock Text="Import Hymns"
+            <TextBlock Text="Importar hinos"
                        FontSize="26"
                        FontWeight="Bold"
                        Foreground="{DynamicResource AppTextPrimary}"
@@ -32,7 +32,7 @@
                         Foreground="#88CCFF"
                         IsEnabled="{Binding IsImporting, Converter={x:Static BoolConverters.Not}}">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Import from native library"
+                        <TextBlock Text="Importar da biblioteca nativa"
                                    FontSize="15"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"/>
@@ -53,7 +53,7 @@
                         Foreground="{DynamicResource AppTextPrimary}"
                         IsEnabled="{Binding IsImporting, Converter={x:Static BoolConverters.Not}}">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Import from LouvorJA installation"
+                        <TextBlock Text="Importar da instalação do LouvorJA"
                                    FontSize="15"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"/>
@@ -195,7 +195,7 @@
                 </StackPanel>
             </Border>
 
-            <Button Content="Import Hymns"
+                <Button Content="Importar hinos"
                     Command="{Binding ImportCommand}"
                     HorizontalAlignment="Left"
                     Padding="20,12"
