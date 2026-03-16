@@ -89,7 +89,7 @@
                         VerticalAlignment="Center"
                         HorizontalAlignment="Center"
                         Spacing="12">
-                <TextBlock Text="🎵"
+                <TextBlock Text="♪"
                            FontSize="48"
                            HorizontalAlignment="Center"/>
                 <TextBlock Text="Selecione uma música"

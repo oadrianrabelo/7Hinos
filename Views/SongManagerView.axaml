@@ -37,7 +37,7 @@
                                 FontWeight="SemiBold"
                                 Background="#4477FF"
                                 Foreground="White"/>
-                        <Button Content="Import Hymns"
+                        <Button Content="Importar hinos"
                             Click="OnImportHymnsClick"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
