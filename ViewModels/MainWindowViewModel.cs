@@ -3,7 +3,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using SevenHinos.Services;
 
 namespace SevenHinos.ViewModels;
 
@@ -11,7 +10,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     public PlayerViewModel         Player         { get; }
     public FileValidationViewModel FileValidation { get; }
-    public ImportViewModel         Import         { get; }
+    public VideosViewModel         Videos         { get; }
     public SongManagerViewModel    SongManager    { get; }
 
     [ObservableProperty] private ViewModelBase _currentPage;
@@ -23,12 +22,12 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel(
         PlayerViewModel player,
         FileValidationViewModel fileValidation,
-        ImportViewModel import,
+        VideosViewModel videos,
         SongManagerViewModel songManager)
     {
         Player         = player;
         FileValidation = fileValidation;
-        Import         = import;
+        Videos         = videos;
         SongManager    = songManager;
         _currentPage   = SongManager;
     }

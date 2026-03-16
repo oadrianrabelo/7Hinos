@@ -37,6 +37,16 @@
                                 FontWeight="SemiBold"
                                 Background="#4477FF"
                                 Foreground="White"/>
+                        <Button Content="Import Hymns"
+                            Click="OnImportHymnsClick"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="0,8"
+                            CornerRadius="6"
+                            FontSize="13"
+                            FontWeight="SemiBold"
+                            Background="#1A3355"
+                            Foreground="#88CCFF"/>
                     </StackPanel>
                 </Border>
 

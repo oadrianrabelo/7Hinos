@@ -62,9 +62,9 @@
                             Foreground="{DynamicResource AppTextPrimary}"
                             FontSize="14"/>
 
-                    <Button Content="⬇  Importar LJA"
+                    <Button Content="▶  Vídeos"
                             Command="{Binding NavigateCommand}"
-                            CommandParameter="{Binding Import}"
+                            CommandParameter="{Binding Videos}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="16,10"

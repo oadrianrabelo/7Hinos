@@ -5,88 +5,197 @@
              x:DataType="vm:ImportViewModel">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel MaxWidth="620"
-                    Margin="40,32"
+        <StackPanel MaxWidth="700"
+                    Margin="24,20"
                     HorizontalAlignment="Left"
                     Spacing="0">
 
-            <!-- ── Header ── -->
-            <TextBlock Text="Importar do LouvorJA"
-                       FontSize="24"
+            <TextBlock Text="Import Hymns"
+                       FontSize="26"
                        FontWeight="Bold"
                        Foreground="{DynamicResource AppTextPrimary}"
                        Margin="0,0,0,6"/>
-            <TextBlock Text="Lê o banco de dados do LouvorJA instalado nesta máquina e importa todas as músicas e slides para o 7Hinos."
+            <TextBlock Text="Escolha a origem da importação. Todo o processo funciona offline e usa apenas os dados disponíveis nesta máquina."
                        FontSize="13"
                        Foreground="{DynamicResource AppTextSecondary}"
                        TextWrapping="Wrap"
-                       Margin="0,0,0,28"/>
+                       Margin="0,0,0,20"/>
 
-            <!-- ── DB path ── -->
-            <TextBlock Text="Banco de dados (database.db)"
-                       FontSize="12"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource AppTextSecondary}"
-                       Margin="0,0,0,6"/>
-            <Grid ColumnDefinitions="*,10,Auto" Margin="0,0,0,4">
-                <TextBox Grid.Column="0"
-                         Text="{Binding DbPath}"
-                         FontSize="13"
-                         Padding="10,8"
-                         CornerRadius="6"/>
-                <!-- Found badge -->
-                <Border Grid.Column="2"
-                        CornerRadius="6" Padding="10,8"
-                        Background="#1A3A1A"
-                        IsVisible="{Binding DbFound}">
-                    <TextBlock Text="✓  Encontrado"
-                               FontSize="12" FontWeight="SemiBold"
-                               Foreground="#88EE88"/>
-                </Border>
-                <!-- Not found badge -->
-                <Border Grid.Column="2"
-                        CornerRadius="6" Padding="10,8"
-                        Background="#3A1A1A"
-                        IsVisible="{Binding DbFound, Converter={x:Static BoolConverters.Not}}">
-                    <TextBlock Text="✗  Não encontrado"
-                               FontSize="12" FontWeight="SemiBold"
-                               Foreground="#EE8888"/>
-                </Border>
+            <Grid ColumnDefinitions="*,12,*" Margin="0,0,0,18">
+                <Button Grid.Column="0"
+                        Command="{Binding SelectNativeLibrarySourceCommand}"
+                        Padding="16,14"
+                        CornerRadius="8"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Background="#1A3355"
+                        Foreground="#88CCFF"
+                        IsEnabled="{Binding IsImporting, Converter={x:Static BoolConverters.Not}}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Import from native library"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Usa o catálogo local incluído com o aplicativo"
+                                   FontSize="11"
+                                   Foreground="#A8CBEA"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Grid.Column="2"
+                        Command="{Binding SelectLouvorJaSourceCommand}"
+                        Padding="16,14"
+                        CornerRadius="8"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Background="{DynamicResource AppNavButtonBg}"
+                        Foreground="{DynamicResource AppTextPrimary}"
+                        IsEnabled="{Binding IsImporting, Converter={x:Static BoolConverters.Not}}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Import from LouvorJA installation"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Lê a base já instalada no computador"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AppTextSecondary}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </Grid>
 
-            <!-- ── Musicas folder ── -->
-            <TextBlock Text="Pasta de áudios (musicas/)"
-                       FontSize="12"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource AppTextSecondary}"
-                       Margin="0,16,0,6"/>
-            <TextBox Text="{Binding MusicasFolder}"
-                     FontSize="13"
-                     Padding="10,8"
-                     CornerRadius="6"
-                     Margin="0,0,0,24"/>
+            <Border Background="{DynamicResource AppSidebarBg}"
+                    CornerRadius="10"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    Padding="16"
+                    Margin="0,0,0,18">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding SelectedSourceTitle}"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextPrimary}"/>
+                    <TextBlock Text="{Binding SelectedSourceDescription}"
+                               FontSize="12"
+                               Foreground="{DynamicResource AppTextSecondary}"
+                               TextWrapping="Wrap"/>
 
-            <!-- ── Info callout ── -->
+                    <Border CornerRadius="6"
+                            Padding="10,8"
+                            Background="#1A2A3A">
+                        <TextBlock Text="{Binding SourceAvailabilityText}"
+                                   FontSize="12"
+                                   Foreground="#A8CBEA"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <Border Background="{DynamicResource AppSidebarBg}"
+                    CornerRadius="10"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    Padding="16"
+                    Margin="0,0,0,18"
+                    IsVisible="{Binding IsNativeLibrarySelected}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Arquivo da biblioteca nativa"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextSecondary}"/>
+                    <TextBox Text="{Binding NativeLibraryPath}"
+                             IsReadOnly="True"
+                             FontSize="13"
+                             Padding="10,8"
+                             CornerRadius="6"/>
+                    <TextBlock Text="Os hinos serão gerados a partir do catálogo offline do próprio 7Hinos. Se os áudios já estiverem no computador, os caminhos serão vinculados automaticamente."
+                               FontSize="12"
+                               Foreground="{DynamicResource AppTextSecondary}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <Border Background="{DynamicResource AppSidebarBg}"
+                    CornerRadius="10"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    Padding="16"
+                    Margin="0,0,0,18"
+                    IsVisible="{Binding IsLouvorJaSelected}">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Pasta da instalação do LouvorJA"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextSecondary}"/>
+
+                    <Grid ColumnDefinitions="*,10,Auto,10,Auto">
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding LouvorJaFolder}"
+                                 FontSize="13"
+                                 Padding="10,8"
+                                 CornerRadius="6"
+                                 IsEnabled="{Binding IsImporting, Converter={x:Static BoolConverters.Not}}"/>
+                        <Button Grid.Column="2"
+                                Content="Detectar"
+                                Command="{Binding AutoDetectLouvorJaCommand}"
+                                Padding="12,8"
+                                CornerRadius="6"
+                                Background="{DynamicResource AppNavButtonBg}"
+                                Foreground="{DynamicResource AppTextPrimary}"
+                                IsEnabled="{Binding IsImporting, Converter={x:Static BoolConverters.Not}}"/>
+                        <Button Grid.Column="4"
+                                Content="Selecionar pasta"
+                                Click="OnBrowseLouvorJaFolderClick"
+                                Padding="12,8"
+                                CornerRadius="6"
+                                Background="{DynamicResource AppNavButtonBg}"
+                                Foreground="{DynamicResource AppTextPrimary}"
+                                IsEnabled="{Binding IsImporting, Converter={x:Static BoolConverters.Not}}"/>
+                    </Grid>
+
+                    <TextBlock Text="Banco detectado"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextSecondary}"/>
+                    <TextBox Text="{Binding LouvorJaDbPath}"
+                             IsReadOnly="True"
+                             FontSize="12"
+                             Padding="10,8"
+                             CornerRadius="6"/>
+
+                    <TextBlock Text="Pasta de áudios detectada"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextSecondary}"/>
+                    <TextBox Text="{Binding LouvorJaMusicasFolder}"
+                             IsReadOnly="True"
+                             FontSize="12"
+                             Padding="10,8"
+                             CornerRadius="6"/>
+                </StackPanel>
+            </Border>
+
             <Border Background="#1A2A3A"
                     CornerRadius="8"
                     Padding="14,12"
                     BorderThickness="1"
                     BorderBrush="#2A4A6A"
-                    Margin="0,0,0,28">
+                    Margin="0,0,0,20">
                 <StackPanel Spacing="4">
-                    <TextBlock Text="ℹ️  O que será importado"
+                    <TextBlock Text="O que será importado"
                                FontSize="13"
                                FontWeight="SemiBold"
                                Foreground="#89B4FA"/>
                     <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#AAAAAA">
-                        Todas as músicas e slides (colunas MUSICAS + MUSICAS_LETRA). Músicas já existentes
-                        no banco do 7Hinos (mesmo título e álbum) são ignoradas automaticamente.
+                        O 7Hinos ignora automaticamente hinos já existentes com o mesmo título e coletânea.
+                        A origem LouvorJA também importa letras e slides. A biblioteca nativa importa o catálogo
+                        local do aplicativo e vincula áudios quando os arquivos já estiverem disponíveis.
                     </TextBlock>
                 </StackPanel>
             </Border>
 
-            <!-- ── Import button ── -->
-            <Button Content="⬇  Importar músicas"
+            <Button Content="Import Hymns"
                     Command="{Binding ImportCommand}"
                     HorizontalAlignment="Left"
                     Padding="20,12"
@@ -98,7 +207,6 @@
                     IsVisible="{Binding IsImporting, Converter={x:Static BoolConverters.Not}}"
                     Margin="0,0,0,20"/>
 
-            <!-- ── Progress ── -->
             <StackPanel Spacing="8"
                         IsVisible="{Binding IsImporting}"
                         Margin="0,0,0,20">
@@ -112,7 +220,6 @@
                            TextTrimming="CharacterEllipsis"/>
             </StackPanel>
 
-            <!-- ── Result ── -->
             <StackPanel Spacing="12"
                         IsVisible="{Binding IsDone}">
 
@@ -128,7 +235,6 @@
                                TextWrapping="Wrap"/>
                 </Border>
 
-                <!-- Error list (collapsible) -->
                 <StackPanel Spacing="8"
                             IsVisible="{Binding HasErrors}">
                     <TextBlock Text="Erros encontrados:"
@@ -153,14 +259,26 @@
                         </ScrollViewer>
                     </Border>
                 </StackPanel>
+            </StackPanel>
 
-                <Button Content="Reimportar"
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        Margin="0,18,0,0">
+                <Button Content="Limpar resultado"
                         Command="{Binding ResetResultCommand}"
                         HorizontalAlignment="Left"
                         Padding="14,8"
                         CornerRadius="6"
                         FontSize="13"
                         Background="{DynamicResource AppNavButtonBg}"
+                        Foreground="{DynamicResource AppTextSecondary}"/>
+                <Button Content="Fechar"
+                        Click="OnCloseClick"
+                        HorizontalAlignment="Left"
+                        Padding="14,8"
+                        CornerRadius="6"
+                        FontSize="13"
+                        Background="Transparent"
                         Foreground="{DynamicResource AppTextSecondary}"/>
             </StackPanel>
 

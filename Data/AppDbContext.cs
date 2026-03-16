@@ -11,6 +11,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Song> Songs => Set<Song>();
     public DbSet<SongSlide> SongSlides => Set<SongSlide>();
     public DbSet<FileAsset> FileAssets => Set<FileAsset>();
+    public DbSet<VideoCategory> VideoCategories => Set<VideoCategory>();
+    public DbSet<VideoConfig> VideoConfigs => Set<VideoConfig>();
+    public DbSet<VideoMonitorTarget> VideoMonitorTargets => Set<VideoMonitorTarget>();
 
     // Stores TimeSpan as total milliseconds (long) — unambiguous, no date-confusion.
     private static readonly ValueConverter<TimeSpan, long> _timeSpanConverter = new(
@@ -46,6 +49,41 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(sl => sl.Id).ValueGeneratedOnAdd();
             e.Property(sl => sl.Time).HasConversion(_timeSpanConverter);
             e.HasIndex(sl => new { sl.SongId, sl.Order }).IsUnique();
+        });
+
+        modelBuilder.Entity<VideoCategory>(e =>
+        {
+            e.HasKey(c => c.Id);
+            e.Property(c => c.Id).ValueGeneratedOnAdd();
+            e.Property(c => c.Name).IsRequired();
+            e.Property(c => c.MonitorPreset).HasDefaultValue(string.Empty);
+            e.HasIndex(c => c.Name).IsUnique();
+        });
+
+        modelBuilder.Entity<VideoConfig>(e =>
+        {
+            e.HasKey(v => v.Id);
+            e.Property(v => v.Id).ValueGeneratedOnAdd();
+            e.Property(v => v.FilePath).IsRequired();
+            e.Property(v => v.VideoName).IsRequired();
+            e.Property(v => v.DisplayOrder).HasDefaultValue(0);
+            e.HasIndex(v => v.FilePath).IsUnique();
+            e.HasIndex(v => new { v.CategoryId, v.DisplayOrder });
+            e.HasOne(v => v.Category)
+             .WithMany(c => c.Videos)
+             .HasForeignKey(v => v.CategoryId)
+             .OnDelete(DeleteBehavior.SetNull);
+            e.HasMany(v => v.MonitorTargets)
+             .WithOne(t => t.VideoConfig)
+             .HasForeignKey(t => t.VideoConfigId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<VideoMonitorTarget>(e =>
+        {
+            e.HasKey(t => t.Id);
+            e.Property(t => t.Id).ValueGeneratedOnAdd();
+            e.HasIndex(t => new { t.VideoConfigId, t.MonitorIndex }).IsUnique();
         });
     }
 }

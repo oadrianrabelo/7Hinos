@@ -1,0 +1,14 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vlc="clr-namespace:LibVLCSharp.Avalonia;assembly=LibVLCSharp.Avalonia"
+        x:Class="SevenHinos.Views.VideoOutputWindow"
+        Title="7Hinos - Vídeo"
+        Background="Black"
+        ShowInTaskbar="False"
+        CanResize="False"
+        SystemDecorations="None">
+
+    <Grid Background="Black">
+        <vlc:VideoView x:Name="VideoSurface"/>
+    </Grid>
+</Window>

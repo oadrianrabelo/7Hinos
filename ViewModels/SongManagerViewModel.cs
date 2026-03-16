@@ -42,6 +42,8 @@ public sealed partial class SongManagerViewModel : ViewModelBase
         _ = LoadAsync();
     }
 
+    public Task ReloadAsync() => LoadAsync();
+
     // ── Load / search ─────────────────────────────────────────────────────────
 
     [RelayCommand]

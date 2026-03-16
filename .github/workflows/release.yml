@@ -25,7 +25,7 @@ jobs:
           manifest-file: .release-please-manifest.json
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
 
@@ -40,11 +40,66 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Build Release
-        run: dotnet publish -c Release -o ./publish
+      - name: Build portable + MSI
+        shell: pwsh
+        run: |
+          pwsh .\tools\Build-Installer.ps1 -Configuration Release
+
+      - name: Optional MSI signing
+        if: ${{ secrets.WINDOWS_CODESIGN_CERT_BASE64 != '' && secrets.WINDOWS_CODESIGN_CERT_PASSWORD != '' }}
+        shell: pwsh
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP "codesign.pfx"
+          [System.IO.File]::WriteAllBytes(
+            $pfxPath,
+            [System.Convert]::FromBase64String("${{ secrets.WINDOWS_CODESIGN_CERT_BASE64 }}")
+          )
+
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
+            $pfxPath,
+            "${{ secrets.WINDOWS_CODESIGN_CERT_PASSWORD }}",
+            "Exportable,PersistKeySet"
+          )
+
+          Get-ChildItem .\.artifacts\installer\*.msi | ForEach-Object {
+            Set-AuthenticodeSignature `
+              -FilePath $_.FullName `
+              -Certificate $cert `
+              -TimestampServer "http://timestamp.digicert.com" `
+              -HashAlgorithm SHA256 | Out-Null
+          }
+
+      - name: Generate SHA256 sums
+        shell: pwsh
+        run: |
+          $files = @(
+            ".\.artifacts\publish\win-x64-portable.zip"
+          )
+
+          $msi = Get-ChildItem .\.artifacts\installer\*.msi |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+
+          if (-not $msi) {
+            throw "Nenhum MSI encontrado para gerar hash."
+          }
+
+          $files += $msi.FullName
+
+          New-Item -ItemType Directory -Path .\.artifacts -Force | Out-Null
+
+          $hashLines = foreach ($file in $files) {
+            $hash = (Get-FileHash -Path $file -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash *$([System.IO.Path]::GetFileName($file))"
+          }
+
+          Set-Content -Path .\.artifacts\SHA256SUMS.txt -Value $hashLines -Encoding utf8
 
       - name: Upload artifacts na Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
-          files: ./publish/**
+          files: |
+            ./.artifacts/publish/win-x64-portable.zip
+            ./.artifacts/installer/*.msi
+            ./.artifacts/SHA256SUMS.txt
