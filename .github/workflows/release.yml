@@ -28,6 +28,9 @@ jobs:
     runs-on: windows-latest
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
+    env:
+      WINDOWS_CODESIGN_CERT_BASE64: ${{ secrets.WINDOWS_CODESIGN_CERT_BASE64 }}
+      WINDOWS_CODESIGN_CERT_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_CERT_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -46,18 +49,18 @@ jobs:
           pwsh .\tools\Build-Installer.ps1 -Configuration Release
 
       - name: Optional MSI signing
-        if: ${{ secrets.WINDOWS_CODESIGN_CERT_BASE64 != '' && secrets.WINDOWS_CODESIGN_CERT_PASSWORD != '' }}
+        if: ${{ env.WINDOWS_CODESIGN_CERT_BASE64 != '' && env.WINDOWS_CODESIGN_CERT_PASSWORD != '' }}
         shell: pwsh
         run: |
           $pfxPath = Join-Path $env:RUNNER_TEMP "codesign.pfx"
           [System.IO.File]::WriteAllBytes(
             $pfxPath,
-            [System.Convert]::FromBase64String("${{ secrets.WINDOWS_CODESIGN_CERT_BASE64 }}")
+            [System.Convert]::FromBase64String("$env:WINDOWS_CODESIGN_CERT_BASE64")
           )
 
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
             $pfxPath,
-            "${{ secrets.WINDOWS_CODESIGN_CERT_PASSWORD }}",
+            "$env:WINDOWS_CODESIGN_CERT_PASSWORD",
             "Exportable,PersistKeySet"
           )
 
