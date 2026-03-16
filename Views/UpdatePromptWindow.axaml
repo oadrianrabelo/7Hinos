@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SevenHinos.Views.UpdatePromptWindow"
+        Title="Atualização disponível"
+        Width="480"
+        Height="220"
+        MinWidth="420"
+        MinHeight="200"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="{DynamicResource AppBg}">
+
+    <Border Padding="20"
+            BorderThickness="1"
+            BorderBrush="{DynamicResource AppBorderBrush}"
+            CornerRadius="10"
+            Background="{DynamicResource AppSidebarBg}">
+        <StackPanel Spacing="14">
+            <TextBlock Text="Uma nova versão do programa está disponível."
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AppTextPrimary}"
+                       TextWrapping="Wrap"/>
+
+            <TextBlock x:Name="MessageText"
+                       FontSize="13"
+                       Foreground="{DynamicResource AppTextSecondary}"
+                       TextWrapping="Wrap"/>
+
+            <Grid ColumnDefinitions="*,10,*"
+                  Margin="0,8,0,0">
+                <Button Grid.Column="0"
+                        Content="Depois"
+                        Click="OnLaterClick"
+                        Padding="12,9"
+                        CornerRadius="8"
+                        FontWeight="SemiBold"
+                        Background="{DynamicResource AppNavButtonBg}"
+                        Foreground="{DynamicResource AppTextPrimary}"/>
+                <Button Grid.Column="2"
+                        Content="Atualizar agora"
+                        Click="OnUpdateClick"
+                        Padding="12,9"
+                        CornerRadius="8"
+                        FontWeight="SemiBold"
+                        Background="{DynamicResource AppAccent}"
+                        Foreground="{DynamicResource AppAccentFg}"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>

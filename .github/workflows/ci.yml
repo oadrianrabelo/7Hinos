@@ -1,34 +1,136 @@
 name: CI
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+  push:
+  pull_request:
+
+permissions:
+  contents: write
 
 jobs:
-    build-and-test:
-        runs-on: ubuntu-latest
+  build-and-test:
+    runs-on: windows-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Setup .NET
-              uses: actions/setup-dotnet@v4
-              with:
-                  dotnet-version: "9.0.x"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
 
-            - name: Restore
-              run: dotnet restore
+      - name: Restore
+        run: dotnet restore
 
-            - name: Build
-              run: dotnet build --no-restore
+      - name: Build
+        run: dotnet build --no-restore -c Release
 
-            - name: Test
-              run: dotnet test --no-build --collect:"XPlat Code Coverage"
+      - name: Test (if test projects exist)
+        shell: pwsh
+        run: |
+          $testProjects = Get-ChildItem -Recurse -Filter *.csproj |
+            Where-Object {
+              $_.FullName -match "test|tests" -or
+              $_.DirectoryName -match "test|tests"
+            }
 
-            - name: Coverage Report
-              uses: codecov/codecov-action@v4
-              with:
-                  files: "**/coverage.cobertura.xml"
+          if (-not $testProjects) {
+            Write-Host "Nenhum projeto de teste encontrado. Pulando etapa de testes."
+            exit 0
+          }
+
+          dotnet test --no-build -c Release --collect:"XPlat Code Coverage"
+
+  package-msi:
+    runs-on: windows-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Compute CI build version
+        id: version
+        shell: pwsh
+        run: |
+          $baseVersion = "0.1.0"
+
+          if (Test-Path ".release-please-manifest.json") {
+            $manifest = Get-Content ".release-please-manifest.json" | ConvertFrom-Json
+            if ($manifest.PSObject.Properties.Name -contains ".") {
+              $baseVersion = [string]$manifest."."
+            }
+          }
+
+          $numericBase = ($baseVersion -split "-")[0]
+          $parts = $numericBase -split "\."
+
+          $major = [int]$parts[0]
+          $minor = if ($parts.Count -gt 1) { [int]$parts[1] } else { 0 }
+
+          $build = ([int]$env:GITHUB_RUN_NUMBER) % 65000
+          if ($build -le 0) { $build = 1 }
+
+          $msiVersion = "$major.$minor.$build"
+          $appVersion = "$msiVersion-ci.$env:GITHUB_RUN_NUMBER"
+
+          "msi_version=$msiVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "app_version=$appVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Build portable + MSI
+        shell: pwsh
+        run: |
+          pwsh .\tools\Build-Installer.ps1 `
+            -Configuration Release `
+            -VersionOverride "${{ steps.version.outputs.app_version }}"
+
+      - name: Generate SHA256 sums
+        shell: pwsh
+        run: |
+          $files = @(
+            ".\.artifacts\publish\win-x64-portable.zip"
+          )
+
+          $msi = Get-ChildItem .\.artifacts\installer\*.msi |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+
+          if (-not $msi) {
+            throw "Nenhum MSI encontrado para gerar hash."
+          }
+
+          $files += $msi.FullName
+
+          $hashLines = foreach ($file in $files) {
+            $hash = (Get-FileHash -Path $file -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash *$([System.IO.Path]::GetFileName($file))"
+          }
+
+          Set-Content -Path .\.artifacts\SHA256SUMS.txt -Value $hashLines -Encoding utf8
+
+      - name: Upload MSI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: 7hinos-windows-${{ steps.version.outputs.msi_version }}
+          path: |
+            ./.artifacts/installer/*.msi
+            ./.artifacts/publish/win-x64-portable.zip
+            ./.artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Optional attach artifacts to GitHub Release
+        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name == 'push' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./.artifacts/installer/*.msi
+            ./.artifacts/publish/win-x64-portable.zip
+            ./.artifacts/SHA256SUMS.txt

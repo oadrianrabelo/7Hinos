@@ -46,6 +46,23 @@ public partial class App : Application
                 DataContext = _services.GetRequiredService<MainWindowViewModel>(),
             };
 
+            desktop.MainWindow.Opened += async (_, _) =>
+            {
+                if (desktop.MainWindow is null)
+                    return;
+
+                try
+                {
+                    await _services
+                        .GetRequiredService<IAppUpdateService>()
+                        .TryCheckAndPromptAsync(desktop.MainWindow);
+                }
+                catch
+                {
+                    // Startup must stay resilient even if update check fails.
+                }
+            };
+
             // Close any open output windows when the app exits (e.g. killed from terminal).
             desktop.ShutdownRequested += (_, _) =>
             {
@@ -78,6 +95,7 @@ public partial class App : Application
         services.AddSingleton<INativeHymnImportService, NativeHymnImportService>();
         services.AddSingleton<IVideoConfigService, VideoConfigService>();
         services.AddSingleton<IVideoOutputService, VideoOutputService>();
+        services.AddSingleton<IAppUpdateService, GitHubUpdateService>();
 
         // ViewModels
         services.AddSingleton<PlayerViewModel>();
