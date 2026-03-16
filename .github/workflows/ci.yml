@@ -61,26 +61,37 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $baseVersion = "0.1.0"
-
-          if (Test-Path ".release-please-manifest.json") {
-            $manifest = Get-Content ".release-please-manifest.json" | ConvertFrom-Json
-            if ($manifest.PSObject.Properties.Name -contains ".") {
-              $baseVersion = [string]$manifest."."
-            }
+          $tagVersion = $null
+          if ($env:GITHUB_REF -match '^refs/tags/v?(\d+\.\d+\.\d+)(?:[-+].*)?$') {
+            $tagVersion = $Matches[1]
           }
 
-          $numericBase = ($baseVersion -split "-")[0]
-          $parts = $numericBase -split "\."
+          if ($tagVersion) {
+            $msiVersion = $tagVersion
+            $appVersion = $tagVersion
+          }
+          else {
+            $baseVersion = "0.1.0"
 
-          $major = [int]$parts[0]
-          $minor = if ($parts.Count -gt 1) { [int]$parts[1] } else { 0 }
+            if (Test-Path ".release-please-manifest.json") {
+              $manifest = Get-Content ".release-please-manifest.json" | ConvertFrom-Json
+              if ($manifest.PSObject.Properties.Name -contains ".") {
+                $baseVersion = [string]$manifest."."
+              }
+            }
 
-          $build = ([int]$env:GITHUB_RUN_NUMBER) % 65000
-          if ($build -le 0) { $build = 1 }
+            $numericBase = ($baseVersion -split "-")[0]
+            $parts = $numericBase -split "\."
 
-          $msiVersion = "$major.$minor.$build"
-          $appVersion = "$msiVersion-ci.$env:GITHUB_RUN_NUMBER"
+            $major = [int]$parts[0]
+            $minor = if ($parts.Count -gt 1) { [int]$parts[1] } else { 0 }
+
+            $build = ([int]$env:GITHUB_RUN_NUMBER) % 65000
+            if ($build -le 0) { $build = 1 }
+
+            $msiVersion = "$major.$minor.$build"
+            $appVersion = "$msiVersion-ci.$env:GITHUB_RUN_NUMBER"
+          }
 
           "msi_version=$msiVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "app_version=$appVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
@@ -122,6 +133,7 @@ jobs:
           name: 7hinos-windows-${{ steps.version.outputs.msi_version }}
           path: |
             ./.artifacts/installer/*.msi
+            ./.artifacts/installer/*.cab
             ./.artifacts/publish/win-x64-portable.zip
             ./.artifacts/SHA256SUMS.txt
           if-no-files-found: error
@@ -132,5 +144,6 @@ jobs:
         with:
           files: |
             ./.artifacts/installer/*.msi
+            ./.artifacts/installer/*.cab
             ./.artifacts/publish/win-x64-portable.zip
             ./.artifacts/SHA256SUMS.txt

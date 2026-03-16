@@ -43,10 +43,27 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
+      - name: Resolve release version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ needs.release-please.outputs.tag_name }}".Trim()
+          if (-not $tag) {
+            throw "Tag de release nao informado pelo release-please."
+          }
+
+          if ($tag.StartsWith("v")) {
+            $tag = $tag.Substring(1)
+          }
+
+          "value=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
       - name: Build portable + MSI
         shell: pwsh
         run: |
-          pwsh .\tools\Build-Installer.ps1 -Configuration Release
+          pwsh .\tools\Build-Installer.ps1 `
+            -Configuration Release `
+            -VersionOverride "${{ steps.version.outputs.value }}"
 
       - name: Optional MSI signing
         if: ${{ env.WINDOWS_CODESIGN_CERT_BASE64 != '' && env.WINDOWS_CODESIGN_CERT_PASSWORD != '' }}
@@ -105,4 +122,5 @@ jobs:
           files: |
             ./.artifacts/publish/win-x64-portable.zip
             ./.artifacts/installer/*.msi
+            ./.artifacts/installer/*.cab
             ./.artifacts/SHA256SUMS.txt
