@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+  xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <?include Generated\BuildVariables.wxi?>
 
   <Package Name="7Hinos"
@@ -13,7 +14,31 @@
            Codepage="65001">
 
     <MajorUpgrade DowngradeErrorMessage="Ja existe uma versao mais recente do 7Hinos instalada." />
-    <MediaTemplate />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Abrir 7Hinos ao finalizar a instalacao." />
+    <SetProperty Id="WixShellExecTarget"
+           Value="[INSTALLFOLDER]SevenHinos.exe"
+                 Before="ExecuteAction"
+           Sequence="ui" />
+
+    <CustomAction Id="LaunchApplication"
+                  BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)"
+                  DllEntry="WixShellExec"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <ui:WixUI Id="WixUI_InstallDir"
+              InstallDirectory="INSTALLFOLDER" />
+
+    <UI>
+      <Publish Dialog="ExitDialog"
+               Control="Finish"
+               Event="DoAction"
+               Value="LaunchApplication"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="7Hinos" />

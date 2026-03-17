@@ -21,7 +21,12 @@ function Resolve-FullPath {
 function Convert-ToMsiVersion {
     param([string] $VersionText)
 
-    $numericPart = (($VersionText ?? "0.1.0") -split '-')[0]
+    $normalizedVersion = ($VersionText ?? "0.1.0").Trim()
+    if ($normalizedVersion.StartsWith('v')) {
+        $normalizedVersion = $normalizedVersion.Substring(1)
+    }
+
+    $numericPart = ($normalizedVersion -split '-')[0]
     $parts = @($numericPart -split '\.' | Where-Object { $_ -match '^\d+$' })
 
     while ($parts.Count -lt 3) {
