@@ -100,6 +100,7 @@ public partial class App : Application
         services.AddDbContextFactory<AppDbContext>(o => o.UseSqlite($"Data Source={dbPath}"));
 
         // Infrastructure
+        services.AddSingleton<IMediaEngine, LibVlcMediaEngine>();
         services.AddSingleton<ISongService, EfSongService>();
         services.AddSingleton<IAudioService, AudioService>();
         services.AddSingleton<IFileAssetService, FileAssetService>();

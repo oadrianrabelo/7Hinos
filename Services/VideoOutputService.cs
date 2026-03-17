@@ -12,17 +12,16 @@ public sealed class VideoOutputService : IVideoOutputService
 {
     private sealed record OutputSession(VideoOutputWindow Window, MediaPlayer Player, bool HasAudio);
 
-    private readonly LibVLC _libVlc;
+    private readonly IMediaEngine _mediaEngine;
     private readonly Dictionary<int, OutputSession> _sessions = [];
 
     public bool IsActive => _sessions.Count > 0;
 
     public event Action? OutputsStopped;
 
-    public VideoOutputService()
+    public VideoOutputService(IMediaEngine mediaEngine)
     {
-        Core.Initialize();
-        _libVlc = new LibVLC(enableDebugLogs: false);
+        _mediaEngine = mediaEngine;
     }
 
     public async Task ShowVideoAsync(
@@ -144,14 +143,9 @@ public sealed class VideoOutputService : IVideoOutputService
             var screen = screens[index];
             var hasAudio = !audioAssigned;
 
-            var player = new MediaPlayer(_libVlc)
-            {
-                EnableHardwareDecoding = true,
-                Mute = !hasAudio
-            };
-
-            if (hasAudio)
-                player.Volume = 100;
+            var player = _mediaEngine.CreatePlayer();
+            player.EnableHardwareDecoding = true;
+            player.Mute = !hasAudio;
 
             var window = new VideoOutputWindow
             {
@@ -159,6 +153,9 @@ public sealed class VideoOutputService : IVideoOutputService
                 CanResize = false,
                 SystemDecorations = SystemDecorations.None
             };
+
+            if (hasAudio)
+                player.Volume = 100;
 
             window.PlaceOnScreen(screen);
             window.Show();
@@ -185,7 +182,7 @@ public sealed class VideoOutputService : IVideoOutputService
 
     private void PlaySession(OutputSession session, string absolutePath)
     {
-        using var media = new Media(_libVlc, new Uri(absolutePath));
+        using var media = _mediaEngine.CreateMedia(new Uri(absolutePath));
 
         // Secondary outputs should never compete for the audio device.
         if (!session.HasAudio)
@@ -274,7 +271,5 @@ public sealed class VideoOutputService : IVideoOutputService
             StopAllInternal();
         else
             Dispatcher.UIThread.InvokeAsync(StopAllInternal).GetAwaiter().GetResult();
-
-        _libVlc.Dispose();
     }
 }
