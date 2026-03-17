@@ -4,7 +4,7 @@ namespace SevenHinos.Services;
 
 public sealed class AudioService : IAudioService
 {
-    private readonly LibVLC _libVlc;
+    private readonly IMediaEngine _mediaEngine;
     private readonly MediaPlayer _player;
     private System.Timers.Timer? _positionTimer;
 
@@ -26,11 +26,11 @@ public sealed class AudioService : IAudioService
         set => _player.Volume = (int)Math.Clamp(value * 100, 0, 100);
     }
 
-    public AudioService()
+    public AudioService(IMediaEngine mediaEngine)
     {
-        Core.Initialize();
-        _libVlc = new LibVLC(enableDebugLogs: false);
-        _player = new MediaPlayer(_libVlc) { Volume = 80 };
+        _mediaEngine = mediaEngine;
+        _player = _mediaEngine.CreatePlayer();
+        _player.Volume = 80;
 
         _player.Playing   += (_, _) => { StartTimer(); PlaybackStarted?.Invoke(this, EventArgs.Empty); };
         _player.EndReached += (_, _) => { StopTimer();  PlaybackEnded?.Invoke(this, EventArgs.Empty); };
@@ -44,7 +44,7 @@ public sealed class AudioService : IAudioService
             ? new Uri(filePath)
             : new Uri(Path.GetFullPath(filePath));
 
-        using var media = new Media(_libVlc, uri);
+        using var media = _mediaEngine.CreateMedia(uri);
         _player.Play(media);
     }
 
@@ -84,6 +84,5 @@ public sealed class AudioService : IAudioService
         StopTimer();
         _player.Stop();
         _player.Dispose();
-        _libVlc.Dispose();
     }
 }
