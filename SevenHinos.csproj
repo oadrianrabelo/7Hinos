@@ -6,6 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- MinVer Configuration -->
+    <MinVerSkip Condition="'$(MinVerVersionOverride)' != ''">true</MinVerSkip>
+    <Version Condition="'$(MinVerVersionOverride)' != ''">$(MinVerVersionOverride)</Version>
+    <InformationalVersion Condition="'$(MinVerVersionOverride)' != ''">$(MinVerVersionOverride)</InformationalVersion>
+    <!-- Ensure proper AssemblyVersion for all builds -->
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
   <ItemGroup>

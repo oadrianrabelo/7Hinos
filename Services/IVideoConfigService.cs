@@ -22,6 +22,7 @@ public interface IVideoConfigService
 
     Task UpdateVideoAsync(
         int videoId,
+        string videoName,
         IEnumerable<int> monitorIndices,
         int? categoryId,
         CancellationToken ct = default);

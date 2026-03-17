@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using Avalonia.Styling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SevenHinos.Data;
@@ -53,13 +54,24 @@ public partial class App : Application
 
                 try
                 {
+                    // Load and apply stored theme preference
+                    var appSettingsService = _services.GetRequiredService<IAppSettingsService>();
+                    var theme = await appSettingsService.GetThemeAsync();
+                    var mainVm = desktop.MainWindow.DataContext as MainWindowViewModel;
+                    if (mainVm != null)
+                    {
+                        mainVm.IsDarkMode = theme == "Dark";
+                        Application.Current!.RequestedThemeVariant =
+                            theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+                    }
+
                     await _services
                         .GetRequiredService<IAppUpdateService>()
                         .TryCheckAndPromptAsync(desktop.MainWindow);
                 }
                 catch
                 {
-                    // Startup must stay resilient even if update check fails.
+                    // Startup must stay resilient even if update check or theme load fails.
                 }
             };
 
@@ -96,6 +108,8 @@ public partial class App : Application
         services.AddSingleton<IVideoConfigService, VideoConfigService>();
         services.AddSingleton<IVideoOutputService, VideoOutputService>();
         services.AddSingleton<IAppUpdateService, GitHubUpdateService>();
+        services.AddSingleton<IAppSettingsService, AppSettingsService>();
+        services.AddSingleton<IMonitorDeviceService, MonitorDeviceService>();
 
         // ViewModels
         services.AddSingleton<PlayerViewModel>();
@@ -106,6 +120,7 @@ public partial class App : Application
         services.AddTransient<SongManagerViewModel>();
         services.AddSingleton<PresentationState>();
         services.AddSingleton<PresentationViewModel>();
+        services.AddSingleton<MonitorsConfigViewModel>();
         services.AddTransient<MainWindowViewModel>();
 
         return services.BuildServiceProvider();
@@ -198,6 +213,29 @@ public partial class App : Application
         db.Database.ExecuteSqlRaw("""
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_VideoMonitorTargets_VideoConfigId_MonitorIndex"
                 ON "VideoMonitorTargets" ("VideoConfigId", "MonitorIndex");
+            """);
+
+        db.Database.ExecuteSqlRaw("""
+            CREATE TABLE IF NOT EXISTS "AppSettings" (
+                "Id"        INTEGER NOT NULL CONSTRAINT "PK_AppSettings" PRIMARY KEY AUTOINCREMENT,
+                "Theme"     TEXT    NOT NULL DEFAULT 'Dark',
+                "UpdatedAt" TEXT    NOT NULL
+            );
+            """);
+
+        db.Database.ExecuteSqlRaw("""
+            CREATE TABLE IF NOT EXISTS "MonitorDevices" (
+                "Id"           INTEGER NOT NULL CONSTRAINT "PK_MonitorDevices" PRIMARY KEY AUTOINCREMENT,
+                "MonitorIndex" INTEGER NOT NULL,
+                "CustomName"   TEXT    NOT NULL DEFAULT '',
+                "CreatedAt"    TEXT    NOT NULL,
+                "UpdatedAt"    TEXT    NOT NULL
+            );
+            """);
+
+        db.Database.ExecuteSqlRaw("""
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_MonitorDevices_MonitorIndex"
+                ON "MonitorDevices" ("MonitorIndex");
             """);
 
         // Additive column migrations (ALTER TABLE has no IF NOT EXISTS in SQLite, so we catch the error).

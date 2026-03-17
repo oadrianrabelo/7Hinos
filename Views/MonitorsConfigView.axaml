@@ -1,0 +1,141 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SevenHinos.ViewModels"
+             x:Class="SevenHinos.Views.MonitorsConfigView"
+             x:DataType="vm:MonitorsConfigViewModel"
+             Background="{DynamicResource AppBg}">
+
+    <DockPanel>
+        <!-- Header -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource AppSidebarBg}"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                Padding="18,14">
+            <StackPanel Spacing="10">
+                <TextBlock Text="Configuração de Monitores"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextPrimary}"/>
+
+                <TextBlock Text="Identifique visualmente seus monitores e configure nomes personalizados."
+                           FontSize="13"
+                           Foreground="{DynamicResource AppTextSecondary}"/>
+
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Content="▼ Identificar Monitores"
+                            Command="{Binding StartMonitorIdentificationCommand}"
+                            Padding="18,14"
+                            CornerRadius="10"
+                            Background="{DynamicResource AppAccent}"
+                            Foreground="{DynamicResource AppAccentFg}"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            IsEnabled="{Binding IsIdentifyingMonitors, Converter={x:Static BoolConverters.Not}}"/>
+
+                    <Button Content="⊗ Parar Identificação"
+                            Command="{Binding StopMonitorIdentificationCommand}"
+                            Padding="18,14"
+                            CornerRadius="10"
+                            Background="#5A2222"
+                            Foreground="#FFD4D4"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            IsEnabled="{Binding IsIdentifyingMonitors}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Status -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource AppSidebarBg}"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource AppBorderBrush}"
+                Padding="18,10">
+            <TextBlock Text="{Binding StatusText}"
+                       FontSize="13"
+                       Foreground="{DynamicResource AppTextSecondary}"
+                       TextWrapping="Wrap"/>
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Padding="14">
+            <StackPanel Spacing="12">
+                <!-- Monitor list -->
+                <ItemsControl ItemsSource="{Binding Monitors}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:MonitorAccessViewModel">
+                            <Border Background="{DynamicResource AppSidebarBg}"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource AppBorderBrush}"
+                                    CornerRadius="10"
+                                    Padding="16"
+                                    Margin="0,0,0,8">
+                                <StackPanel Spacing="12">
+                                    <!-- Monitor number and resolution -->
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="{Binding Index, StringFormat='Tela {0, 0}'}"
+                                                       FontSize="18"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AppTextPrimary}"/>
+                                            <TextBlock Text="{Binding Label, StringFormat='Resolução: {0}'}"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource AppTextSecondary}"/>
+                                        </StackPanel>
+
+                                        <!-- Identification badge -->
+                                        <Border Grid.Column="1"
+                                                Background="{DynamicResource AppAccent}"
+                                                CornerRadius="6"
+                                                Padding="10,5">
+                                            <TextBlock Text="✓ Configurável"
+                                                       FontSize="11"
+                                                       FontWeight="Bold"
+                                                       Foreground="{DynamicResource AppAccentFg}"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Custom name input -->
+                                    <Grid ColumnDefinitions="*,10,*">
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="Nome Personalizado"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AppTextSecondary}"/>
+                                            <TextBox Text="{Binding CustomName}"
+                                                     Watermark="Ex: Projetor, TV Lateral"
+                                                     FontSize="14"
+                                                     Padding="10,8"
+                                                     CornerRadius="6"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="Padrão"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AppTextSecondary}"/>
+                                            <Border Background="{DynamicResource AppBg}"
+                                                    CornerRadius="6"
+                                                    Padding="10,8">
+                                                <TextBlock Text="{Binding Index, StringFormat='Tela {0, 0}'}"
+                                                           FontSize="14"
+                                                           Foreground="{DynamicResource AppTextMuted}"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <TextBlock Text="Quando identificando monitores, exibirá o número em cada tela."
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AppTextSecondary}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

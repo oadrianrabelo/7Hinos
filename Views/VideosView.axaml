@@ -237,11 +237,24 @@
                                 <StackPanel Spacing="10">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <StackPanel Grid.Column="0" Spacing="4">
-                                            <TextBlock Text="{Binding VideoName}"
-                                                       FontSize="18"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource AppTextPrimary}"
-                                                       TextWrapping="Wrap"/>
+                                            <StackPanel Spacing="4" IsVisible="{Binding IsEditing, Converter={x:Static BoolConverters.Not}}">
+                                                <TextBlock Text="{Binding VideoName}"
+                                                           FontSize="18"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource AppTextPrimary}"
+                                                           TextWrapping="Wrap"/>
+                                            </StackPanel>
+
+                                            <StackPanel Spacing="4" IsVisible="{Binding IsEditing}">
+                                                <TextBlock Text="Nome do vídeo"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource AppTextSecondary}"/>
+                                                <TextBox Text="{Binding VideoName, Mode=TwoWay}"
+                                                         FontSize="16"
+                                                         Padding="8,6"
+                                                         CornerRadius="6"/>
+                                            </StackPanel>
+
                                             <TextBlock Text="{Binding FilePath}"
                                                        FontSize="12"
                                                        Foreground="{DynamicResource AppTextMuted}"
