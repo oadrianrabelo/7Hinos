@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.1](https://github.com/oadrianrabelo/7Hinos/compare/v0.2.0...v0.2.1) (2026-03-17)
+
+
+### 🐛 Correções
+
+* **installer:** corrige cab, versao e UX de instalacao ([de3d40a](https://github.com/oadrianrabelo/7Hinos/commit/de3d40a3d4468d1a55f9483f9df1d22d40daab06))
+* **installer:** corrige cab, versao e UX de instalacao ([ce67582](https://github.com/oadrianrabelo/7Hinos/commit/ce675828654ae842794161a994a8a717e2dc13f1))
+
+
+### 🔧 Manutenção
+
+* **main:** release 0.2.0 ([5469d8b](https://github.com/oadrianrabelo/7Hinos/commit/5469d8b87e3d936991ec30b54d555bd47bb9f54e))
+
 ## [0.2.0](https://github.com/oadrianrabelo/7Hinos/compare/v0.1.0...v0.2.0) (2026-03-16)
 
 
