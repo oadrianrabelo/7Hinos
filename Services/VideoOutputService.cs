@@ -58,6 +58,73 @@ public sealed class VideoOutputService : IVideoOutputService
             Dispatcher.UIThread.Post(StopAllInternal);
     }
 
+    public void ShowIdentificationWindow(int monitorIndex)
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+            ShowIdentificationInternal(monitorIndex);
+        else
+            Dispatcher.UIThread.Post(() => ShowIdentificationInternal(monitorIndex));
+    }
+
+    private void ShowIdentificationInternal(int monitorIndex)
+    {
+        var screens = GetScreens();
+        if (monitorIndex < 0 || monitorIndex >= screens.Count)
+            return;
+
+        var screen = screens[monitorIndex];
+
+        var window = new Window
+        {
+            Title = $"Monitor {monitorIndex + 1}",
+            Width = screen.WorkingArea.Width,
+            Height = screen.WorkingArea.Height,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+            Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Black),
+            Content = new Canvas
+            {
+                Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Black),
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = $"Tela {monitorIndex + 1}",
+                        FontSize = 200,
+                        FontWeight = Avalonia.Media.FontWeight.Bold,
+                        Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.White),
+                        TextAlignment = Avalonia.Media.TextAlignment.Center,
+                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+                    }
+                }
+            }
+        };
+
+        window.Position = new Avalonia.PixelPoint(
+            (int)screen.WorkingArea.X,
+            (int)screen.WorkingArea.Y);
+
+        window.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Escape)
+                window.Close();
+        };
+
+        window.Show();
+
+        // Auto-close after 5 seconds
+        Dispatcher.UIThread.Post(() =>
+        {
+            Task.Delay(5000).ContinueWith(_ =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    try { window.Close(); } catch { }
+                });
+            });
+        }, DispatcherPriority.Background);
+    }
+
     private void ShowInternal(string absolutePath, IReadOnlyList<int> monitorIndices)
     {
         StopAllInternal();

@@ -15,6 +15,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<VideoConfig> VideoConfigs => Set<VideoConfig>();
     public DbSet<VideoMonitorTarget> VideoMonitorTargets => Set<VideoMonitorTarget>();
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
+    public DbSet<MonitorDevice> MonitorDevices => Set<MonitorDevice>();
 
     // Stores TimeSpan as total milliseconds (long) — unambiguous, no date-confusion.
     private static readonly ValueConverter<TimeSpan, long> _timeSpanConverter = new(
@@ -92,6 +93,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(s => s.Id);
             e.Property(s => s.Id).ValueGeneratedOnAdd();
             e.Property(s => s.Theme).IsRequired().HasDefaultValue("Dark");
+        });
+
+        modelBuilder.Entity<MonitorDevice>(e =>
+        {
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Id).ValueGeneratedOnAdd();
+            e.Property(m => m.MonitorIndex).IsRequired();
+            e.Property(m => m.CustomName).IsRequired().HasDefaultValue(string.Empty);
+            e.HasIndex(m => m.MonitorIndex).IsUnique();
         });
     }
 }

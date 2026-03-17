@@ -73,6 +73,17 @@
                             Foreground="{DynamicResource AppTextPrimary}"
                             FontSize="14"/>
 
+                    <Button Content="⚙  Monitores"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="{Binding MonitorsConfig}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="16,10"
+                            CornerRadius="8"
+                            Background="{DynamicResource AppNavButtonBg}"
+                            Foreground="{DynamicResource AppTextPrimary}"
+                            FontSize="14"/>
+
                     <!-- Separator -->
                     <Border Height="1" Margin="4,6" Background="{DynamicResource AppBorderBrush}"/>
 

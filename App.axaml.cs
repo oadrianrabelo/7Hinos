@@ -108,6 +108,7 @@ public partial class App : Application
         services.AddSingleton<IVideoOutputService, VideoOutputService>();
         services.AddSingleton<IAppUpdateService, GitHubUpdateService>();
         services.AddSingleton<IAppSettingsService, AppSettingsService>();
+        services.AddSingleton<IMonitorDeviceService, MonitorDeviceService>();
 
         // ViewModels
         services.AddSingleton<PlayerViewModel>();
@@ -118,6 +119,7 @@ public partial class App : Application
         services.AddTransient<SongManagerViewModel>();
         services.AddSingleton<PresentationState>();
         services.AddSingleton<PresentationViewModel>();
+        services.AddSingleton<MonitorsConfigViewModel>();
         services.AddTransient<MainWindowViewModel>();
 
         return services.BuildServiceProvider();
@@ -218,6 +220,21 @@ public partial class App : Application
                 "Theme"     TEXT    NOT NULL DEFAULT 'Dark',
                 "UpdatedAt" TEXT    NOT NULL
             );
+            """);
+
+        db.Database.ExecuteSqlRaw("""
+            CREATE TABLE IF NOT EXISTS "MonitorDevices" (
+                "Id"           INTEGER NOT NULL CONSTRAINT "PK_MonitorDevices" PRIMARY KEY AUTOINCREMENT,
+                "MonitorIndex" INTEGER NOT NULL,
+                "CustomName"   TEXT    NOT NULL DEFAULT '',
+                "CreatedAt"    TEXT    NOT NULL,
+                "UpdatedAt"    TEXT    NOT NULL
+            );
+            """);
+
+        db.Database.ExecuteSqlRaw("""
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_MonitorDevices_MonitorIndex"
+                ON "MonitorDevices" ("MonitorIndex");
             """);
 
         // Additive column migrations (ALTER TABLE has no IF NOT EXISTS in SQLite, so we catch the error).

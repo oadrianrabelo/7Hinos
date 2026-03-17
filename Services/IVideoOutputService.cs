@@ -11,5 +11,7 @@ public interface IVideoOutputService : IDisposable
         IReadOnlyList<int> monitorIndices,
         CancellationToken ct = default);
 
+    void ShowIdentificationWindow(int monitorIndex);
+
     void StopAll();
 }

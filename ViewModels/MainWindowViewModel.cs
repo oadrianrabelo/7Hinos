@@ -16,6 +16,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public FileValidationViewModel FileValidation { get; }
     public VideosViewModel         Videos         { get; }
     public SongManagerViewModel    SongManager    { get; }
+    public MonitorsConfigViewModel MonitorsConfig { get; }
     public string                  AppVersion     { get; } = ResolveAppVersion();
 
     [ObservableProperty] private ViewModelBase _currentPage;
@@ -29,12 +30,14 @@ public partial class MainWindowViewModel : ViewModelBase
         FileValidationViewModel fileValidation,
         VideosViewModel videos,
         SongManagerViewModel songManager,
+        MonitorsConfigViewModel monitorsConfig,
         IAppSettingsService appSettingsService)
     {
         Player         = player;
         FileValidation = fileValidation;
         Videos         = videos;
         SongManager    = songManager;
+        MonitorsConfig = monitorsConfig;
         _appSettingsService = appSettingsService;
         _currentPage   = SongManager;
     }
