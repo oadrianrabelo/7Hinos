@@ -59,6 +59,78 @@ public partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(clean))
             clean = asm.GetName().Version?.ToString(3);
 
+        // Additional fallback: try to read from git tag if running locally
+        if (string.IsNullOrWhiteSpace(clean) || clean == "0.0.0")
+        {
+            try
+            {
+                var gitDir = FindGitDirectory(AppContext.BaseDirectory);
+                if (gitDir != null)
+                {
+                    var version = ReadGitDescribe(gitDir);
+                    if (!string.IsNullOrWhiteSpace(version))
+                        clean = version;
+                }
+            }
+            catch
+            {
+                // Ignore git read errors, use default
+            }
+        }
+
         return $"v{(string.IsNullOrWhiteSpace(clean) ? "0.0.0" : clean)}";
+    }
+
+    private static string? FindGitDirectory(string startPath)
+    {
+        var current = new DirectoryInfo(startPath);
+        while (current != null)
+        {
+            var gitDir = Path.Combine(current.FullName, ".git");
+            if (Directory.Exists(gitDir))
+                return gitDir;
+            current = current.Parent;
+        }
+        return null;
+    }
+
+    private static string? ReadGitDescribe(string gitDir)
+    {
+        try
+        {
+            var packedRefs = Path.Combine(gitDir, "packed-refs");
+            if (File.Exists(packedRefs))
+            {
+                var lines = File.ReadAllLines(packedRefs);
+                var tagLine = lines
+                    .Where(l => !l.StartsWith("#") && l.Contains("refs/tags/v"))
+                    .OrderByDescending(l => l)
+                    .FirstOrDefault();
+                
+                if (tagLine != null)
+                {
+                    var parts = tagLine.Split(' ');
+                    var tag = parts[1]?.Replace("refs/tags/v", "");
+                    return tag;
+                }
+            }
+
+            // Also check loose refs
+            var refsTagsDir = Path.Combine(gitDir, "refs", "tags");
+            if (Directory.Exists(refsTagsDir))
+            {
+                var tags = Directory.GetFiles(refsTagsDir)
+                    .OrderByDescending(f => f)
+                    .FirstOrDefault();
+                
+                if (tags != null)
+                    return Path.GetFileName(tags);
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+        return null;
     }
 }

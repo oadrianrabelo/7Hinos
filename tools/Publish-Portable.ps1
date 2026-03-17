@@ -28,7 +28,9 @@ $publishArgs = @(
 )
 
 if (-not [string]::IsNullOrWhiteSpace($VersionOverride)) {
+    $publishArgs += "-p:MinVerVersionOverride=$VersionOverride"
     $publishArgs += "-p:Version=$VersionOverride"
+    $publishArgs += "-p:InformationalVersion=$VersionOverride"
 }
 
 dotnet @publishArgs
