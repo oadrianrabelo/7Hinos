@@ -116,12 +116,13 @@
                                                        FontSize="13"
                                                        FontWeight="SemiBold"
                                                        Foreground="{DynamicResource AppTextSecondary}"/>
-                                            <TextBlock Text="{Binding Index, StringFormat='Tela {0, 0}'}"
-                                                       FontSize="14"
-                                                       Foreground="{DynamicResource AppTextMuted}"
-                                                       Padding="10,8"
-                                                       Background="{DynamicResource AppBg}"
-                                                       CornerRadius="6"/>
+                                            <Border Background="{DynamicResource AppBg}"
+                                                    CornerRadius="6"
+                                                    Padding="10,8">
+                                                <TextBlock Text="{Binding Index, StringFormat='Tela {0, 0}'}"
+                                                           FontSize="14"
+                                                           Foreground="{DynamicResource AppTextMuted}"/>
+                                            </Border>
                                         </StackPanel>
                                     </Grid>
 

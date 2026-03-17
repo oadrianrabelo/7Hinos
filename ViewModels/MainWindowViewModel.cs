@@ -49,7 +49,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void OpenPresentation() => OpenPresentationRequested?.Invoke();
 
     [RelayCommand]
-    private async void ToggleTheme()
+    private async Task ToggleTheme()
     {
         IsDarkMode = !IsDarkMode;
         Application.Current!.RequestedThemeVariant =
@@ -123,7 +123,7 @@ public partial class MainWindowViewModel : ViewModelBase
                     .Where(l => !l.StartsWith("#") && l.Contains("refs/tags/v"))
                     .OrderByDescending(l => l)
                     .FirstOrDefault();
-                
+
                 if (tagLine != null)
                 {
                     var parts = tagLine.Split(' ');
@@ -139,7 +139,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 var tags = Directory.GetFiles(refsTagsDir)
                     .OrderByDescending(f => f)
                     .FirstOrDefault();
-                
+
                 if (tags != null)
                     return Path.GetFileName(tags);
             }

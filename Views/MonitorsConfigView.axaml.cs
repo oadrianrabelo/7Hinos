@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using SevenHinos.ViewModels;
 
@@ -10,12 +9,6 @@ public partial class MonitorsConfigView : UserControl
     public MonitorsConfigView()
     {
         InitializeComponent();
-        DataContextChanged += async (_, _) => await OnDataContextChangedAsync();
-    }
-
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnAttachedToVisualTree(e);
         DataContextChanged += async (_, _) => await OnDataContextChangedAsync();
     }
 

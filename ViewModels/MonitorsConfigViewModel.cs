@@ -68,8 +68,16 @@ public sealed partial class MonitorsConfigViewModel : ViewModelBase
         {
             await _monitorDeviceService.SetMonitorNameAsync(monitorIndex, newName);
 
-            // Reload to show updated names
-            await LoadMonitorsAsync(Screen.AllScreens.ToList());
+            // Update the local monitor list with the new name
+            var monitor = Monitors.FirstOrDefault(m => m.Index == monitorIndex);
+            if (monitor != null)
+            {
+                var updatedMonitors = Monitors.ToList();
+                var index = updatedMonitors.IndexOf(monitor);
+                updatedMonitors[index] = monitor with { CustomName = newName };
+                Monitors = updatedMonitors;
+            }
+            
             StatusText = $"Nome do monitor {monitorIndex + 1} atualizado.";
         }
         catch (Exception ex)
