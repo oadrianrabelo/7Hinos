@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.4.0](https://github.com/oadrianrabelo/7Hinos/compare/v0.3.0...v0.4.0) (2026-03-17)
+
+
+### ✨ Novas Funcionalidades
+
+* **monitors:** adiciona identificacao visual e renomeacao de monitores ([928d003](https://github.com/oadrianrabelo/7Hinos/commit/928d00305cef47219f7af58896486dbbb14cc349))
+* **videos,settings:** adiciona edicao de titulo de videos e persistencia de tema ([fb78163](https://github.com/oadrianrabelo/7Hinos/commit/fb78163a7479c22d3d04e87edbacd6071feb0121))
+
+
+### 🐛 Correções
+
+* resolve compilation errors in monitors feature ([bec4c5a](https://github.com/oadrianrabelo/7Hinos/commit/bec4c5af7aea894bef01626091e553dfb213549f))
+* **version:** resuelve deteccion de version en app y MSI ([87ac28e](https://github.com/oadrianrabelo/7Hinos/commit/87ac28e6e1b96faa171b93f51e563666d8b44dec))
+
+
+### 🔧 Manutenção
+
+* **main:** release 0.2.1 ([fc8c60a](https://github.com/oadrianrabelo/7Hinos/commit/fc8c60a9e4d14bb9c8a461960acc449763689a0a))
+* **main:** release 0.2.1 ([51becd1](https://github.com/oadrianrabelo/7Hinos/commit/51becd1387ea6c15f04d3e2c4b353632e444b528))
+* **main:** release 0.3.0 ([7e311cd](https://github.com/oadrianrabelo/7Hinos/commit/7e311cd81bf93cd82799117fba2a427b60090116))
+* **main:** release 0.3.0 ([8378086](https://github.com/oadrianrabelo/7Hinos/commit/8378086850570f94de4b310d23478a24faf61483))
+* merge main into feat/song-list ([b988903](https://github.com/oadrianrabelo/7Hinos/commit/b988903ce01b6347ffa5060e8ba91680fed52579))
+* resolve manifest version conflict - use 0.2.1 ([dab9325](https://github.com/oadrianrabelo/7Hinos/commit/dab9325f51a7544cc29117863aa21c518ae79242))
+
+
+### ♻️ Refatoração
+
+* centralize LibVLC in IMediaEngine to eliminate audio/video conflicts ([13aba72](https://github.com/oadrianrabelo/7Hinos/commit/13aba7228d330f84f30e0ca2b45a12c5a9fe632e))
+* integrate LibVLC media engine abstraction ([e096e7d](https://github.com/oadrianrabelo/7Hinos/commit/e096e7dc20979f4692e4b1e3c3499fcd85c5680a))
+
 ## [0.3.0](https://github.com/oadrianrabelo/7Hinos/compare/v0.2.1...v0.3.0) (2026-03-17)
 
 
