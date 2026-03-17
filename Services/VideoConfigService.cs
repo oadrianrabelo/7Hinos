@@ -180,10 +180,15 @@ public sealed class VideoConfigService(IDbContextFactory<AppDbContext> dbFactory
 
     public async Task UpdateVideoAsync(
         int videoId,
+        string videoName,
         IEnumerable<int> monitorIndices,
         int? categoryId,
         CancellationToken ct = default)
     {
+        var trimmed = (videoName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+            throw new InvalidOperationException("O nome do vídeo é obrigatório.");
+
         await using var db = await dbFactory.CreateDbContextAsync(ct);
 
         var video = await db.VideoConfigs
@@ -199,6 +204,7 @@ public sealed class VideoConfigService(IDbContextFactory<AppDbContext> dbFactory
 
         categoryId = category?.Id;
 
+        video.VideoName = trimmed;
         video.CategoryId = categoryId;
 
         if (oldCategoryId != categoryId)

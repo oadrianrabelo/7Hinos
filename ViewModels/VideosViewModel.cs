@@ -55,9 +55,9 @@ public sealed partial class VideoCardViewModel : ObservableObject
     private int? _selectedCategoryId;
 
     public int VideoId { get; }
-    public string VideoName { get; }
     public string FilePath { get; }
 
+    [ObservableProperty] private string _videoName = string.Empty;
     [ObservableProperty] private bool _isEditing;
     [ObservableProperty] private bool _isPlaying;
     [ObservableProperty] private string _selectedMonitorsSummary = "Nenhuma tela selecionada";
@@ -92,7 +92,7 @@ public sealed partial class VideoCardViewModel : ObservableObject
         Func<VideoCardViewModel, Task> onApplyCategoryPresetAsync)
     {
         VideoId = videoId;
-        VideoName = videoName;
+        _videoName = videoName;
         FilePath = filePath;
         _selectedCategoryId = selectedCategoryId;
         _selectedMonitorIndices = selectedMonitorIndices
@@ -652,6 +652,7 @@ public sealed partial class VideosViewModel : ViewModelBase
         {
             await _videoConfigService.UpdateVideoAsync(
                 card.VideoId,
+                card.VideoName.Trim(),
                 card.GetSelectedMonitorIndices(),
                 card.GetSelectedCategoryId());
 

@@ -53,13 +53,24 @@ public partial class App : Application
 
                 try
                 {
+                    // Load and apply stored theme preference
+                    var appSettingsService = _services.GetRequiredService<IAppSettingsService>();
+                    var theme = await appSettingsService.GetThemeAsync();
+                    var mainVm = desktop.MainWindow.DataContext as MainWindowViewModel;
+                    if (mainVm != null)
+                    {
+                        mainVm.IsDarkMode = theme == "Dark";
+                        Application.Current!.RequestedThemeVariant =
+                            theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+                    }
+
                     await _services
                         .GetRequiredService<IAppUpdateService>()
                         .TryCheckAndPromptAsync(desktop.MainWindow);
                 }
                 catch
                 {
-                    // Startup must stay resilient even if update check fails.
+                    // Startup must stay resilient even if update check or theme load fails.
                 }
             };
 
@@ -96,6 +107,7 @@ public partial class App : Application
         services.AddSingleton<IVideoConfigService, VideoConfigService>();
         services.AddSingleton<IVideoOutputService, VideoOutputService>();
         services.AddSingleton<IAppUpdateService, GitHubUpdateService>();
+        services.AddSingleton<IAppSettingsService, AppSettingsService>();
 
         // ViewModels
         services.AddSingleton<PlayerViewModel>();
@@ -198,6 +210,14 @@ public partial class App : Application
         db.Database.ExecuteSqlRaw("""
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_VideoMonitorTargets_VideoConfigId_MonitorIndex"
                 ON "VideoMonitorTargets" ("VideoConfigId", "MonitorIndex");
+            """);
+
+        db.Database.ExecuteSqlRaw("""
+            CREATE TABLE IF NOT EXISTS "AppSettings" (
+                "Id"        INTEGER NOT NULL CONSTRAINT "PK_AppSettings" PRIMARY KEY AUTOINCREMENT,
+                "Theme"     TEXT    NOT NULL DEFAULT 'Dark',
+                "UpdatedAt" TEXT    NOT NULL
+            );
             """);
 
         // Additive column migrations (ALTER TABLE has no IF NOT EXISTS in SQLite, so we catch the error).

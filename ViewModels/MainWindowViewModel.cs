@@ -3,12 +3,15 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using SevenHinos.Services;
 using System.Reflection;
 
 namespace SevenHinos.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private readonly IAppSettingsService _appSettingsService;
+
     public PlayerViewModel         Player         { get; }
     public FileValidationViewModel FileValidation { get; }
     public VideosViewModel         Videos         { get; }
@@ -25,12 +28,14 @@ public partial class MainWindowViewModel : ViewModelBase
         PlayerViewModel player,
         FileValidationViewModel fileValidation,
         VideosViewModel videos,
-        SongManagerViewModel songManager)
+        SongManagerViewModel songManager,
+        IAppSettingsService appSettingsService)
     {
         Player         = player;
         FileValidation = fileValidation;
         Videos         = videos;
         SongManager    = songManager;
+        _appSettingsService = appSettingsService;
         _currentPage   = SongManager;
     }
 
@@ -41,11 +46,20 @@ public partial class MainWindowViewModel : ViewModelBase
     private void OpenPresentation() => OpenPresentationRequested?.Invoke();
 
     [RelayCommand]
-    private void ToggleTheme()
+    private async void ToggleTheme()
     {
         IsDarkMode = !IsDarkMode;
         Application.Current!.RequestedThemeVariant =
             IsDarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
+
+        try
+        {
+            await _appSettingsService.SetThemeAsync(IsDarkMode ? "Dark" : "Light");
+        }
+        catch
+        {
+            // Silently fail if unable to save preference
+        }
     }
 
     private static string ResolveAppVersion()
