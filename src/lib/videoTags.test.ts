@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guessTag, tagInfo } from "./videoTags";
+import { guessTag, itemTag, resolveVideo, tagInfo } from "./videoTags";
 
 describe("tipos de vídeo", () => {
   it("reconhece os vídeos semanais pelo nome do arquivo", () => {
@@ -13,5 +13,18 @@ describe("tipos de vídeo", () => {
     expect(tagInfo("provai")?.weekly).toBe(true);
     expect(tagInfo(null)).toBeNull();
     expect(tagInfo("desconhecido")).toBeNull();
+  });
+
+  it("no culto, o vídeo semanal é sempre o de hoje", () => {
+    const videos = [
+      { path: "/v/informativo-antigo.mp4", title: "Antigo", tag: null },
+      { path: "/v/informativo-novo.mp4", title: "Novo", tag: "missoes" },
+    ];
+    const slot = { kind: "video" as const, path: "/v/informativo-antigo.mp4", title: "Informativo", tag: "missoes" };
+    expect(resolveVideo(slot, videos).path).toBe("/v/informativo-novo.mp4");
+    expect(itemTag(slot, videos)?.id).toBe("missoes");
+    const plain = { kind: "video" as const, path: "/v/informativo-novo.mp4", title: "Novo" };
+    expect(resolveVideo(plain, videos).path).toBe("/v/informativo-novo.mp4");
+    expect(itemTag(plain, videos)?.id).toBe("missoes");
   });
 });

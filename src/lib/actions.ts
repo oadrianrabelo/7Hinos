@@ -7,6 +7,7 @@ import { player } from "./state/player.svelte";
 import { settings } from "./state/settings.svelte";
 import { video } from "./state/video.svelte";
 import type { SetItem, SongSummary, VideoItem } from "./types";
+import { resolveVideo } from "./videoTags";
 
 /** Modo simples abre a página da música; o completo carrega no painel. */
 export function selectSong(song: Pick<SongSummary, "id">) {
@@ -37,5 +38,5 @@ export async function playVideo(item: VideoItem, targets: string[] = []) {
 /** Abre um item da programação do culto. */
 export function openSetItem(item: SetItem) {
   if (item.kind === "song") return selectSong({ id: item.id });
-  return playVideo({ path: item.path, title: item.title });
+  return playVideo(resolveVideo(item, settings.current.videos));
 }

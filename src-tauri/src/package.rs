@@ -20,7 +20,9 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, Result};
-use crate::settings::{IdleScreen, Notice, SetItem, Settings, VideoItem};
+use crate::settings::{
+    IdleScreen, MonitorOptions, Notice, ScreenStyle, SetItem, Settings, VideoItem,
+};
 
 pub const FOLDER: &str = "7Hinos-pacote";
 const MANIFEST: &str = "pacote.json";
@@ -51,6 +53,8 @@ pub struct Content {
     pub videos: Vec<VideoItem>,
     pub notices: Vec<Notice>,
     pub idle: Option<IdleScreen>,
+    pub screen_style: Option<ScreenStyle>,
+    pub monitor: Option<MonitorOptions>,
 }
 
 /// As pastas do app que entram no pacote.
@@ -153,6 +157,8 @@ pub fn export(
         videos,
         notices: settings.notices.clone(),
         idle: Some(settings.idle.clone()),
+        screen_style: Some(settings.screen_style.clone()),
+        monitor: Some(settings.monitor.clone()),
     };
     write_json(&root.join("conteudo.json"), &content)?;
 
@@ -266,6 +272,17 @@ pub fn merge_content(settings: &mut Settings, content: Content) {
     if let Some(idle) = content.idle {
         if settings.idle == IdleScreen::default() {
             settings.idle = idle;
+        }
+    }
+    // O mesmo vale para a aparência dos avisos e as opções do retorno.
+    if let Some(style) = content.screen_style {
+        if settings.screen_style == ScreenStyle::default() {
+            settings.screen_style = style;
+        }
+    }
+    if let Some(monitor) = content.monitor {
+        if settings.monitor == MonitorOptions::default() {
+            settings.monitor = monitor;
         }
     }
     for video in content.videos {

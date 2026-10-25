@@ -60,12 +60,17 @@
   {#if stage && prefs}
     <ErrorBoundary where="projeção {label}" silent>
       {#if role === "monitor"}
-        <MonitorView {stage} />
+        <MonitorView {stage} options={prefs.monitor} />
       {:else if showVideo && stage.video}
         {@const v = stage.video}
-        <VideoLayer state={v} muted={v.targets[0] !== label} onerror={() => void tell("video://failed", { path: v.path, title: v.title })} />
+        <VideoLayer
+          state={v}
+          muted={v.targets[0] !== label}
+          onerror={() => void tell("video://failed", { path: v.path, title: v.title })}
+          onended={() => v.targets[0] === label && void tell("video://ended", { path: v.path })}
+        />
       {:else}
-        <SceneView scene={stage.scene} style={prefs.slide} idle={prefs.idle} />
+        <SceneView scene={stage.scene} style={prefs.slide} idle={prefs.idle} screen={prefs.screenStyle} />
       {/if}
     </ErrorBoundary>
   {/if}

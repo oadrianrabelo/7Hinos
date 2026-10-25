@@ -75,7 +75,28 @@ export interface SlideStyle {
 /** Um item da programação do culto. */
 export type SetItem =
   | { kind: "song"; id: number; title: string }
-  | { kind: "video"; path: string; title: string };
+  /** `tag` semanal: na hora toca o vídeo "de hoje" daquele tipo. */
+  | { kind: "video"; path: string; title: string; tag?: string | null };
+
+/** O que o monitor de retorno mostra além da letra. */
+export interface MonitorOptions {
+  showNext: boolean;
+  showClock: boolean;
+  showTitle: boolean;
+  textScale: number;
+}
+
+export type ScreenFont = "condensed" | "sans" | "serif";
+
+/** Aparência dos avisos, da tela de espera e do relógio. */
+export interface ScreenStyle {
+  font: ScreenFont;
+  textColor: string;
+  accentColor: string;
+  /** "gradient" ou uma cor #rrggbb. */
+  background: string;
+  backgroundImage: string | null;
+}
 
 export interface VideoItem {
   path: string;
@@ -96,6 +117,8 @@ export interface Settings {
   videos: VideoItem[];
   setlist: SetItem[];
   idle: IdleScreen;
+  monitor: MonitorOptions;
+  screenStyle: ScreenStyle;
   notices: Notice[];
   bibleVersion: number | null;
   keepPlayed: boolean;
@@ -137,7 +160,11 @@ export interface Diagnostics {
 }
 
 /** Mudança parcial nas preferências (objetos aninhados também parciais). */
-export type SettingsPatch = Partial<Omit<Settings, "slide">> & { slide?: Partial<SlideStyle> };
+export type SettingsPatch = Partial<Omit<Settings, "slide" | "monitor" | "screenStyle">> & {
+  slide?: Partial<SlideStyle>;
+  monitor?: Partial<MonitorOptions>;
+  screenStyle?: Partial<ScreenStyle>;
+};
 
 /** O que baixar para usar sem internet. */
 export type Scope =

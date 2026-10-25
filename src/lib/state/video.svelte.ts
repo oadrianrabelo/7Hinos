@@ -15,8 +15,14 @@ class VideoControl {
 
   #lastFailure = { path: "", at: 0 };
 
+  /** O que fazer quando o vídeo acabar (ex.: começar o hino seguinte). */
+  after = $state<{ label: string; run: () => void } | null>(null);
+
   async init() {
     await on("video://failed", ({ path, title }) => this.failed(path, title));
+    await on("video://ended", ({ path }) => {
+      if (this.state?.path === path) this.ended();
+    });
     this.state = (await api.stage()).video;
   }
 
@@ -75,16 +81,36 @@ class VideoControl {
     this.#commit({ ...s, position: this.#now(s), updatedAt: Date.now(), targets });
   }
 
-  /** O vídeo terminou (sem repetição): fica parado no fim. */
+  /** O vídeo terminou (sem repetição): fica parado no fim, ou segue a fila. */
   ended() {
     const s = this.state;
-    if (s?.playing && !s.looping) {
-      this.#commit({ ...s, playing: false, position: this.duration, updatedAt: Date.now() });
+    if (!s?.playing || s.looping) return;
+    const next = this.after;
+    if (next) {
+      this.after = null;
+      this.stop();
+      next.run();
+      return;
     }
+    this.#commit({ ...s, playing: false, position: this.duration, updatedAt: Date.now() });
+  }
+
+  /** Agenda algo para quando o vídeo acabar. */
+  queue(label: string, run: () => void) {
+    this.after = { label, run };
+  }
+
+  /** Para o vídeo e já faz o que estava na fila. */
+  skipToNext() {
+    const next = this.after;
+    this.after = null;
+    this.stop();
+    next?.run();
   }
 
   stop() {
     this.state = null;
+    this.duration = 0;
     this.position = 0;
     void api.setVideo(null);
   }

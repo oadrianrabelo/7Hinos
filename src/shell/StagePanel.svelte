@@ -4,6 +4,7 @@
     ChevronLeft,
     ChevronRight,
     Heart,
+    ListEnd,
     LoaderCircle,
     Pencil,
     Monitor,
@@ -83,7 +84,7 @@
 
   <div class="preview" class:dim={!onScreen && isLive && isBlack}>
     {#if showStage}
-      <SceneView scene={stage.current.scene} style={settings.current.slide} idle={settings.current.idle} />
+      <SceneView scene={stage.current.scene} style={settings.current.slide} idle={settings.current.idle} screen={settings.current.screenStyle} />
     {:else}
       <SlideView slide={previewSlide} style={settings.current.slide} />
     {/if}
@@ -122,6 +123,17 @@
         {#if video.state.playing}<Pause size={16} />{:else}<Play size={16} />{/if}
       </button>
       <button class="btn btn-plain btn-icon" aria-label="Parar o vídeo" onclick={() => video.stop()}><Square size={14} /></button>
+    </div>
+  {/if}
+
+  {#if video.after}
+    <div class="queued">
+      <span class="grow">
+        <span class="section-title">Depois do vídeo</span>
+        <span class="truncate block">{video.after.label}</span>
+      </span>
+      <button class="btn btn-plain" onclick={() => (video.after = null)}>Cancelar</button>
+      <button class="btn btn-primary" onclick={() => video.skipToNext()}>Agora</button>
     </div>
   {/if}
 
@@ -186,9 +198,29 @@
             >
           {/each}
         </div>
-        <button class="btn btn-live btn-lg" onclick={() => player.start(choice)}>
-          <Presentation size={18} /> Projetar
-        </button>
+        {#if video.state?.playing}
+          <!-- Vídeo no ar: o hino espera o fim ou entra já. -->
+          <div class="after-video">
+            {#if !video.after}
+            <button
+              class="btn btn-lg btn-primary"
+              onclick={() => {
+                const mode = choice;
+                video.queue(song.title, () => void player.start(mode));
+              }}
+            >
+              <ListEnd size={18} /> Depois do vídeo
+            </button>
+            {/if}
+            <button class="btn btn-lg" onclick={() => { video.after = null; video.stop(); void player.start(choice); }}>
+              <Presentation size={18} /> Agora
+            </button>
+          </div>
+        {:else}
+          <button class="btn btn-live btn-lg" onclick={() => player.start(choice)}>
+            <Presentation size={18} /> Projetar
+          </button>
+        {/if}
       </div>
     {:else}
       <div class="transport">
@@ -385,6 +417,16 @@
 
   .fav.on {
     color: #ff2d55;
+  }
+
+  .after-video {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .after-video .btn {
+    flex: 1;
+    justify-content: center;
   }
 
   .start {

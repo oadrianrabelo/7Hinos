@@ -1,6 +1,11 @@
 <script lang="ts">
   import { AppWindow, Monitor, MonitorOff, MonitorPlay, MonitorSpeaker, RefreshCw, ScanEye } from "@lucide/svelte";
   import { api } from "../lib/api";
+  import { settings } from "../lib/state/settings.svelte";
+  import type { MonitorOptions } from "../lib/types";
+
+  const mon = $derived(settings.current.monitor);
+  const setMon = (patch: Partial<MonitorOptions>) => settings.save({ monitor: patch });
   import PageHeader from "../components/PageHeader.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
 
@@ -54,6 +59,38 @@
     </div>
   {/each}
 </div>
+
+<section class="monitor-options">
+  <div>
+    <h2>Tela de retorno</h2>
+    <p class="muted">O que aparece para quem canta ou prega. Vale para todas as telas de retorno.</p>
+  </div>
+  <div class="group">
+    <label class="row">
+      <span class="grow">
+        Mostrar a próxima letra
+        <span class="muted block">Embaixo, em letra menor. Desligue se o pessoal achar confuso.</span>
+      </span>
+      <input type="checkbox" class="switch" checked={mon.showNext} onchange={(e) => setMon({ showNext: e.currentTarget.checked })} />
+    </label>
+    <label class="row">
+      <span class="grow">Mostrar as horas</span>
+      <input type="checkbox" class="switch" checked={mon.showClock} onchange={(e) => setMon({ showClock: e.currentTarget.checked })} />
+    </label>
+    <label class="row">
+      <span class="grow">Mostrar o nome do hino ou a referência</span>
+      <input type="checkbox" class="switch" checked={mon.showTitle} onchange={(e) => setMon({ showTitle: e.currentTarget.checked })} />
+    </label>
+    <div class="row">
+      <span class="grow">Tamanho da letra</span>
+      <div class="segmented">
+        {#each [[0.85, "Menor"], [1, "Normal"], [1.2, "Maior"]] as [value, label] (value)}
+          <button aria-pressed={mon.textScale === value} onclick={() => setMon({ textScale: Number(value) })}>{label}</button>
+        {/each}
+      </div>
+    </div>
+  </div>
+</section>
 
 <section class="windowed">
   <div class="row-head">
@@ -137,6 +174,21 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  .monitor-options {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .monitor-options h2 {
+    margin: 0;
+  }
+
+  .block {
+    display: block;
   }
 
   .window-buttons {

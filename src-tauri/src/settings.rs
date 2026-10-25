@@ -83,8 +83,77 @@ pub fn tag_video(videos: &mut [VideoItem], path: &str, tag: Option<String>) {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum SetItem {
-    Song { id: u32, title: String },
-    Video { path: String, title: String },
+    Song {
+        id: u32,
+        title: String,
+    },
+    Video {
+        path: String,
+        title: String,
+        /// Tipo semanal ("missoes", "provai"): na hora, toca o vídeo "de hoje"
+        /// daquele tipo, mesmo que o culto tenha sido montado antes.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        tag: Option<String>,
+    },
+}
+
+/// O que o monitor de retorno mostra além da letra.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct MonitorOptions {
+    /// O próximo slide embaixo (há quem ache confuso ao cantar).
+    pub show_next: bool,
+    pub show_clock: bool,
+    /// Nome do hino ou referência bíblica no alto.
+    pub show_title: bool,
+    pub text_scale: f32,
+}
+
+impl Default for MonitorOptions {
+    fn default() -> Self {
+        Self {
+            show_next: true,
+            show_clock: true,
+            show_title: true,
+            text_scale: 1.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ScreenFont {
+    /// A mesma letra condensada dos hinos.
+    #[default]
+    Condensed,
+    Sans,
+    Serif,
+}
+
+/// Aparência dos avisos, da tela de espera e do relógio no telão.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ScreenStyle {
+    pub font: ScreenFont,
+    pub text_color: String,
+    /// Títulos, frase da contagem e detalhes.
+    pub accent_color: String,
+    /// "gradient" (o azul do app) ou uma cor (#rrggbb).
+    pub background: String,
+    /// Imagem de fundo em `user-media/`; tem prioridade sobre a cor.
+    pub background_image: Option<String>,
+}
+
+impl Default for ScreenStyle {
+    fn default() -> Self {
+        Self {
+            font: ScreenFont::Condensed,
+            text_color: "#ffffff".into(),
+            accent_color: "#ffc94a".into(),
+            background: "gradient".into(),
+            background_image: None,
+        }
+    }
 }
 
 /// O que o telão mostra quando nada está sendo apresentado.
@@ -129,6 +198,8 @@ pub struct Settings {
     pub recent: Vec<u32>,
     pub videos: Vec<VideoItem>,
     pub idle: IdleScreen,
+    pub monitor: MonitorOptions,
+    pub screen_style: ScreenStyle,
     pub notices: Vec<Notice>,
     /// Versão da Bíblia escolhida por último.
     pub bible_version: Option<i64>,
@@ -159,6 +230,8 @@ impl Default for Settings {
             recent: Vec::new(),
             videos: Vec::new(),
             idle: IdleScreen::default(),
+            monitor: MonitorOptions::default(),
+            screen_style: ScreenStyle::default(),
             notices: Vec::new(),
             bible_version: None,
             setlist: Vec::new(),
@@ -296,6 +369,16 @@ mod tests {
 
         tag_video(&mut videos, "a.mp4", None);
         assert_eq!(videos[0].tag, None);
+    }
+
+    #[test]
+    fn settings_from_before_the_monitor_options_get_defaults() {
+        let s: Settings =
+            serde_json::from_str(r#"{"setlist":[{"kind":"video","path":"a.mp4","title":"A"}]}"#)
+                .unwrap();
+        assert!(s.monitor.show_next && s.monitor.show_clock);
+        assert_eq!(s.screen_style, ScreenStyle::default());
+        assert!(matches!(&s.setlist[0], SetItem::Video { tag: None, .. }));
     }
 
     #[test]

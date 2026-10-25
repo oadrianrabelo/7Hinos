@@ -202,6 +202,8 @@ export function install() {
             { kind: "song", id: 18, title: "Castelo Forte" },
           ],
     idle: { image: null, text: "Bem-vindos!", showClock: true },
+    monitor: { showNext: params.get("next") !== "0", showClock: true, showTitle: true, textScale: 1 },
+    screenStyle: { font: "condensed", textColor: "#ffffff", accentColor: "#ffc94a", background: "gradient", backgroundImage: null },
     notices: [
       { id: 1, title: "Santa Ceia", body: "Neste sábado, às 10h30. Prepare o coração." },
     ],
@@ -252,7 +254,13 @@ export function install() {
         case "settings_get":
           return settings;
         case "settings_update":
-          settings = { ...settings, ...a.patch, slide: { ...settings.slide, ...(a.patch.slide ?? {}) } };
+          settings = {
+            ...settings,
+            ...a.patch,
+            slide: { ...settings.slide, ...(a.patch.slide ?? {}) },
+            monitor: { ...settings.monitor, ...(a.patch.monitor ?? {}) },
+            screenStyle: { ...settings.screenStyle, ...(a.patch.screenStyle ?? {}) },
+          };
           changed("settings://changed", settings);
           return settings;
         case "catalog_check_now":

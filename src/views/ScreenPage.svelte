@@ -3,6 +3,7 @@
   import { Clock, ImagePlus, Megaphone, MonitorOff, Pencil, Plus, Presentation, Timer, Trash2, X } from "@lucide/svelte";
   import { ask, open } from "@tauri-apps/plugin-dialog";
   import PageHeader from "../components/PageHeader.svelte";
+  import AppearancePanel from "../components/AppearancePanel.svelte";
   import PulpitPanel from "../components/PulpitPanel.svelte";
   import SceneView from "../components/SceneView.svelte";
   import { api, errorMessage } from "../lib/api";
@@ -165,7 +166,7 @@
     <p class="muted">Aparece no telão quando nada está sendo apresentado.</p>
     <div class="idle">
       <div class="preview">
-        <SceneView scene={{ kind: "idle" }} style={s.slide} idle={s.idle} />
+        <SceneView scene={{ kind: "idle" }} style={s.slide} idle={s.idle} screen={s.screenStyle} />
       </div>
       <div class="idle-form">
         <label class="form-label">
@@ -185,6 +186,8 @@
       </div>
     </div>
   </section>
+
+  <AppearancePanel />
 </div>
 
 <style>

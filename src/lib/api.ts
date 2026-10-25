@@ -106,6 +106,8 @@ export interface Events {
   "displays://identify": null;
   /** Uma tela não conseguiu tocar o vídeo. */
   "video://failed": { path: string; title: string };
+  /** O vídeo chegou ao fim (avisado pela tela que toca o som). */
+  "video://ended": { path: string };
   "package://progress": { done: number; total: number };
   "bible://progress": { phase: "download" | "install"; done: number; total: number };
 }
