@@ -88,7 +88,7 @@
     inset: 0;
     display: grid;
     place-items: center;
-    background: rgba(91, 87, 224, 0.92);
+    background: rgba(31, 106, 144, 0.94);
     color: #fff;
     font: 700 12vh/1 var(--font-ui, system-ui);
     text-align: center;

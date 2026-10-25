@@ -27,7 +27,7 @@
   const tiles = [
     { label: "Culto de hoje", icon: ListMusic, route: { name: "setlist" }, tint: "#af52de" },
     { label: "Avisos e relógio", icon: Megaphone, route: { name: "screen" }, tint: "#ff6b3d" },
-    { label: "Hinário", icon: BookOpen, route: { name: "hymnal" }, tint: "#5b57e0" },
+    { label: "Hinário", icon: BookOpen, route: { name: "hymnal" }, tint: "#1f6a90" },
     { label: "Bíblia", icon: BookMarked, route: { name: "bible" }, tint: "#a2845e" },
     { label: "Coletâneas e CDs", icon: Library, route: { name: "collections" }, tint: "#34a853" },
     { label: "Favoritos", icon: Heart, route: { name: "favorites" }, tint: "#ff2d55" },

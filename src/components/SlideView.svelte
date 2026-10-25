@@ -92,7 +92,7 @@
   }
 
   .shade.plain {
-    background: radial-gradient(ellipse at 50% 35%, #26264a 0%, #0d0d1a 70%, #050509 100%);
+    background: radial-gradient(ellipse at 50% 35%, #1d4560 0%, #0b1d2b 70%, #050b11 100%);
   }
 
   .content {
