@@ -1,0 +1,68 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "7Hinos",
+  "version": "../package.json",
+  "identifier": "br.com.setehinos.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "7Hinos",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "center": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "connect-src": "ipc: http://ipc.localhost",
+        "img-src": "'self' asset: http://asset.localhost https://files.louvorja.com.br data: blob:",
+        "media-src": "'self' asset: http://asset.localhost https://files.louvorja.com.br",
+        "style-src": "'self' 'unsafe-inline'",
+        "font-src": "'self' data:"
+      },
+      "assetProtocol": {
+        "enable": true,
+        "scope": []
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": false,
+    "category": "Music",
+    "shortDescription": "Hinos e louvores com projeção de slides",
+    "longDescription": "Toque hinos e louvores do acervo do LouvorJA, projete a letra em uma ou mais telas e reproduza vídeos durante o culto.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/oadrianrabelo/7Hinos/releases/latest/download/latest.json"
+      ],
+      "pubkey": "COLE_AQUI_A_CHAVE_PUBLICA_GERADA_COM_tauri_signer_generate",
+      "windows": { "installMode": "passive" }
+    }
+  }
+}

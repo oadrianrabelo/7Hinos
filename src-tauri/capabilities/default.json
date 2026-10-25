@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Janela de controle e telas de projeção",
+  "windows": ["main", "output-*"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-is-fullscreen",
+    "core:window:allow-start-dragging",
+    "dialog:allow-open",
+    "process:allow-restart",
+    "updater:default"
+  ]
+}

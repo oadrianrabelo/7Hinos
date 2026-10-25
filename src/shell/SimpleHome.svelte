@@ -1,0 +1,121 @@
+<script lang="ts">
+  import { BookOpen, Clock, Film, Heart, Library, Settings } from "@lucide/svelte";
+  import SearchField from "../components/SearchField.svelte";
+  import SongList from "../components/SongList.svelte";
+  import { api } from "../lib/api";
+  import { selectSong } from "../lib/actions";
+  import { nav, type Route } from "../lib/state/nav.svelte";
+  import type { SongSummary } from "../lib/types";
+
+  let query = $state("");
+  let results = $state<SongSummary[]>([]);
+
+  $effect(() => {
+    const q = query;
+    if (!q.trim()) {
+      results = [];
+      return;
+    }
+    let cancelled = false;
+    void api.search(q).then((r) => {
+      if (!cancelled) results = r;
+    });
+    return () => (cancelled = true);
+  });
+
+  const tiles = [
+    { label: "Hinário", icon: BookOpen, route: { name: "hymnal" }, tint: "#5b57e0" },
+    { label: "Coletâneas e CDs", icon: Library, route: { name: "collections" }, tint: "#34a853" },
+    { label: "Favoritos", icon: Heart, route: { name: "favorites" }, tint: "#ff2d55" },
+    { label: "Tocados por último", icon: Clock, route: { name: "recent" }, tint: "#ff9500" },
+    { label: "Vídeos", icon: Film, route: { name: "videos" }, tint: "#30b0c7" },
+    { label: "Ajustes", icon: Settings, route: { name: "settings" }, tint: "#8e8e93" },
+  ] satisfies { label: string; icon: unknown; route: Route; tint: string }[];
+</script>
+
+<div class="home">
+  <h1>O que vamos cantar?</h1>
+  <SearchField bind:value={query} large autofocus placeholder="Digite o nome, o número ou um pedaço da letra" />
+
+  {#if query.trim()}
+    {#if results.length}
+      <div class="results card"><SongList songs={results} onselect={selectSong} /></div>
+    {:else}
+      <p class="muted none">Nenhum hino encontrado com “{query}”.</p>
+    {/if}
+  {:else}
+    <div class="tiles">
+      {#each tiles as t (t.label)}
+        <button class="tile card" style:--tint={t.tint} onclick={() => nav.push(t.route)}>
+          <span class="icon"><t.icon size={30} /></span>
+          <span>{t.label}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
+</div>
+
+<style>
+  .home {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-top: 1rem;
+  }
+
+  h1 {
+    font-size: 2.3rem;
+    text-align: center;
+  }
+
+  .results {
+    padding: 0.5rem;
+  }
+
+  .none {
+    text-align: center;
+    font-size: 1.15rem;
+    padding: 2rem;
+  }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .tile {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 6rem;
+    padding: 1.1rem 1.25rem;
+    font-size: 1.2rem;
+    font-weight: 650;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      transform var(--fast) var(--ease),
+      box-shadow var(--normal);
+  }
+
+  .tile:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+  }
+
+  .tile:active {
+    transform: scale(0.98);
+  }
+
+  .icon {
+    display: grid;
+    place-items: center;
+    width: 3.6rem;
+    height: 3.6rem;
+    flex: none;
+    border-radius: var(--radius-l);
+    color: #fff;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--tint) 80%, white), var(--tint));
+  }
+</style>
