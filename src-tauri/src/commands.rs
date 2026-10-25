@@ -4,6 +4,7 @@
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 
+use crate::bible::{BibleBook, BibleVersion, SearchHit, Verse};
 use crate::catalog::louvorja::{self, Install};
 use crate::catalog::model::{Album, Collection, Song, SongSummary};
 use crate::displays::{self, Display, Output};
@@ -18,6 +19,7 @@ use crate::state::AppState;
 pub const SETTINGS_EVENT: &str = "settings://changed";
 pub const CATALOG_EVENT: &str = "catalog://changed";
 pub const PACKAGE_EVENT: &str = "package://progress";
+pub const BIBLE_EVENT: &str = "bible://progress";
 pub const CATALOG_PROGRESS_EVENT: &str = "catalog://progress";
 
 const SEARCH_LIMIT: usize = 60;
@@ -237,6 +239,7 @@ pub async fn louvorja_import(app: AppHandle, path: Option<String>) -> Result<Cat
     })?;
 
     let root = install.root.to_string_lossy().into_owned();
+    let database = install.database.clone();
     let imported = state
         .library
         .import_louvorja(install, lang)
@@ -246,6 +249,15 @@ pub async fn louvorja_import(app: AppHandle, path: Option<String>) -> Result<Cat
         "LouvorJA importado de {root}: {:?}",
         state.library.status().songs
     );
+    // A Bíblia vem no mesmo banco; se faltar, os hinos continuam valendo.
+    let bible = crate::bible::Bible::new(state.bible.path().to_path_buf());
+    match tauri::async_runtime::spawn_blocking(move || bible.import_desktop(&database, imported))
+        .await
+    {
+        Ok(Ok(count)) => log::info!("Bíblia do LouvorJA: {count} versículos"),
+        Ok(Err(e)) => log::warn!("Bíblia do LouvorJA não importada: {e}"),
+        Err(e) => log::warn!("Bíblia do LouvorJA não importada: {e}"),
+    }
     let saved = state.settings.update(|s| {
         s.add_local_source(root);
         s.language = imported;
@@ -358,6 +370,64 @@ pub fn song_played(app: AppHandle, state: State<AppState>, id: u32) -> Result<()
         });
     }
     Ok(())
+}
+
+// ── Bíblia ──────────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn bible_versions(state: State<AppState>) -> Result<Vec<BibleVersion>> {
+    state.bible.versions(state.settings.get().language)
+}
+
+#[tauri::command]
+pub fn bible_books(state: State<AppState>) -> Result<Vec<BibleBook>> {
+    state.bible.books(state.settings.get().language)
+}
+
+#[tauri::command]
+pub fn bible_chapter(
+    state: State<AppState>,
+    version: i64,
+    book: i64,
+    chapter: i64,
+) -> Result<Vec<Verse>> {
+    state.bible.chapter(version, book, chapter)
+}
+
+#[tauri::command]
+pub fn bible_search(state: State<AppState>, version: i64, query: String) -> Result<Vec<SearchHit>> {
+    state.bible.search(version, &query, 80)
+}
+
+/// Baixa a Bíblia online. Progresso em `bible://progress`.
+#[tauri::command]
+pub async fn bible_download(app: AppHandle) -> Result<usize> {
+    let state = app.state::<AppState>();
+    let emitter = app.clone();
+    let count = state
+        .library
+        .download_bible(&state.bible, move |phase, done, total| {
+            let _ = emitter.emit(
+                BIBLE_EVENT,
+                BibleProgress {
+                    phase: phase.to_owned(),
+                    done,
+                    total,
+                },
+            );
+        })
+        .await
+        .inspect_err(|e| log::warn!("download da Bíblia falhou: {e}"))?;
+    log::info!("Bíblia instalada: {count} versículos");
+    Ok(count)
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BibleProgress {
+    phase: String,
+    done: u64,
+    total: u64,
 }
 
 /// O que um pacote de pendrive contém, para a pessoa confirmar antes.

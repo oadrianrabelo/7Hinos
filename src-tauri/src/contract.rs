@@ -237,6 +237,20 @@ async fn desktop_database_contract() {
     let install = Install::find(&dir.path().join("Louvor JA"), Lang::Pt).expect("instalação");
 
     let local = louvorja::read(&install, Lang::Pt).expect("o banco real é lido");
+
+    // A Bíblia vem no mesmo banco: é a Bíblia de quem não tem internet.
+    let bible = crate::bible::Bible::new(dir.path().join("bible.db"));
+    let verses = bible
+        .import_desktop(&install.database, Lang::Pt)
+        .expect("Bíblia do banco do programa");
+    let versions = bible.versions(Lang::Pt).unwrap();
+    println!(
+        "Bíblia do programa: {verses} versículos, versões {:?}",
+        versions.iter().map(|v| &v.abbreviation).collect::<Vec<_>>()
+    );
+    assert!(verses > 30_000, "o banco do programa veio sem a Bíblia");
+    let john = bible.chapter(versions[0].id, 43, 3).unwrap();
+    assert!(john.iter().any(|v| v.number == 16), "João 3:16");
     println!(
         "convertido: {} chaves, versão {}",
         local.entries.len(),
@@ -310,4 +324,28 @@ async fn desktop_database_contract() {
         audio_ok * 4 >= compared * 3,
         "caminhos de áudio do banco não batem com o acervo online"
     );
+}
+
+#[tokio::test]
+#[ignore = "baixa a Bíblia online (26 MB)"]
+async fn online_bible_contract() {
+    let dir = tempfile::tempdir().unwrap();
+    let library = Library::with_api(dir.path().to_path_buf(), API_URL);
+    library.sync(Lang::Pt, true, |_, _| {}).await.unwrap();
+    let bible = crate::bible::Bible::new(dir.path().join("bible.db"));
+    let verses = library
+        .download_bible(&bible, |_, _, _| {})
+        .await
+        .expect("/db/bible-bundle instala");
+    let pt = bible.versions(Lang::Pt).unwrap();
+    let es = bible.versions(Lang::Es).unwrap();
+    println!(
+        "Bíblia online: {verses} versículos; pt {:?}; es {:?}",
+        pt.iter().map(|v| &v.abbreviation).collect::<Vec<_>>(),
+        es.iter().map(|v| &v.abbreviation).collect::<Vec<_>>()
+    );
+    assert!(pt.len() >= 3 && !es.is_empty());
+    assert_eq!(bible.books(Lang::Pt).unwrap().len(), 66);
+    let psalm = bible.chapter(pt[0].id, 19, 23).unwrap();
+    assert_eq!(psalm.len(), 6, "Salmo 23 tem 6 versículos");
 }

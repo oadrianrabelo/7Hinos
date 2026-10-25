@@ -46,9 +46,20 @@ impl Remote {
         &self,
         version: u32,
         dest: &Path,
+        progress: impl FnMut(u64, Option<u64>),
+    ) -> Result<()> {
+        self.download(&format!("/db/catalog-bundle?v={version}"), dest, progress)
+            .await
+    }
+
+    /// Baixa um caminho da API para `dest`, avisando o progresso em bytes.
+    pub async fn download(
+        &self,
+        path: &str,
+        dest: &Path,
         mut progress: impl FnMut(u64, Option<u64>),
     ) -> Result<()> {
-        let url = format!("{}/db/catalog-bundle?v={version}", self.base);
+        let url = format!("{}{path}", self.base);
         let response = self.client.get(url).send().await?;
         if !response.status().is_success() {
             return Err(Error::Http(response.status().as_u16()));

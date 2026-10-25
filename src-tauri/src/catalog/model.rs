@@ -82,6 +82,10 @@ pub struct Song {
 pub enum SlideKind {
     Title,
     Lyric,
+    /// Versículo(s) da Bíblia: texto corrido, referência embaixo.
+    Verse,
+    /// Texto livre (avisos): sem maiúsculas forçadas.
+    Text,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

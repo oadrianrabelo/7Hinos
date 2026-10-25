@@ -1,3 +1,4 @@
+use crate::bible::Bible;
 use crate::displays::Outputs;
 use crate::downloads::Downloads;
 use crate::library::Library;
@@ -15,4 +16,5 @@ pub struct AppState {
     pub media_server: MediaServer,
     pub watcher: CatalogWatcher,
     pub downloads: Downloads,
+    pub bible: Bible,
 }

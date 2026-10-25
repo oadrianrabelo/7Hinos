@@ -125,6 +125,42 @@ impl Library {
         self.store.dir()
     }
 
+    /// Baixa a Bíblia online (todas as versões) para `bible`, avisando o
+    /// progresso: primeiro em bytes baixados, depois em capítulos gravados.
+    pub async fn download_bible(
+        &self,
+        bible: &crate::bible::Bible,
+        mut progress: impl FnMut(&str, u64, u64) + Send,
+    ) -> Result<usize> {
+        let mut catalogs = Vec::new();
+        for lang in [Lang::Pt, Lang::Es] {
+            let code = lang.code();
+            let versions: serde_json::Value = self.key(&format!("{code}_bible_version")).await?;
+            let books: serde_json::Value = self.key(&format!("{code}_bible_book")).await?;
+            catalogs.push((lang, versions, books));
+        }
+        let zip = self.data_dir.join("bible-bundle.zip");
+        self.remote
+            .download("/db/bible-bundle", &zip, |done, total| {
+                progress("download", done, total.unwrap_or(0))
+            })
+            .await?;
+        let target = crate::bible::Bible::new(bible.path().to_path_buf());
+        let zip_path = zip.clone();
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let job = tokio::task::spawn_blocking(move || {
+            target.import_bundle(&zip_path, &catalogs, |done, total| {
+                let _ = tx.send((done as u64, total as u64));
+            })
+        });
+        while let Some((done, total)) = rx.recv().await {
+            progress("install", done, total);
+        }
+        let count = job.await.map_err(|e| Error::other(e.to_string()))??;
+        let _ = tokio::fs::remove_file(&zip).await;
+        Ok(count)
+    }
+
     /// Instala o catálogo de uma pasta (a `acervo/` de um pacote de pendrive).
     pub async fn import_catalog_dir(&self, dir: PathBuf, lang: Lang) -> Result<()> {
         let _guard = self.sync_lock.lock().await;

@@ -1,3 +1,4 @@
+mod bible;
 mod catalog;
 mod commands;
 #[cfg(test)]
@@ -124,6 +125,7 @@ pub fn run() {
                 media_server,
                 watcher: Default::default(),
                 downloads: Default::default(),
+                bible: bible::Bible::new(data_dir.join("bible.db")),
             });
             commands::apply_local_sources(app.handle());
             commands::resolve_pending_favorites(app.handle());
@@ -165,6 +167,11 @@ pub fn run() {
             commands::package_inspect,
             commands::package_export,
             commands::package_import,
+            commands::bible_versions,
+            commands::bible_books,
+            commands::bible_chapter,
+            commands::bible_search,
+            commands::bible_download,
             commands::offline_status,
             commands::songs_available,
             commands::download_start,
