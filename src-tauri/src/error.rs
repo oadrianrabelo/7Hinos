@@ -18,6 +18,8 @@ pub enum Error {
     Tauri(#[from] tauri::Error),
     #[error("Os hinos ainda não foram baixados.")]
     CatalogMissing,
+    #[error("Download cancelado.")]
+    Cancelled,
     #[error("{0}")]
     Other(String),
 }

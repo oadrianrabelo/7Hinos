@@ -1,4 +1,5 @@
 use crate::displays::Outputs;
+use crate::downloads::Downloads;
 use crate::library::Library;
 use crate::media_server::MediaServer;
 use crate::settings::SettingsStore;
@@ -13,4 +14,5 @@ pub struct AppState {
     pub outputs: Outputs,
     pub media_server: MediaServer,
     pub watcher: CatalogWatcher,
+    pub downloads: Downloads,
 }

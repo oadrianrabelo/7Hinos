@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ClipboardCopy, FileText, FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Trash2, X } from "@lucide/svelte";
+  import DownloadButton from "../components/DownloadButton.svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import SlideView from "../components/SlideView.svelte";
   import { api } from "../lib/api";
@@ -241,6 +242,13 @@
           <button class="btn btn-plain btn-icon" aria-label="Remover pasta" title="Remover" onclick={() => removeFolder(path)}><X size={15} /></button>
         </div>
       {/each}
+      <div class="row">
+        <span class="grow">
+          Todo o acervo no computador
+          <span class="muted block">Baixa áudios e fundos de todos os hinos (alguns GB). Ideal antes de levar o computador para a igreja.</span>
+        </span>
+        <DownloadButton key="all" scope={{ kind: "all" }} label="Todo o acervo" text="Baixar tudo" />
+      </div>
       <div class="row">
         <span class="grow">
           Guardar os hinos tocados

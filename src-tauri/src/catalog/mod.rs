@@ -125,6 +125,10 @@ impl Catalog {
             .map(|song| song.summary.id)
     }
 
+    pub fn song_ids(&self) -> Vec<u32> {
+        self.index.iter().map(|s| s.summary.id).collect()
+    }
+
     pub fn song_count(&self) -> usize {
         self.index.len()
     }

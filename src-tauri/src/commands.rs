@@ -7,8 +7,9 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::catalog::louvorja::{self, Install};
 use crate::catalog::model::{Album, Collection, Song, SongSummary};
 use crate::displays::{self, Display, Output};
+use crate::downloads;
 use crate::error::{Error, Result};
-use crate::library::{CatalogStatus, OfflineStatus};
+use crate::library::{CatalogStatus, OfflineStatus, Scope};
 use crate::settings::{self, Settings, VideoItem};
 use crate::stage::{Scene, StageState, VideoState};
 use crate::state::AppState;
@@ -16,7 +17,6 @@ use crate::state::AppState;
 pub const SETTINGS_EVENT: &str = "settings://changed";
 pub const CATALOG_EVENT: &str = "catalog://changed";
 pub const CATALOG_PROGRESS_EVENT: &str = "catalog://progress";
-pub const DOWNLOAD_EVENT: &str = "download://progress";
 
 const SEARCH_LIMIT: usize = 60;
 
@@ -25,15 +25,6 @@ const SEARCH_LIMIT: usize = 60;
 struct ByteProgress {
     done: u64,
     total: Option<u64>,
-}
-
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AlbumProgress {
-    album_id: u32,
-    cached: usize,
-    total: usize,
-    finished: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -359,48 +350,34 @@ pub fn song_played(app: AppHandle, state: State<AppState>, id: u32) -> Result<()
             let state = app.state::<AppState>();
             let library = &state.library;
             if let Ok(urls) = library.song_media(id).await {
-                let _ = library.download(urls, |_| {}).await;
+                let never = std::sync::atomic::AtomicBool::new(false);
+                let _ = library.download(urls, &never, |_| {}).await;
             }
         });
     }
     Ok(())
 }
 
+/// Quanto de um escopo já está no computador.
 #[tauri::command]
-pub async fn album_offline(state: State<'_, AppState>, id: u32) -> Result<OfflineStatus> {
-    state.library.album_offline(id).await
+pub async fn offline_status(state: State<'_, AppState>, scope: Scope) -> Result<OfflineStatus> {
+    state.library.scope_offline(&scope).await
+}
+
+/// Das músicas pedidas, as que tocam sem internet.
+#[tauri::command]
+pub async fn songs_available(state: State<'_, AppState>, ids: Vec<u32>) -> Result<Vec<u32>> {
+    Ok(state.library.available_offline(&ids).await)
 }
 
 #[tauri::command]
-pub async fn album_download(app: AppHandle, id: u32) -> Result<OfflineStatus> {
-    let state = app.state::<AppState>();
-    let library = &state.library;
-    let urls = library.album_media(id).await?;
-    let emitter = app.clone();
-    let result = library
-        .download(urls, |p| {
-            let _ = emitter.emit(
-                DOWNLOAD_EVENT,
-                AlbumProgress {
-                    album_id: id,
-                    cached: p.cached,
-                    total: p.total,
-                    finished: false,
-                },
-            );
-        })
-        .await;
-    let status = library.album_offline(id).await?;
-    let _ = app.emit(
-        DOWNLOAD_EVENT,
-        AlbumProgress {
-            album_id: id,
-            cached: status.cached,
-            total: status.total,
-            finished: true,
-        },
-    );
-    result.map(|_| status)
+pub fn download_start(app: AppHandle, scope: Scope, label: String) -> u32 {
+    downloads::start(&app, scope, label)
+}
+
+#[tauri::command]
+pub fn download_cancel(state: State<AppState>, job: u32) {
+    state.downloads.cancel(job);
 }
 
 #[tauri::command]

@@ -1,6 +1,8 @@
 <!-- A programação do culto: monte antes, apresente na ordem. -->
 <script lang="ts">
-  import { ArrowDown, ArrowUp, Film, ListMusic, Music, Play, Trash2, X } from "@lucide/svelte";
+  import { ArrowDown, ArrowUp, CircleCheck, CloudOff, Film, ListMusic, Music, Play, Trash2, X } from "@lucide/svelte";
+  import DownloadButton from "../components/DownloadButton.svelte";
+  import { availability } from "../lib/state/availability.svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import { openSetItem } from "../lib/actions";
   import { player } from "../lib/state/player.svelte";
@@ -10,12 +12,17 @@
 
   let { simple = false }: { simple?: boolean } = $props();
 
+  const songIds = $derived(setlist.items.flatMap((i) => (i.kind === "song" ? [i.id] : [])));
+
   const isCurrent = (item: SetItem) =>
     item.kind === "song" ? player.song?.id === item.id : video.state?.path === item.path;
 </script>
 
 <PageHeader title="Culto de hoje" subtitle="Monte a ordem antes do culto e vá apresentando um por um">
   {#snippet actions()}
+    {#if songIds.length}
+      <DownloadButton key="setlist" scope={{ kind: "songs", ids: songIds }} label="Culto de hoje" text="Preparar para sem internet" large={simple} />
+    {/if}
     {#if setlist.items.length}
       <button class="btn" class:btn-lg={simple} onclick={() => setlist.clear()}><Trash2 size={15} /> Limpar lista</button>
     {/if}
@@ -32,7 +39,17 @@
         </span>
         <span class="info">
           <span class="title truncate">{item.title}</span>
-          <span class="kind">{item.kind === "song" ? "Hino" : "Vídeo"}</span>
+          <span class="kind">
+            {item.kind === "song" ? "Hino" : "Vídeo"}
+            {#if item.kind === "song"}
+              {@const ready = availability.get(item.id)}
+              {#if ready === true}
+                <span class="ok"><CircleCheck size={12} /> toca sem internet</span>
+              {:else if ready === false}
+                <span class="need"><CloudOff size={12} /> precisa de internet</span>
+              {/if}
+            {/if}
+          </span>
         </span>
         <span class="order">
           <button class="btn btn-plain btn-icon" aria-label="Subir" title="Subir" disabled={i === 0} onclick={() => setlist.move(i, -1)}><ArrowUp size={16} /></button>
@@ -125,8 +142,26 @@
   }
 
   .kind {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
     font-size: 0.8rem;
     color: var(--text-2);
+  }
+
+  .ok,
+  .need {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .ok {
+    color: var(--success);
+  }
+
+  .need {
+    color: var(--warning);
   }
 
   .order {

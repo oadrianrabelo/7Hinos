@@ -132,6 +132,23 @@ export interface Diagnostics {
 /** Mudança parcial nas preferências (objetos aninhados também parciais). */
 export type SettingsPatch = Partial<Omit<Settings, "slide">> & { slide?: Partial<SlideStyle> };
 
+/** O que baixar para usar sem internet. */
+export type Scope =
+  | { kind: "all" }
+  | { kind: "collection"; id: number }
+  | { kind: "album"; id: number }
+  | { kind: "songs"; ids: number[] };
+
+export interface DownloadProgress {
+  job: number;
+  label: string;
+  cached: number;
+  total: number;
+  finished: boolean;
+  cancelled: boolean;
+  error: string | null;
+}
+
 export interface OfflineStatus {
   cached: number;
   total: number;

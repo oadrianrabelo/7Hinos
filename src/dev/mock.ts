@@ -212,6 +212,7 @@ export function install() {
   let outputs: Output[] = params.get("outputs") === "1" ? [{ label: "output-1", displayId: "tv", name: "Tela 2" }] : [];
 
   const changed = (event: string, payload: unknown) => void emit(event, payload);
+  let jobs = 0;
   const status = () => ({
     installed,
     version: installed ? 185 : null,
@@ -280,10 +281,22 @@ export function install() {
           return albums[a.id];
         case "song":
           return song(a.id);
-        case "album_offline":
-          return { cached: a.id === 727 ? 12 : 0, total: 12 };
-        case "album_download":
-          return { cached: 12, total: 12 };
+        case "offline_status":
+          return { cached: a.scope.kind === "album" && a.scope.id === 727 ? 12 : 3, total: 12 };
+        case "songs_available":
+          return (a.ids as number[]).filter((id) => id !== 18);
+        case "download_start": {
+          const job = ++jobs;
+          void (async () => {
+            for (let cached = 0; cached <= 40; cached += 4) {
+              await new Promise((r) => setTimeout(r, 300));
+              changed("download://progress", { job, label: a.label, cached, total: 40, finished: cached === 40, cancelled: false, error: null });
+            }
+          })();
+          return job;
+        }
+        case "download_cancel":
+          return;
         case "media_usage":
           return 734_003_200;
         case "stage_get":

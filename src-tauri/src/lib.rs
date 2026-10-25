@@ -3,6 +3,7 @@ mod commands;
 #[cfg(test)]
 mod contract;
 mod displays;
+mod downloads;
 mod error;
 mod legacy;
 mod library;
@@ -121,6 +122,7 @@ pub fn run() {
                 outputs: Default::default(),
                 media_server,
                 watcher: Default::default(),
+                downloads: Default::default(),
             });
             commands::apply_local_sources(app.handle());
             commands::resolve_pending_favorites(app.handle());
@@ -159,8 +161,10 @@ pub fn run() {
             commands::album,
             commands::song,
             commands::song_played,
-            commands::album_offline,
-            commands::album_download,
+            commands::offline_status,
+            commands::songs_available,
+            commands::download_start,
+            commands::download_cancel,
             commands::media_usage,
             commands::media_clear,
             commands::stage_get,

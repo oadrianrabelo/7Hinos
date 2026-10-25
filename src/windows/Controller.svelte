@@ -2,12 +2,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Sparkles } from "@lucide/svelte";
+  import DownloadsStrip from "../components/DownloadsStrip.svelte";
   import Toasts from "../components/Toasts.svelte";
   import FullShell from "../shell/FullShell.svelte";
   import SimpleShell from "../shell/SimpleShell.svelte";
   import Onboarding from "./Onboarding.svelte";
   import { on } from "../lib/api";
   import { catalog } from "../lib/state/catalog.svelte";
+  import { downloads } from "../lib/state/downloads.svelte";
   import { nav } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
   import { player } from "../lib/state/player.svelte";
@@ -19,7 +21,7 @@
   let full = $state<FullShell>();
 
   onMount(async () => {
-    await Promise.all([settings.init(), catalog.init(), outputs.init(), video.init()]);
+    await Promise.all([settings.init(), catalog.init(), outputs.init(), video.init(), downloads.init()]);
     await on("stage://changed", (stage) => video.receive(stage.video));
     ready = true;
     if (settings.current.autoUpdateApp) setTimeout(() => updater.checkInBackground(), 5000);
@@ -112,6 +114,7 @@
   </div>
 {/if}
 
+<DownloadsStrip />
 <Toasts />
 
 <style>

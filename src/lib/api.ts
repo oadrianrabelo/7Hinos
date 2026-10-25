@@ -8,10 +8,12 @@ import type {
   CatalogStatus,
   Collection,
   Diagnostics,
+  DownloadProgress,
   Display,
   Install,
   OfflineStatus,
   Output,
+  Scope,
   Scene,
   Settings,
   SettingsPatch,
@@ -46,8 +48,10 @@ export const api = {
   album: (id: number) => invoke<Album>("album", { id }),
   song: (id: number) => invoke<Song>("song", { id }),
   songPlayed: (id: number) => invoke<void>("song_played", { id }),
-  albumOffline: (id: number) => invoke<OfflineStatus>("album_offline", { id }),
-  downloadAlbum: (id: number) => invoke<OfflineStatus>("album_download", { id }),
+  offlineStatus: (scope: Scope) => invoke<OfflineStatus>("offline_status", { scope }),
+  songsAvailable: (ids: number[]) => invoke<number[]>("songs_available", { ids }),
+  startDownload: (scope: Scope, label: string) => invoke<number>("download_start", { scope, label }),
+  cancelDownload: (job: number) => invoke<void>("download_cancel", { job }),
   mediaUsage: () => invoke<number>("media_usage"),
   clearMedia: () => invoke<void>("media_clear"),
 
@@ -67,7 +71,7 @@ export interface Events {
   "settings://changed": Settings;
   "catalog://changed": { status: CatalogStatus; updated: boolean };
   "catalog://progress": { done: number; total: number | null };
-  "download://progress": { albumId: number; cached: number; total: number; finished: boolean };
+  "download://progress": DownloadProgress;
   "displays://changed": null;
 }
 

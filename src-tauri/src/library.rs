@@ -4,11 +4,12 @@
 
 use std::collections::BTreeSet;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 
 use futures_util::{stream, StreamExt};
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::catalog::louvorja::{self, Install};
 use crate::catalog::model::{self, Album, Collection, Lang, Song, SongSummary};
@@ -53,6 +54,16 @@ impl UpdateCheck {
     pub fn has_update(&self) -> bool {
         self.installed.is_none_or(|v| self.available > v)
     }
+}
+
+/// O que baixar para usar sem internet.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum Scope {
+    All,
+    Collection { id: u32 },
+    Album { id: u32 },
+    Songs { ids: Vec<u32> },
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -293,12 +304,68 @@ impl Library {
         Ok(urls)
     }
 
-    pub async fn album_offline(&self, id: u32) -> Result<OfflineStatus> {
-        let urls = self.album_media(id).await?;
+    /// Todos os arquivos de que um escopo precisa para tocar sem internet.
+    pub async fn scope_media(&self, scope: &Scope) -> Result<BTreeSet<String>> {
+        let mut urls = BTreeSet::new();
+        match scope {
+            Scope::All => {
+                for collection in self.collections().await? {
+                    urls.extend(
+                        collection
+                            .albums
+                            .iter()
+                            .filter_map(|a| a.cover.as_ref().map(|m| m.url.clone())),
+                    );
+                }
+                for id in self.catalog()?.song_ids() {
+                    // Uma música com problema não impede as outras.
+                    if let Ok(song) = self.song_media(id).await {
+                        urls.extend(song);
+                    }
+                }
+            }
+            Scope::Collection { id } => {
+                let collections = self.collections().await?;
+                let collection = collections
+                    .iter()
+                    .find(|c| c.id == *id)
+                    .ok_or_else(|| Error::other("Coleção não encontrada."))?;
+                for album in &collection.albums {
+                    urls.extend(self.album_media(album.id).await?);
+                }
+            }
+            Scope::Album { id } => urls.extend(self.album_media(*id).await?),
+            Scope::Songs { ids } => {
+                for &id in ids {
+                    urls.extend(self.song_media(id).await?);
+                }
+            }
+        }
+        Ok(urls)
+    }
+
+    pub async fn scope_offline(&self, scope: &Scope) -> Result<OfflineStatus> {
+        let urls = self.scope_media(scope).await?;
         Ok(OfflineStatus {
             cached: urls.iter().filter(|u| self.media.is_cached(u)).count(),
             total: urls.len(),
         })
+    }
+
+    /// Das músicas pedidas, as que tocam sem internet: o áudio cantado está no
+    /// computador (ou a música nem tem áudio, só letra).
+    pub async fn available_offline(&self, ids: &[u32]) -> Vec<u32> {
+        let mut available = Vec::new();
+        for &id in ids {
+            let Ok(raw) = self.local_key::<RawMusic>(&format!("music_{id}")) else {
+                continue;
+            };
+            let song = model::song(&raw, &self.media);
+            if song.audio.as_ref().is_none_or(|a| a.path.is_some()) {
+                available.push(id);
+            }
+        }
+        available
     }
 
     /// Baixa a mídia que falta, quatro arquivos por vez. Um arquivo que falha
@@ -306,6 +373,7 @@ impl Library {
     pub async fn download(
         &self,
         urls: BTreeSet<String>,
+        cancel: &AtomicBool,
         mut progress: impl FnMut(OfflineStatus),
     ) -> Result<()> {
         let total = urls.len();
@@ -317,10 +385,18 @@ impl Library {
             .filter(|u| !self.media.is_cached(u))
             .collect();
         let mut results = stream::iter(missing)
-            .map(|url| async move { self.media.download(&url).await })
+            .map(|url| async move {
+                if cancel.load(Ordering::Relaxed) {
+                    return Err(Error::Cancelled);
+                }
+                self.media.download(&url).await
+            })
             .buffer_unordered(4);
         let mut first_error = None;
         while let Some(result) = results.next().await {
+            if cancel.load(Ordering::Relaxed) {
+                return Err(Error::Cancelled);
+            }
             match result {
                 Ok(_) => {
                     cached += 1;
@@ -332,6 +408,12 @@ impl Library {
             }
         }
         first_error.map_or(Ok(()), Err)
+    }
+
+    /// Só do disco, sem internet (para respostas rápidas na interface).
+    fn local_key<T: DeserializeOwned>(&self, key: &str) -> Result<T> {
+        let bytes = self.store.read(key).ok_or(Error::CatalogMissing)?;
+        Ok(serde_json::from_slice(&bytes)?)
     }
 
     /// Chave que pode não existir: lê do disco e só vai à internet quando a
@@ -531,7 +613,26 @@ mod tests {
             .as_ref()
             .unwrap()
             .ends_with("ceu.bmp"));
-        let offline = library.album_offline(1).await.unwrap();
+        // O hino 11 tem áudio que não está no computador.
+        assert_eq!(library.available_offline(&[10, 11, 99]).await, [10]);
+        let hymnal = library
+            .scope_offline(&Scope::Songs { ids: vec![11] })
+            .await
+            .unwrap();
+        assert!(hymnal.cached < hymnal.total);
+        let cancel = AtomicBool::new(true);
+        let urls = library
+            .scope_media(&Scope::Songs { ids: vec![11] })
+            .await
+            .unwrap();
+        assert!(matches!(
+            library.download(urls, &cancel, |_| {}).await,
+            Err(Error::Cancelled)
+        ));
+        let offline = library
+            .scope_offline(&Scope::Album { id: 1 })
+            .await
+            .unwrap();
         assert_eq!(offline.cached, offline.total);
     }
 

@@ -1,58 +1,27 @@
 <script lang="ts">
-  import { CircleCheck, CloudDownload, LoaderCircle, Play } from "@lucide/svelte";
+  import { LoaderCircle, Play } from "@lucide/svelte";
   import Cover from "../components/Cover.svelte";
+  import DownloadButton from "../components/DownloadButton.svelte";
   import SongList from "../components/SongList.svelte";
-  import { api, errorMessage, on } from "../lib/api";
+  import { api, errorMessage } from "../lib/api";
   import { playSong, selectSong } from "../lib/actions";
   import { plural } from "../lib/format";
-  import { toasts } from "../lib/state/toasts.svelte";
-  import type { Album, OfflineStatus } from "../lib/types";
+  import type { Album } from "../lib/types";
 
   let { id }: { id: number } = $props();
 
   let album = $state<Album | null>(null);
   let error = $state<string | null>(null);
-  let offline = $state<OfflineStatus | null>(null);
-  let downloading = $state(false);
 
   $effect(() => {
     const albumId = id;
     album = null;
     error = null;
-    offline = null;
     api
       .album(albumId)
-      .then((a) => {
-        album = a;
-        return api.albumOffline(albumId);
-      })
-      .then((o) => (offline = o))
+      .then((a) => (album = a))
       .catch((e) => (error = errorMessage(e)));
   });
-
-  $effect(() => {
-    const unlisten = on("download://progress", (p) => {
-      if (p.albumId !== id) return;
-      offline = { cached: p.cached, total: p.total };
-      downloading = !p.finished;
-    });
-    return () => void unlisten.then((f) => f());
-  });
-
-  async function download() {
-    downloading = true;
-    try {
-      offline = await api.downloadAlbum(id);
-      toasts.show(`“${album?.name}” está disponível sem internet.`, "success");
-    } catch (e) {
-      toasts.error(errorMessage(e));
-    } finally {
-      downloading = false;
-    }
-  }
-
-  const complete = $derived(offline !== null && offline.total > 0 && offline.cached >= offline.total);
-  const percent = $derived(offline && offline.total ? Math.round((offline.cached / offline.total) * 100) : 0);
 </script>
 
 {#if error}
@@ -70,17 +39,7 @@
             <Play size={18} fill="currentColor" /> Tocar
           </button>
         {/if}
-        {#if complete}
-          <span class="pill accent"><CircleCheck size={14} /> Disponível sem internet</span>
-        {:else}
-          <button class="btn btn-lg" onclick={download} disabled={downloading}>
-            {#if downloading}
-              <LoaderCircle size={18} class="spin" /> Baixando… {percent}%
-            {:else}
-              <CloudDownload size={18} /> Baixar para usar sem internet
-            {/if}
-          </button>
-        {/if}
+        <DownloadButton key="album:{album.id}" scope={{ kind: "album", id: album.id }} label={album.name} large />
       </div>
     </div>
   </header>
