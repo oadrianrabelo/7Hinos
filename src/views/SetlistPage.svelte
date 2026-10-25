@@ -1,6 +1,6 @@
 <!-- A programação do culto: monte antes, apresente na ordem. -->
 <script lang="ts">
-  import { ArrowDown, ArrowUp, CircleCheck, CloudOff, Film, ListMusic, Music, Play, Trash2, X } from "@lucide/svelte";
+  import { ArrowDown, ArrowUp, CircleCheck, CloudOff, Film, ListMusic, Music, Play, Plus, Trash2, X } from "@lucide/svelte";
   import DownloadButton from "../components/DownloadButton.svelte";
   import { availability } from "../lib/state/availability.svelte";
   import PageHeader from "../components/PageHeader.svelte";
@@ -8,14 +8,24 @@
   import { player } from "../lib/state/player.svelte";
   import { setlist } from "../lib/state/setlist.svelte";
   import { video } from "../lib/state/video.svelte";
+  import { settings } from "../lib/state/settings.svelte";
   import type { SetItem } from "../lib/types";
+  import { itemTag, resolveVideo, WEEKLY_TAGS } from "../lib/videoTags";
 
   let { simple = false }: { simple?: boolean } = $props();
 
   const songIds = $derived(setlist.items.flatMap((i) => (i.kind === "song" ? [i.id] : [])));
 
+  const videos = $derived(settings.current.videos);
   const isCurrent = (item: SetItem) =>
-    item.kind === "song" ? player.song?.id === item.id : video.state?.path === item.path;
+    item.kind === "song" ? player.song?.id === item.id : video.state?.path === resolveVideo(item, videos).path;
+
+  /** Lugares semanais que ainda não estão na lista: "Informativo de hoje" etc. */
+  const weeklySlots = $derived(
+    WEEKLY_TAGS.map((tag) => ({ tag, today: videos.find((v) => v.tag === tag.id) ?? null })).filter(
+      ({ tag }) => !setlist.items.some((i) => i.kind === "video" && i.tag === tag.id),
+    ),
+  );
 </script>
 
 <PageHeader title="Culto de hoje" subtitle="Monte a ordem antes do culto e vá apresentando um por um">
@@ -29,9 +39,27 @@
   {/snippet}
 </PageHeader>
 
+{#if weeklySlots.length}
+  <div class="slots">
+    <span class="muted">Acrescentar:</span>
+    {#each weeklySlots as { tag, today } (tag.id)}
+      <button
+        class="chip"
+        style:--tint={tag.tint}
+        disabled={!today}
+        title={today ? `Toca o vídeo marcado como ${tag.label} de hoje` : `Marque um vídeo como ${tag.label} em Vídeos`}
+        onclick={() => today && setlist.toggle({ kind: "video", path: today.path, title: tag.label, tag: tag.id })}
+      >
+        <Plus size={14} /> {tag.short} de hoje
+      </button>
+    {/each}
+  </div>
+{/if}
+
 {#if setlist.items.length}
   <ol class="setlist">
-    {#each setlist.items as item, i (item.kind + (item.kind === "song" ? item.id : item.path))}
+    {#each setlist.items as item, i (item.kind + (item.kind === "song" ? item.id : `${item.path}|${item.tag ?? ""}`))}
+      {@const tag = item.kind === "video" ? itemTag(item, videos) : null}
       <li class="entry" class:current={isCurrent(item)} class:simple>
         <span class="n">{i + 1}</span>
         <span class="icon" class:video={item.kind === "video"}>
@@ -41,6 +69,13 @@
           <span class="title truncate">{item.title}</span>
           <span class="kind">
             {item.kind === "song" ? "Hino" : "Vídeo"}
+            {#if tag}
+              <span class="tag" style:--tint={tag.tint}>{tag.short}{tag.weekly ? " · de hoje" : ""}</span>
+            {/if}
+            {#if item.kind === "video" && tag?.weekly}
+              {@const today = resolveVideo(item, videos)}
+              {#if today.title !== item.title}<span class="truncate">{today.title}</span>{/if}
+            {/if}
             {#if item.kind === "song"}
               {@const ready = availability.get(item.id)}
               {#if ready === true}
@@ -124,6 +159,43 @@
     border-radius: var(--radius);
     color: #fff;
     background: linear-gradient(145deg, #4f9cc4, var(--accent));
+  }
+
+  .slots {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--tint);
+    background: color-mix(in srgb, var(--tint) 12%, transparent);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .chip:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .tag {
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--tint);
   }
 
   .icon.video {

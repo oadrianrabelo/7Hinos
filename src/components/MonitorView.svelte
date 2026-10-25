@@ -4,11 +4,12 @@
 -->
 <script lang="ts">
   import { clockText, countdownText } from "../lib/clock";
-  import { fitText } from "../lib/slides";
+  import { mediaSrc } from "../lib/media";
+  import { backgroundPosition, fitText } from "../lib/slides";
   import { timerDisplay } from "../lib/timer";
-  import type { StageState } from "../lib/types";
+  import type { MonitorOptions, StageState } from "../lib/types";
 
-  let { stage }: { stage: StageState } = $props();
+  let { stage, options }: { stage: StageState; options: MonitorOptions } = $props();
 
   let now = $state(Date.now());
   $effect(() => {
@@ -20,9 +21,16 @@
   const message = $derived(stage.pulpit?.message ?? null);
   const timer = $derived(stage.pulpit?.timer ? timerDisplay(stage.pulpit.timer, now) : null);
   const current = $derived(scene.kind === "slide" ? scene.slide : null);
-  const next = $derived(scene.kind === "slide" ? (scene.next ?? null) : null);
+  // O mesmo fundo do telão, bem escurecido: a letra continua sendo o principal.
+  const image = $derived(options.showBackground && current ? mediaSrc(current.image) : null);
+  const backdrop = $derived(
+    image && current
+      ? `linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), url("${image}") ${backgroundPosition(current.imagePosition)} / cover`
+      : null,
+  );
+  const next = $derived(scene.kind === "slide" && options.showNext ? (scene.next ?? null) : null);
   // Sem fundo e sem sombra, cabe um pouco mais de letra que no telão.
-  const size = $derived(current ? fitText(current.text, current.kind, 1.3) : null);
+  const size = $derived(current ? fitText(current.text, current.kind, 1.3 * options.textScale) : null);
 
   const status = $derived.by(() => {
     if (stage.video?.playing) return `Vídeo: ${stage.video.title}`;
@@ -39,15 +47,23 @@
   });
 </script>
 
-<div class="monitor">
+<div class="monitor" class:with-bg={!!backdrop} style:background={backdrop}>
   <header>
     <span class="title truncate">
-      {#if scene.kind === "slide"}{scene.title}{:else}{status}{/if}
+      {#if scene.kind !== "slide"}{status}{:else if options.showTitle}{scene.title}{/if}
     </span>
     {#if timer}
-      <span class="timer" class:warn={timer.warn} class:over={timer.over} title="Cronômetro">{timer.text}</span>
+      <span class="timer" class:limited={timer.limited} class:warn={timer.warn} class:over={timer.over}>
+        <span class="timer-label">{timer.label}</span>
+        <span class="timer-value">{timer.text}</span>
+      </span>
     {/if}
-    <span class="clock">{clockText(new Date(now))}</span>
+    {#if options.showClock}
+      <span class="clock">
+        <span class="timer-label">Agora</span>
+        <span>{clockText(new Date(now))}</span>
+      </span>
+    {/if}
   </header>
 
   {#if message}
@@ -67,10 +83,12 @@
     {/if}
   </main>
 
+  {#if options.showNext}
   <footer class:empty={!next}>
     <span class="tag">A seguir</span>
     <span class="next truncate">{next ? next.text.replace(/\n+/g, " / ") : scene.kind === "slide" ? "Fim" : "—"}</span>
   </footer>
+  {/if}
 </div>
 
 <style>
@@ -105,31 +123,62 @@
     color: rgba(255, 255, 255, 0.7);
   }
 
-  .clock {
+  .clock,
+  .timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
     font-size: 6vh;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+  }
+
+  .clock {
     color: #ffd36b;
   }
 
-  .timer {
-    padding: 0.3vh 1.2vw;
-    border-radius: 1vh;
-    font-size: 6vh;
+  .timer-label {
+    margin-bottom: 0.6vh;
+    font-size: 1.9vh;
     font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: #8fd18f;
-    background: rgba(143, 209, 143, 0.12);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  /* Cronômetro: sem tempo combinado, discreto; com, vermelho, cada vez
+     mais forte conforme acaba. */
+  .timer {
+    padding: 0.8vh 1.4vw;
+    border-radius: 1.2vh;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .timer.limited {
+    color: #ff8a80;
+    background: rgba(217, 48, 37, 0.18);
+    box-shadow: inset 0 0 0 0.25vh rgba(255, 138, 128, 0.6);
   }
 
   .timer.warn {
-    color: #ffd36b;
-    background: rgba(255, 211, 107, 0.14);
+    color: #fff;
+    background: #c62828;
+    box-shadow: none;
   }
 
   .timer.over {
     color: #fff;
     background: #d93025;
+    box-shadow: none;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    50% {
+      background: #7f1d1d;
+    }
   }
 
   /* Recado do operador: chama atenção ao chegar, depois fica parado. */
@@ -211,6 +260,14 @@
     letter-spacing: 0.05em;
     color: #000;
     background: #8fd18f;
+  }
+
+  .with-bg footer {
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .with-bg .text {
+    text-shadow: 0 0.4vh 2vh rgba(0, 0, 0, 0.6);
   }
 
   .empty .tag {

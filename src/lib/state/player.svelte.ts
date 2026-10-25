@@ -8,6 +8,7 @@ import type { Scene, Song } from "../types";
 import { live } from "./live.svelte";
 import { outputs } from "./outputs.svelte";
 import { toasts } from "./toasts.svelte";
+import { video } from "./video.svelte";
 
 const audio = new Audio();
 audio.preload = "auto";
@@ -127,6 +128,11 @@ class Player {
   async start(mode: PlayMode) {
     const song = this.song;
     if (!song) return;
+    // Um vídeo no telão cobriria a letra e tocaria junto: sai antes.
+    if (video.state) {
+      video.after = null;
+      video.stop();
+    }
     const source = mode === "voice" ? song.audio : mode === "playback" ? song.instrumental : null;
     this.mode = source ? mode : "lyrics";
     this.#times = slideTimes(song.slides, this.mode);

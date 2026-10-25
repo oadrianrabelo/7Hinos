@@ -2,10 +2,16 @@
 <script lang="ts">
   import { clockText, countdownText } from "../lib/clock";
   import { userMediaSrc } from "../lib/media";
-  import type { IdleScreen, Scene, SlideStyle } from "../lib/types";
+  import { fitText } from "../lib/slides";
+  import type { IdleScreen, Scene, ScreenStyle, SlideStyle } from "../lib/types";
   import SlideView from "./SlideView.svelte";
 
-  let { scene, style, idle }: { scene: Scene; style: SlideStyle; idle: IdleScreen } = $props();
+  let {
+    scene,
+    style,
+    idle,
+    screen,
+  }: { scene: Scene; style: SlideStyle; idle: IdleScreen; screen: ScreenStyle } = $props();
 
   // O relógio anda sozinho em cada tela, sem depender de mensagens.
   let now = $state(Date.now());
@@ -16,23 +22,62 @@
   });
 
   const logo = $derived(userMediaSrc(idle.image));
+
+  // Avisos, tela de espera e relógio seguem a aparência escolhida em
+  // "Avisos e relógio"; os hinos seguem o estilo dos slides.
+  const fonts = {
+    condensed: "var(--font-slide)",
+    sans: "var(--font-ui)",
+    serif: 'Georgia, "Times New Roman", serif',
+  };
+  const backdrop = $derived.by(() => {
+    const image = userMediaSrc(screen.backgroundImage);
+    if (image) return `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("${image}") center / cover`;
+    if (screen.background === "gradient")
+      return "radial-gradient(ellipse at 50% 35%, #1d4560 0%, #0b1d2b 70%, #050b11 100%)";
+    return screen.background;
+  });
+  const notice = $derived(scene.kind === "slide" && scene.slide.kind === "text" ? scene.slide : null);
+  const noticeSize = $derived(notice ? fitText(notice.text, "text", style.textScale) : null);
 </script>
 
-{#if scene.kind === "slide"}
+{#snippet themed(kind: string, body: import("svelte").Snippet)}
+  <div
+    class="screen {kind}"
+    style:background={backdrop}
+    style:color={screen.textColor}
+    style:--accent={screen.accentColor}
+    style:font-family={fonts[screen.font]}
+  >
+    {@render body()}
+  </div>
+{/snippet}
+
+{#if notice && noticeSize}
+  {#snippet noticeBody()}
+    {#if notice.aux}<p class="label">{notice.aux}</p>{/if}
+    <p class="notice-text" style:font-size="min({noticeSize.cqw}cqw, {noticeSize.cqh}cqh)">{notice.text}</p>
+  {/snippet}
+  {@render themed("notice", noticeBody)}
+{:else if scene.kind === "slide"}
   <SlideView slide={scene.slide} {style} />
 {:else if scene.kind === "idle"}
-  <div class="screen idle">
+  {#snippet idleBody()}
     {#if logo}<img src={logo} alt="" />{/if}
     {#if idle.text}<p class="idle-text">{idle.text}</p>{/if}
     {#if idle.showClock}<p class="corner-clock">{clockText(new Date(now))}</p>{/if}
-  </div>
+  {/snippet}
+  {@render themed("idle", idleBody)}
 {:else if scene.kind === "clock"}
-  <div class="screen clock">
-    {#if scene.label}<p class="label">{scene.label}</p>{/if}
-    <p class="time" class:done={scene.until !== null && now >= scene.until}>
-      {scene.until !== null ? countdownText(scene.until, now) : clockText(new Date(now))}
+  {@const until = scene.until}
+  {@const label = scene.label}
+  {#snippet clockBody()}
+    {#if label}<p class="label">{label}</p>{/if}
+    <p class="time" class:done={until !== null && now >= until}>
+      {until !== null ? countdownText(until, now) : clockText(new Date(now))}
     </p>
-  </div>
+  {/snippet}
+  {@render themed("clock", clockBody)}
 {:else}
   <div class="screen"></div>
 {/if}
@@ -54,11 +99,6 @@
     font-family: var(--font-slide);
   }
 
-  .idle,
-  .clock {
-    background: radial-gradient(ellipse at 50% 35%, #1d4560 0%, #0b1d2b 70%, #050b11 100%);
-  }
-
   img {
     max-width: 70cqw;
     max-height: 55cqh;
@@ -75,6 +115,16 @@
     text-wrap: balance;
   }
 
+  .notice-text {
+    max-width: 88cqw;
+    margin: 0;
+    text-align: center;
+    font-weight: 600;
+    line-height: 1.25;
+    text-wrap: balance;
+    white-space: pre-line;
+  }
+
   .corner-clock {
     position: absolute;
     right: 4cqw;
@@ -86,11 +136,12 @@
   }
 
   .label {
+    margin: 0;
     font-size: min(7cqh, 5.5cqw);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #ffc94a;
+    color: var(--accent, #ffc94a);
     text-align: center;
   }
 
@@ -103,6 +154,6 @@
   }
 
   .time.done {
-    color: #ffd36b;
+    color: var(--accent, #ffd36b);
   }
 </style>

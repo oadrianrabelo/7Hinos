@@ -2,10 +2,18 @@
 // nova, que vai inteira para as preferências.
 
 import type { SetItem } from "./types";
+import { tagInfo } from "./videoTags";
+
+const weekly = (tag: string | null | undefined) => (tagInfo(tag)?.weekly ? tag : null);
 
 export function sameItem(a: SetItem, b: SetItem): boolean {
   if (a.kind === "song" && b.kind === "song") return a.id === b.id;
-  if (a.kind === "video" && b.kind === "video") return a.path === b.path;
+  if (a.kind === "video" && b.kind === "video") {
+    // "Informativo de hoje" é um lugar na programação, não um arquivo.
+    const wa = weekly(a.tag);
+    const wb = weekly(b.tag);
+    return wa || wb ? wa === wb : a.path === b.path;
+  }
   return false;
 }
 

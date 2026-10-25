@@ -80,6 +80,10 @@ pub struct StageState {
     pub video: Option<VideoState>,
     #[serde(default)]
     pub pulpit: Pulpit,
+    /// Sobe a cada mudança. Uma tela que vê um número diferente do seu sabe
+    /// que perdeu alguma atualização e pede o estado de novo.
+    #[serde(default)]
+    pub rev: u64,
 }
 
 #[derive(Default)]
@@ -116,6 +120,19 @@ impl Stage {
         });
     }
 
+    /// Uma tela reaberta continua mostrando o vídeo que a anterior mostrava.
+    pub fn rename_output(&self, app: &AppHandle, old: &str, new: &str) {
+        self.change(app, |s| {
+            if let Some(video) = &mut s.video {
+                for target in &mut video.targets {
+                    if target == old {
+                        *target = new.to_owned();
+                    }
+                }
+            }
+        });
+    }
+
     fn change(&self, app: &AppHandle, f: impl FnOnce(&mut StageState)) {
         let snapshot = {
             let mut state = self.state.locked();
@@ -124,6 +141,7 @@ impl Stage {
             if *state == before {
                 return;
             }
+            state.rev = before.rev.wrapping_add(1);
             state.clone()
         };
         let _ = app.emit(STAGE_EVENT, snapshot);

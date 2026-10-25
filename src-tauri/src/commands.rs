@@ -701,6 +701,12 @@ pub fn output_close(app: AppHandle, label: String) -> Result<()> {
     displays::close(&app, &label)
 }
 
+// Assíncrono pelo mesmo motivo de `output_open`.
+#[tauri::command]
+pub async fn outputs_reopen(app: AppHandle) -> Result<()> {
+    displays::reopen_all(&app)
+}
+
 #[tauri::command]
 pub fn outputs_close_all(app: AppHandle) {
     displays::forget_lost(&app);

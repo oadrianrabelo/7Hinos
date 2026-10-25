@@ -1,8 +1,14 @@
 <script lang="ts">
-  import { AppWindow, Monitor, MonitorOff, MonitorPlay, MonitorSpeaker, RefreshCw, ScanEye } from "@lucide/svelte";
-  import { api } from "../lib/api";
+  import { AppWindow, Monitor, MonitorOff, MonitorPlay, MonitorSpeaker, RefreshCw, RotateCw, ScanEye } from "@lucide/svelte";
   import PageHeader from "../components/PageHeader.svelte";
+  import ProfilesPanel from "../components/ProfilesPanel.svelte";
+  import { api } from "../lib/api";
   import { outputs } from "../lib/state/outputs.svelte";
+  import { settings } from "../lib/state/settings.svelte";
+  import type { MonitorOptions } from "../lib/types";
+
+  const mon = $derived(settings.current.monitor);
+  const setMon = (patch: Partial<MonitorOptions>) => settings.save({ monitor: patch });
 
   $effect(() => {
     void outputs.refresh();
@@ -16,10 +22,15 @@
   {#snippet actions()}
     {#if outputs.outputs.length}
       <button class="btn" onclick={() => api.identifyDisplays()} title="Cada tela aberta mostra o próprio nome"><ScanEye size={15} /> Identificar telas</button>
+      <button class="btn" onclick={() => outputs.reopen()} title="Fecha e abre de novo todas as telas, nos mesmos lugares. Use se alguma travar.">
+        <RotateCw size={15} /> Reabrir telas
+      </button>
     {/if}
     <button class="btn" onclick={() => outputs.refresh()}><RefreshCw size={15} /> Atualizar</button>
   {/snippet}
 </PageHeader>
+
+<ProfilesPanel />
 
 <div class="displays">
   {#each outputs.displays as d (d.id)}
@@ -54,6 +65,45 @@
     </div>
   {/each}
 </div>
+
+<section class="monitor-options">
+  <div>
+    <h2>Tela de retorno</h2>
+    <p class="muted">O que aparece para quem canta ou prega. Vale para todas as telas de retorno.</p>
+  </div>
+  <div class="group">
+    <label class="row">
+      <span class="grow">
+        Mostrar a próxima letra
+        <span class="muted block">Embaixo, em letra menor. Desligue se o pessoal achar confuso.</span>
+      </span>
+      <input type="checkbox" class="switch" checked={mon.showNext} onchange={(e) => setMon({ showNext: e.currentTarget.checked })} />
+    </label>
+    <label class="row">
+      <span class="grow">
+        Mostrar a imagem de fundo
+        <span class="muted block">A mesma do telão, escurecida para a letra continuar fácil de ler.</span>
+      </span>
+      <input type="checkbox" class="switch" checked={mon.showBackground} onchange={(e) => setMon({ showBackground: e.currentTarget.checked })} />
+    </label>
+    <label class="row">
+      <span class="grow">Mostrar as horas</span>
+      <input type="checkbox" class="switch" checked={mon.showClock} onchange={(e) => setMon({ showClock: e.currentTarget.checked })} />
+    </label>
+    <label class="row">
+      <span class="grow">Mostrar o nome do hino ou a referência</span>
+      <input type="checkbox" class="switch" checked={mon.showTitle} onchange={(e) => setMon({ showTitle: e.currentTarget.checked })} />
+    </label>
+    <div class="row">
+      <span class="grow">Tamanho da letra</span>
+      <div class="segmented">
+        {#each [[0.85, "Menor"], [1, "Normal"], [1.2, "Maior"]] as [value, label] (value)}
+          <button aria-pressed={mon.textScale === value} onclick={() => setMon({ textScale: Number(value) })}>{label}</button>
+        {/each}
+      </div>
+    </div>
+  </div>
+</section>
 
 <section class="windowed">
   <div class="row-head">
@@ -137,6 +187,21 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  .monitor-options {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .monitor-options h2 {
+    margin: 0;
+  }
+
+  .block {
+    display: block;
   }
 
   .window-buttons {

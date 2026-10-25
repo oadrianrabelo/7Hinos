@@ -1,3 +1,5 @@
+import type { SetItem, VideoItem } from "./types";
+
 // Tipos de vídeo. Os semanais (Informativo Mundial das Missões, Provai e
 // Vede) têm um só "de hoje" por vez e ganham botão próprio.
 
@@ -36,4 +38,21 @@ export function guessTag(path: string): string | null {
   if (/informativo|missoes|mundial das missoes/.test(name)) return "missoes";
   if (/provai/.test(name)) return "provai";
   return null;
+}
+
+type VideoSetItem = Extract<SetItem, { kind: "video" }>;
+
+/** O tipo de um vídeo do culto: o guardado no item ou o do vídeo na lista. */
+export function itemTag(item: VideoSetItem, videos: VideoItem[]): VideoTag | null {
+  return tagInfo(item.tag ?? videos.find((v) => v.path === item.path)?.tag);
+}
+
+/**
+ * O vídeo a tocar: num tipo semanal, o "de hoje" daquele tipo (o culto pode ter
+ * sido montado antes de chegar o vídeo da semana).
+ */
+export function resolveVideo(item: VideoSetItem, videos: VideoItem[]): VideoItem {
+  const tag = tagInfo(item.tag);
+  const today = tag?.weekly ? videos.find((v) => v.tag === tag.id) : undefined;
+  return today ?? { path: item.path, title: item.title };
 }

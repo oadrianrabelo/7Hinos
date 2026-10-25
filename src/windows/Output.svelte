@@ -40,6 +40,29 @@
       [stage, prefs] = await Promise.all([api.stage(), api.settings(), readRole()]);
     })();
     wake();
+
+    // Rede de segurança: se um aviso do controle se perder (janela minimizada,
+    // computador lento), a tela percebe pela revisão e se acerta sozinha, sem
+    // precisar ser fechada e aberta.
+    const resync = async () => {
+      try {
+        const now = await api.stage();
+        if (!stage || now.rev !== stage.rev) stage = now;
+      } catch {
+        // O controle pode estar fechando; tenta de novo no próximo ciclo.
+      }
+    };
+    const timer = setInterval(resync, 4000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void resync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   });
 
   // O cursor some depois de parado, para não aparecer no telão.
@@ -60,12 +83,17 @@
   {#if stage && prefs}
     <ErrorBoundary where="projeção {label}" silent>
       {#if role === "monitor"}
-        <MonitorView {stage} />
+        <MonitorView {stage} options={prefs.monitor} />
       {:else if showVideo && stage.video}
         {@const v = stage.video}
-        <VideoLayer state={v} muted={v.targets[0] !== label} onerror={() => void tell("video://failed", { path: v.path, title: v.title })} />
+        <VideoLayer
+          state={v}
+          muted={v.targets[0] !== label}
+          onerror={() => void tell("video://failed", { path: v.path, title: v.title })}
+          onended={() => v.targets[0] === label && void tell("video://ended", { path: v.path })}
+        />
       {:else}
-        <SceneView scene={stage.scene} style={prefs.slide} idle={prefs.idle} />
+        <SceneView scene={stage.scene} style={prefs.slide} idle={prefs.idle} screen={prefs.screenStyle} />
       {/if}
     </ErrorBoundary>
   {/if}

@@ -66,7 +66,7 @@
   </div>
 
   <div class="block">
-    <span class="section-title"><Timer size={14} /> Cronômetro do pregador</span>
+    <span class="section-title"><Timer size={14} /> Cronômetro — quanto falta para acabar esta parte do culto</span>
     <div class="line wrap">
       <div class="segmented">
         {#each limits as [minutes, text] (text)}
@@ -75,7 +75,10 @@
       </div>
     </div>
     <div class="line">
-      <span class="clock" class:warn={shown?.warn} class:over={shown?.over}>{shown?.text ?? (limitMin ? `${limitMin}:00` : "00:00")}</span>
+      <span class="clock" class:warn={shown?.warn} class:over={shown?.over}>
+        <span class="clock-label">{shown?.label ?? (limitMin ? "Faltam" : "Tempo")}</span>
+        {shown?.text ?? (limitMin ? `${limitMin}:00` : "00:00")}
+      </span>
       <span class="grow"></span>
       {#if pulpit.running}
         <button class="btn btn-lg" onclick={() => pulpit.pause()}><Pause size={17} /> Pausar</button>
@@ -170,7 +173,17 @@
     border-color: var(--accent);
   }
 
+  .clock-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
   .clock {
+    line-height: 1.05;
     font-size: 2.2rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;

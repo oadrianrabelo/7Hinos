@@ -92,6 +92,8 @@ export const api = {
   openOutput: (displayId: string | null, role: OutputRole = "audience") => invoke<string>("output_open", { displayId, role }),
   closeOutput: (label: string) => invoke<void>("output_close", { label }),
   closeOutputs: () => invoke<void>("outputs_close_all"),
+  /** Fecha e abre de novo todas as telas, nos mesmos lugares e papéis. */
+  reopenOutputs: () => invoke<void>("outputs_reopen"),
 };
 
 export interface Events {
@@ -106,6 +108,8 @@ export interface Events {
   "displays://identify": null;
   /** Uma tela não conseguiu tocar o vídeo. */
   "video://failed": { path: string; title: string };
+  /** O vídeo chegou ao fim (avisado pela tela que toca o som). */
+  "video://ended": { path: string };
   "package://progress": { done: number; total: number };
   "bible://progress": { phase: "download" | "install"; done: number; total: number };
 }

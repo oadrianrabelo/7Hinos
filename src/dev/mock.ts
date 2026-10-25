@@ -202,6 +202,20 @@ export function install() {
             { kind: "song", id: 18, title: "Castelo Forte" },
           ],
     idle: { image: null, text: "Bem-vindos!", showClock: true },
+    monitor: { showNext: params.get("next") !== "0", showClock: true, showTitle: true, showBackground: params.get("bg") === "1", textScale: 1 },
+    screenProfiles: [
+      {
+        id: 1,
+        name: "Culto normal",
+        outputs: [
+          { displayId: "tv", displayName: "Tela 2", width: 1920, height: 1080, role: "audience" },
+          { displayId: "stage", displayName: "Tela 3", width: 1920, height: 1080, role: "monitor" },
+        ],
+      },
+      { id: 2, name: "Só o telão", outputs: [{ displayId: "tv", displayName: "Tela 2", width: 1920, height: 1080, role: "audience" }] },
+    ],
+    defaultProfile: 1,
+    screenStyle: { font: "condensed", textColor: "#ffffff", accentColor: "#ffc94a", background: "gradient", backgroundImage: null },
     notices: [
       { id: 1, title: "Santa Ceia", body: "Neste sábado, às 10h30. Prepare o coração." },
     ],
@@ -223,6 +237,7 @@ export function install() {
       params.get("pulpit") === "1"
         ? { message: "Faltam 5 minutos", timer: { elapsedMs: 26 * 60_000, startedAt: Date.now(), limitMs: 30 * 60_000 } }
         : { message: null, timer: null },
+    rev: 0,
   };
   let outputs: Output[] = [
     ...(params.get("outputs") === "1" ? [{ label: "output-1", displayId: "tv", name: "Tela 2", role: "audience" as const }] : []),
@@ -252,7 +267,13 @@ export function install() {
         case "settings_get":
           return settings;
         case "settings_update":
-          settings = { ...settings, ...a.patch, slide: { ...settings.slide, ...(a.patch.slide ?? {}) } };
+          settings = {
+            ...settings,
+            ...a.patch,
+            slide: { ...settings.slide, ...(a.patch.slide ?? {}) },
+            monitor: { ...settings.monitor, ...(a.patch.monitor ?? {}) },
+            screenStyle: { ...settings.screenStyle, ...(a.patch.screenStyle ?? {}) },
+          };
           changed("settings://changed", settings);
           return settings;
         case "catalog_check_now":
@@ -384,11 +405,11 @@ export function install() {
         case "stage_get":
           return stage;
         case "stage_show":
-          stage = { ...stage, scene: a.scene };
+          stage = { ...stage, scene: a.scene, rev: stage.rev + 1 };
           changed("stage://changed", stage);
           return;
         case "stage_pulpit":
-          stage = { ...stage, pulpit: a.pulpit };
+          stage = { ...stage, pulpit: a.pulpit, rev: stage.rev + 1 };
           changed("stage://changed", stage);
           return;
         case "displays_identify":
@@ -398,7 +419,7 @@ export function install() {
           location.search = "?onboarded=0&installed=0";
           return;
         case "stage_video":
-          stage = { ...stage, video: a.video };
+          stage = { ...stage, video: a.video, rev: stage.rev + 1 };
           changed("stage://changed", stage);
           return;
         case "displays_list":
@@ -423,6 +444,9 @@ export function install() {
           }
         case "output_close":
           outputs = outputs.filter((o) => o.label !== a.label);
+          changed("displays://changed", null);
+          return;
+        case "outputs_reopen":
           changed("displays://changed", null);
           return;
         case "outputs_close_all":

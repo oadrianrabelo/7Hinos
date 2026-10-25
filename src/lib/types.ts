@@ -75,7 +75,46 @@ export interface SlideStyle {
 /** Um item da programação do culto. */
 export type SetItem =
   | { kind: "song"; id: number; title: string }
-  | { kind: "video"; path: string; title: string };
+  /** `tag` semanal: na hora toca o vídeo "de hoje" daquele tipo. */
+  | { kind: "video"; path: string; title: string; tag?: string | null };
+
+/** O que o monitor de retorno mostra além da letra. */
+export interface MonitorOptions {
+  showNext: boolean;
+  showClock: boolean;
+  showTitle: boolean;
+  /** A mesma imagem de fundo do telão, escurecida. */
+  showBackground: boolean;
+  textScale: number;
+}
+
+/** Uma tela de um perfil; nome e tamanho ajudam a reconhecê-la depois. */
+export interface ProfileOutput {
+  displayId: string | null;
+  displayName: string;
+  width: number;
+  height: number;
+  role: OutputRole;
+}
+
+/** Combinação de telas salva com nome. */
+export interface ScreenProfile {
+  id: number;
+  name: string;
+  outputs: ProfileOutput[];
+}
+
+export type ScreenFont = "condensed" | "sans" | "serif";
+
+/** Aparência dos avisos, da tela de espera e do relógio. */
+export interface ScreenStyle {
+  font: ScreenFont;
+  textColor: string;
+  accentColor: string;
+  /** "gradient" ou uma cor #rrggbb. */
+  background: string;
+  backgroundImage: string | null;
+}
 
 export interface VideoItem {
   path: string;
@@ -96,6 +135,10 @@ export interface Settings {
   videos: VideoItem[];
   setlist: SetItem[];
   idle: IdleScreen;
+  monitor: MonitorOptions;
+  screenStyle: ScreenStyle;
+  screenProfiles: ScreenProfile[];
+  defaultProfile: number | null;
   notices: Notice[];
   bibleVersion: number | null;
   keepPlayed: boolean;
@@ -137,7 +180,11 @@ export interface Diagnostics {
 }
 
 /** Mudança parcial nas preferências (objetos aninhados também parciais). */
-export type SettingsPatch = Partial<Omit<Settings, "slide">> & { slide?: Partial<SlideStyle> };
+export type SettingsPatch = Partial<Omit<Settings, "slide" | "monitor" | "screenStyle">> & {
+  slide?: Partial<SlideStyle>;
+  monitor?: Partial<MonitorOptions>;
+  screenStyle?: Partial<ScreenStyle>;
+};
 
 /** O que baixar para usar sem internet. */
 export type Scope =
@@ -215,6 +262,8 @@ export interface StageState {
   scene: Scene;
   video: VideoState | null;
   pulpit: Pulpit;
+  /** Sobe a cada mudança; uma tela que vê outro número pede o estado de novo. */
+  rev: number;
 }
 
 export interface Display {

@@ -17,13 +17,30 @@ export function timerText(ms: number): string {
   return negative ? `-${text}` : text;
 }
 
+export interface TimerView {
+  /** "Faltam", "Passou" ou "Tempo" (sem tempo combinado). */
+  label: string;
+  text: string;
+  /** Há tempo combinado: o retorno mostra em vermelho. */
+  limited: boolean;
+  warn: boolean;
+  over: boolean;
+}
+
 /**
- * O que mostrar: com tempo combinado, o que falta (negativo depois de
- * passar); sem, o tempo corrido.
+ * O que mostrar: com tempo combinado, quanto falta (e quanto passou depois
+ * de estourar); sem, o tempo corrido.
  */
-export function timerDisplay(timer: Timer, now: number): { text: string; over: boolean; warn: boolean } {
+export function timerDisplay(timer: Timer, now: number): TimerView {
   const elapsed = elapsedMs(timer, now);
-  if (timer.limitMs === null) return { text: timerText(elapsed), over: false, warn: false };
+  if (timer.limitMs === null) return { label: "Tempo", text: timerText(elapsed), limited: false, warn: false, over: false };
   const left = timer.limitMs - elapsed;
-  return { text: timerText(left), over: left < 0, warn: left >= 0 && left <= 5 * 60_000 };
+  const over = left < 0;
+  return {
+    label: over ? "Passou" : "Faltam",
+    text: timerText(Math.abs(left)),
+    limited: true,
+    warn: !over && left <= 5 * 60_000,
+    over,
+  };
 }

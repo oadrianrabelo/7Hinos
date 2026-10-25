@@ -35,15 +35,23 @@ experiência.
 - **Monitor de retorno.** Qualquer tela pode virar o retorno de quem canta ou
   prega: letra grande sem fundo, o próximo slide e as horas. Só ali aparecem
   o **recado do operador** ("Faltam 5 minutos") e o **cronômetro do
-  pregador**, que fica amarelo nos 5 minutos finais e vermelho quando passa
-  do tempo combinado. A igreja não vê nada disso.
+  pregador**, em vermelho com "Faltam" e "Passou" quando estoura o tempo
+  combinado. A igreja não vê nada disso. Dá para esconder a próxima letra,
+  as horas ou o título, mostrar o fundo do telão e mudar o tamanho da letra,
+  em **Telas**.
 - **Telas difíceis.** Telão e retorno também abrem em janela, para telas que
   o sistema não lista direito (alguns adaptadores USB para HDMI): arraste
   para a tela e dê dois cliques. **Identificar telas** mostra o nome de cada
   uma nela mesma.
+- **Perfis de telas.** Salve combinações ("Culto normal": telão + retorno;
+  "Só retorno") e troque com um clique; o perfil com estrela abre sozinho
+  quando o app começa. Cada tela confere sozinha se está em dia com o
+  controle e se corrige; se alguma travar, **Reabrir telas** fecha e abre
+  todas nos mesmos lugares, sem parar o vídeo.
 - **Avisos, relógio e tela de espera.** Avisos da semana salvos para projetar
   com um clique, relógio, contagem regressiva ("O culto começa em 05:00") e
-  uma tela de espera com o logo e o nome da igreja.
+  uma tela de espera com o logo e o nome da igreja — com letra, cores e fundo
+  (cor ou imagem) à escolha.
 - **Bíblia.** As versões do LouvorJA (em português e espanhol), busca
   por referência ("jo 3 16", "Salmos 23:1-4") ou por palavra, versículo a
   versículo no telão. Vem do LouvorJA desktop ou é baixada uma vez.
@@ -55,7 +63,9 @@ experiência.
   (AVI, WMV, MPG…) são avisados ao adicionar, com a dica de converter.
   Cada vídeo pode ter um tipo (abertura, anúncio, alerta); o **Informativo
   Mundial das Missões** e o **Provai e Vede** da semana ganham botão próprio,
-  e o vídeo novo substitui o da semana anterior.
+  e o vídeo novo substitui o da semana anterior. No culto de hoje, "Informativo
+  de hoje" toca sempre o vídeo da semana. Com um vídeo no ar, o hino escolhido
+  pode entrar **depois do vídeo**, sozinho, ou na hora.
 - **Funciona sem internet.** Importa o LouvorJA desktop instalado no
   computador (ou copiado num pendrive): hinos, letras, fundos, músicas e
   Bíblia, sem baixar nada. Com internet, os hinos tocados ficam guardados e

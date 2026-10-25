@@ -15,8 +15,9 @@ describe("cronômetro", () => {
 
   it("com tempo combinado, mostra o que falta e avisa", () => {
     const base = { elapsedMs: 0, startedAt: 0, limitMs: 30 * 60_000 };
-    expect(timerDisplay(base, 10 * 60_000)).toEqual({ text: "20:00", over: false, warn: false });
+    expect(timerDisplay(base, 10 * 60_000)).toMatchObject({ label: "Faltam", text: "20:00", over: false, warn: false });
     expect(timerDisplay(base, 26 * 60_000).warn).toBe(true);
-    expect(timerDisplay(base, 31 * 60_000)).toEqual({ text: "-01:00", over: true, warn: false });
+    expect(timerDisplay(base, 31 * 60_000)).toMatchObject({ label: "Passou", text: "01:00", over: true, warn: false });
+    expect(timerDisplay({ ...base, limitMs: null }, 65_000)).toMatchObject({ label: "Tempo", text: "01:05", limited: false });
   });
 });
