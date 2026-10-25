@@ -18,15 +18,18 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       id: ${{ steps.create.outputs.result }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+      - id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: actions/github-script@v7
         id: create
         env:
           NOTES: |
             Instaladores de teste gerados a partir da branch `${BRANCH}`.
 
-            - **Windows**: `.exe` (recomendado) ou `.msi`. Se o Windows avisar “O Windows protegeu o computador”, clique em *Mais informações → Executar assim mesmo* (o instalador ainda não tem assinatura digital paga).
+            - **Windows**: `_x64-setup.exe` (recomendado) ou `.msi`; para computador sem internet com Windows 10 antigo, `_x64-offline-setup.exe`. Se o Windows avisar “O Windows protegeu o computador”, clique em *Mais informações → Executar assim mesmo* (o instalador ainda não tem assinatura digital paga).
             - **macOS**: `.dmg` (funciona em Mac Intel e Apple Silicon). Na primeira vez, clique com o botão direito no 7Hinos → *Abrir*. Se aparecer “está danificado”, rode no Terminal: `xattr -cr /Applications/7Hinos.app`.
             - **Linux**: `.AppImage` (qualquer distribuição), `.deb` (Ubuntu/Debian) ou `.rpm` (Fedora).
         with:
@@ -88,3 +91,18 @@ jobs:
           releaseId: ${{ needs.release.outputs.id }}
           includeUpdaterJson: false
           args: ${{ matrix.args }}
+      # Instalador alternativo com o WebView2 embutido (~180 MB a mais), para
+      # computadores sem internet que nunca tiveram o WebView2. O principal
+      # fica pequeno: o Windows 10 atualizado e o 11 já trazem o WebView2.
+      - name: Instalador sem internet (Windows)
+        if: startsWith(matrix.platform, 'windows')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ needs.release.outputs.version }}-previa.${{ github.run_number }}
+        run: |
+          npm run tauri build -- --bundles nsis --config src-tauri/tauri.offline.conf.json
+          dir=src-tauri/target/release/bundle/nsis
+          version=$(node -p "require('./package.json').version")
+          mv "$dir"/*_x64-setup.exe "$dir/7Hinos_${version}_x64-offline-setup.exe"
+          gh release upload "$TAG" "$dir/7Hinos_${version}_x64-offline-setup.exe" --clobber
