@@ -13,7 +13,7 @@ export interface VideoTag {
 export const VIDEO_TAGS: VideoTag[] = [
   { id: "missoes", label: "Informativo Mundial das Missões", short: "Informativo das Missões", weekly: true, tint: "#34a853" },
   { id: "provai", label: "Provai e Vede", short: "Provai e Vede", weekly: true, tint: "#ff9500" },
-  { id: "abertura", label: "Abertura", short: "Abertura", weekly: false, tint: "#5b57e0" },
+  { id: "abertura", label: "Abertura", short: "Abertura", weekly: false, tint: "#1f6a90" },
   { id: "anuncio", label: "Anúncio", short: "Anúncio", weekly: false, tint: "#30b0c7" },
   { id: "alerta", label: "Alerta para os irmãos", short: "Alerta", weekly: false, tint: "#ff3b30" },
 ];

@@ -63,7 +63,7 @@
       "endpoints": [
         "https://github.com/oadrianrabelo/7Hinos/releases/latest/download/latest.json"
       ],
-      "pubkey": "COLE_AQUI_A_CHAVE_PUBLICA_GERADA_COM_tauri_signer_generate",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ2NzlGRjZFMUYyNTJGRDkKUldUWkx5VWZidjk1MWxyVlFVaWlPbjZWRnN6V1VMYkNVb3ZVWnpxWGxOS01xY3R6cnhvMEg2MzgK",
       "windows": {
         "installMode": "passive"
       }

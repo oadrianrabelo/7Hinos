@@ -160,7 +160,7 @@
   }
 
   .voice {
-    background: linear-gradient(145deg, #7c78ff, #5b57e0);
+    background: linear-gradient(145deg, #3d8bb5, #1f6a90);
   }
 
   .playback {

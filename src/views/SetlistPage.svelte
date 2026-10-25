@@ -123,7 +123,7 @@
     flex: none;
     border-radius: var(--radius);
     color: #fff;
-    background: linear-gradient(145deg, #8c88ff, var(--accent));
+    background: linear-gradient(145deg, #4f9cc4, var(--accent));
   }
 
   .icon.video {

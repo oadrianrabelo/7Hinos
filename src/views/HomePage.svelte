@@ -19,7 +19,7 @@
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
 
   const shortcuts = [
-    { label: "Hinário", detail: "Hinos numerados", icon: BookOpen, route: { name: "hymnal" }, tint: "#5b57e0" },
+    { label: "Hinário", detail: "Hinos numerados", icon: BookOpen, route: { name: "hymnal" }, tint: "#1f6a90" },
     { label: "Favoritos", detail: "Os que você marcou", icon: Heart, route: { name: "favorites" }, tint: "#ff2d55" },
     { label: "Recentes", detail: "Tocados por último", icon: Clock, route: { name: "recent" }, tint: "#ff9500" },
     { label: "Vídeos", detail: "Projetar vídeos", icon: Film, route: { name: "videos" }, tint: "#30b0c7" },
