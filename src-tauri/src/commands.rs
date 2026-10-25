@@ -669,6 +669,81 @@ pub async fn system_fonts() -> Vec<String> {
         .unwrap_or_default()
 }
 
+// ── Controle pelo celular ───────────────────────────────────────────────────
+
+fn remote_start(app: &AppHandle, settings: &Settings) -> Result<u16> {
+    let state = app.state::<AppState>();
+    let emitter = app.clone();
+    state
+        .remote
+        .start(
+            settings.remote.port,
+            &settings.remote.token,
+            std::sync::Arc::new(move |command| {
+                let _ = emitter.emit(crate::remote::COMMAND_EVENT, command);
+            }),
+        )
+        .map_err(|e| Error::other(format!("Não deu para ligar o controle pelo celular: {e}")))
+}
+
+/// Garante um código de acesso; liga o servidor se estiver ligado nos ajustes.
+pub fn start_remote_if_enabled(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let settings = match state.settings.get().remote.token.is_empty() {
+        true => state
+            .settings
+            .update(|s| s.remote.token = crate::remote::new_token())
+            .unwrap_or_else(|_| state.settings.get()),
+        false => state.settings.get(),
+    };
+    if settings.remote.enabled {
+        if let Err(e) = remote_start(app, &settings) {
+            log::warn!("{e}");
+        }
+    }
+}
+
+#[tauri::command]
+pub fn remote_info(state: State<AppState>) -> crate::remote::RemoteInfo {
+    state.remote.info()
+}
+
+#[tauri::command]
+pub fn remote_enable(
+    app: AppHandle,
+    state: State<AppState>,
+    enabled: bool,
+) -> Result<crate::remote::RemoteInfo> {
+    let saved = state.settings.update(|s| s.remote.enabled = enabled)?;
+    let _ = app.emit(SETTINGS_EVENT, &saved);
+    if enabled {
+        remote_start(&app, &saved)?;
+    } else {
+        state.remote.stop();
+    }
+    Ok(state.remote.info())
+}
+
+/// Troca o código de acesso (quem tinha o QR antigo perde o acesso).
+#[tauri::command]
+pub fn remote_new_token(app: AppHandle, state: State<AppState>) -> Result<Settings> {
+    let saved = state
+        .settings
+        .update(|s| s.remote.token = crate::remote::new_token())?;
+    let _ = app.emit(SETTINGS_EVENT, &saved);
+    if state.remote.info().running {
+        state.remote.stop();
+        remote_start(&app, &saved)?;
+    }
+    Ok(saved)
+}
+
+/// A janela de controle conta o que está no ar, para o celular mostrar.
+#[tauri::command]
+pub fn remote_publish(state: State<AppState>, status: String) {
+    state.remote.publish(status);
+}
+
 // ── Apresentações (PDF, imagens, lição) ─────────────────────────────────────
 
 #[tauri::command]

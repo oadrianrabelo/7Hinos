@@ -16,6 +16,7 @@
   import { settings } from "../lib/state/settings.svelte";
   import { stage } from "../lib/state/stage.svelte";
   import { updater } from "../lib/state/updater.svelte";
+  import { remote } from "../lib/state/remote.svelte";
   import { video } from "../lib/state/video.svelte";
 
   let ready = $state(false);
@@ -24,6 +25,7 @@
   onMount(async () => {
     await Promise.all([settings.init(), catalog.init(), outputs.init(), video.init(), downloads.init()]);
     await stage.init();
+    await remote.init();
     ready = true;
     // O perfil de telas padrão abre sozinho, se nenhuma tela estiver aberta.
     const preferred = settings.current.screenProfiles.find((p) => p.id === settings.current.defaultProfile);

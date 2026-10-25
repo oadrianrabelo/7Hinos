@@ -14,6 +14,7 @@ mod library;
 mod media;
 mod media_server;
 mod package;
+mod remote;
 mod reset;
 mod settings;
 mod stage;
@@ -136,8 +137,10 @@ pub fn run() {
                 downloads: Default::default(),
                 bible: bible::Bible::new(data_dir.join("bible.db")),
                 decks: decks::Decks::new(data_dir.join(DECKS_DIR)),
+                remote: Default::default(),
             });
             commands::apply_local_sources(app.handle());
+            commands::start_remote_if_enabled(app.handle());
             commands::resolve_pending_favorites(app.handle());
 
             tauri::async_runtime::spawn(updates::run(app.handle().clone()));
@@ -217,6 +220,10 @@ pub fn run() {
             commands::lesson_quarter,
             commands::lesson_download,
             commands::system_fonts,
+            commands::remote_info,
+            commands::remote_enable,
+            commands::remote_new_token,
+            commands::remote_publish,
             commands::video_tag,
             commands::displays_identify,
             commands::reset_all,

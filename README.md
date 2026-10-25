@@ -55,6 +55,15 @@ experiência.
 - **Bíblia.** As versões do LouvorJA (em português e espanhol), busca
   por referência ("jo 3 16", "Salmos 23:1-4") ou por palavra, versículo a
   versículo no telão. Vem do LouvorJA desktop ou é baixada uma vez.
+- **Apresentações.** O PDF do pregador (ou fotos) vira slides no próprio
+  7Hinos, com setas e passador, sem abrir outro programa. Do PowerPoint: salve
+  como PDF (ou instale o LibreOffice para importar direto). A **Lição da Escola
+  Sabatina** do trimestre é baixada e aberta da mesma forma.
+- **Controle pelo celular.** Pelo Wi‑Fi da igreja, sem internet: passar
+  slides e páginas, tela preta, abrir um hino pelo número ou um item do culto.
+  Em **Ajustes → Controle pelo celular**, é só ler o QR code.
+- **Fontes.** Dez fontes livres embutidas, as instaladas no computador e
+  arquivos `.ttf`/`.otf`, para os hinos e para os avisos.
 - **Músicas da igreja.** Cadastre corinhos e hinos que não estão no acervo
   (com áudio e fundo, se quiser) ou corrija a letra de um hino; nenhuma
   atualização apaga o que a igreja fez.
@@ -155,6 +164,10 @@ src-tauri/src/            Rust: dados, disco, rede e janelas
   media_server.rs         entrega arquivos locais à interface (HTTP em 127.0.0.1)
   stage.rs                o palco: o que está sendo projetado agora
   displays.rs             monitores, telão/retorno e reconexão de telas
+  decks.rs                apresentações (páginas em imagem; PDF via pdf.js)
+  lessons.rs              Lição da Escola Sabatina (API do Sabbath School)
+  remote.rs               controle pelo celular na rede local
+  fonts.rs                fontes instaladas no computador
   settings.rs             preferências (JSON legível, alteradas por partes)
   updates.rs              vigia que mantém o acervo em dia com o LouvorJA
   contract.rs             testes contra o LouvorJA real (diários, na CI)

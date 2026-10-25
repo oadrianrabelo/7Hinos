@@ -18,6 +18,7 @@ import type {
   Output,
   OutputRole,
   Pulpit,
+  RemoteInfo,
   Deck,
   Lesson,
   LessonQuarter,
@@ -100,6 +101,10 @@ export const api = {
   lessonQuarter: (quarter?: string) => invoke<LessonQuarter>("lesson_quarter", { quarter: quarter ?? null }),
   downloadLesson: (quarter: string, lesson: Lesson) =>
     invoke<string>("lesson_download", { quarter, number: lesson.number, title: lesson.title, src: lesson.src }),
+  remoteInfo: () => invoke<RemoteInfo>("remote_info"),
+  remoteEnable: (enabled: boolean) => invoke<RemoteInfo>("remote_enable", { enabled }),
+  remoteNewToken: () => invoke<Settings>("remote_new_token"),
+  remotePublish: (status: string) => invoke<void>("remote_publish", { status }),
   /** Famílias de fonte instaladas no computador. */
   systemFonts: () => invoke<string[]>("system_fonts"),
   identifyDisplays: () => invoke<void>("displays_identify"),
@@ -129,6 +134,8 @@ export interface Events {
   "video://failed": { path: string; title: string };
   /** O vídeo chegou ao fim (avisado pela tela que toca o som). */
   "video://ended": { path: string };
+  /** Um comando do celular (próximo, anterior, tela preta, hino pelo número…). */
+  "remote://command": { action: string; index?: number; query?: string };
   "package://progress": { done: number; total: number };
   "bible://progress": { phase: "download" | "install"; done: number; total: number };
 }

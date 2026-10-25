@@ -3,6 +3,7 @@
   import { ask } from "@tauri-apps/plugin-dialog";
   import DownloadButton from "../components/DownloadButton.svelte";
   import FontPicker from "../components/FontPicker.svelte";
+  import RemotePanel from "../components/RemotePanel.svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import TransferPanel from "../components/TransferPanel.svelte";
   import SlideView from "../components/SlideView.svelte";
@@ -284,6 +285,11 @@
         <button class="btn" onclick={clearMedia} disabled={!usage}><Trash2 size={15} /> Apagar</button>
       </div>
     </div>
+  </section>
+
+  <section>
+    <h2>Controle pelo celular</h2>
+    <RemotePanel />
   </section>
 
   <section>

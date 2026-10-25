@@ -91,6 +91,19 @@ export interface MonitorOptions {
   textScale: number;
 }
 
+/** Controle pelo celular na rede local. */
+export interface RemoteSettings {
+  enabled: boolean;
+  port: number;
+  token: string;
+}
+
+export interface RemoteInfo {
+  running: boolean;
+  port: number | null;
+  addresses: string[];
+}
+
 /** Uma tela de um perfil; nome e tamanho ajudam a reconhecê-la depois. */
 export interface ProfileOutput {
   displayId: string | null;
@@ -142,6 +155,7 @@ export interface Settings {
   monitor: MonitorOptions;
   screenStyle: ScreenStyle;
   screenProfiles: ScreenProfile[];
+  remote: RemoteSettings;
   defaultProfile: number | null;
   notices: Notice[];
   bibleVersion: number | null;

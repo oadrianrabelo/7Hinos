@@ -215,6 +215,7 @@ export function install() {
       { id: 2, name: "Só o telão", outputs: [{ displayId: "tv", displayName: "Tela 2", width: 1920, height: 1080, role: "audience" }] },
     ],
     defaultProfile: 1,
+    remote: { enabled: params.get("remote") === "1", port: 7788, token: "k7m2p9qa" },
     screenStyle: { font: "condensed", textColor: "#ffffff", accentColor: "#ffc94a", background: "gradient", backgroundImage: null },
     notices: [
       { id: 1, title: "Santa Ceia", body: "Neste sábado, às 10h30. Prepare o coração." },
@@ -426,6 +427,18 @@ export function install() {
               { number: "04", title: "A fé de Abraão", src: "" },
             ],
           };
+        case "remote_info":
+          return { running: settings.remote.enabled, port: settings.remote.enabled ? 7788 : null, addresses: ["192.168.0.15"] };
+        case "remote_enable":
+          settings = { ...settings, remote: { ...settings.remote, enabled: a.enabled } };
+          changed("settings://changed", settings);
+          return { running: a.enabled, port: a.enabled ? 7788 : null, addresses: ["192.168.0.15"] };
+        case "remote_new_token":
+          settings = { ...settings, remote: { ...settings.remote, token: "n3w7ok3n" } };
+          changed("settings://changed", settings);
+          return settings;
+        case "remote_publish":
+          return;
         case "system_fonts":
           return ["Arial", "Calibri", "Cambria", "Comic Sans MS", "Georgia", "Segoe UI", "Times New Roman", "Trebuchet MS", "Verdana"];
         case "stage_pulpit":

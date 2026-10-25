@@ -105,6 +105,26 @@ pub enum SetItem {
     },
 }
 
+/// Controle pelo celular na rede local.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct RemoteSettings {
+    pub enabled: bool,
+    pub port: u16,
+    /// Código de acesso que vai no QR code; gerado na primeira vez.
+    pub token: String,
+}
+
+impl Default for RemoteSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            port: 7788,
+            token: String::new(),
+        }
+    }
+}
+
 /// Uma combinação de telas salva com nome ("Culto normal", "Só retorno").
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -237,6 +257,7 @@ pub struct Settings {
     pub monitor: MonitorOptions,
     pub screen_style: ScreenStyle,
     pub screen_profiles: Vec<ScreenProfile>,
+    pub remote: RemoteSettings,
     /// Perfil aberto sozinho quando o app inicia.
     pub default_profile: Option<u32>,
     pub notices: Vec<Notice>,
@@ -272,6 +293,7 @@ impl Default for Settings {
             monitor: MonitorOptions::default(),
             screen_style: ScreenStyle::default(),
             screen_profiles: Vec::new(),
+            remote: RemoteSettings::default(),
             default_profile: None,
             notices: Vec::new(),
             bible_version: None,
