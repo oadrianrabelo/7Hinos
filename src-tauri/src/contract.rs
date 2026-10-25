@@ -174,6 +174,32 @@ async fn online_catalog_contract() {
         ids.len()
     );
     assert!(with_audio * 10 >= ids.len() * 9, "poucas músicas com áudio");
+
+    // A interface troca Opus pelo MP3 original quando o sistema não toca Opus.
+    let mut opus_checked = 0;
+    for &id in &ids {
+        let Ok(song) = library.song(id).await else {
+            continue;
+        };
+        let Some(url) = song.audio.map(|a| a.url).filter(|u| u.ends_with(".opus")) else {
+            continue;
+        };
+        let mp3 = format!(
+            "{}.mp3",
+            url.replacen(
+                "https://files.louvorja.com.br/",
+                "https://mp3.louvorja.com.br/",
+                1
+            )
+            .trim_end_matches(".opus")
+        );
+        assert!(reachable(&mp3).await, "MP3 alternativo inexistente: {mp3}");
+        opus_checked += 1;
+        if opus_checked == 3 {
+            break;
+        }
+    }
+    println!("opus com MP3 alternativo conferidos: {opus_checked}");
     assert!(
         synced * 2 >= ids.len(),
         "poucas músicas com tempo dos slides"
