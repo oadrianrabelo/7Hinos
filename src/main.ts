@@ -1,6 +1,20 @@
 import "@fontsource-variable/inter";
 import "@fontsource/barlow-condensed/600.css";
 import "@fontsource/barlow-condensed/700.css";
+// Fontes embutidas para slides e avisos (todas livres, SIL OFL).
+import "@fontsource-variable/montserrat";
+import "@fontsource-variable/nunito";
+import "@fontsource-variable/oswald";
+import "@fontsource-variable/lora";
+import "@fontsource-variable/playfair-display";
+import "@fontsource-variable/roboto-slab";
+import "@fontsource-variable/source-serif-4";
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
+import "@fontsource/bebas-neue/400.css";
+import "@fontsource/merriweather/400.css";
+import "@fontsource/merriweather/700.css";
 import "./app.css";
 
 import { mount } from "svelte";

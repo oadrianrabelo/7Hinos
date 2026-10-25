@@ -185,7 +185,7 @@ export function install() {
     theme: (params.get("theme") as Settings["theme"]) ?? "system",
     language: "pt",
     uiScale: 1,
-    slide: { uppercase: true, textScale: 1, showImages: true, transitionMs: 450 },
+    slide: { font: "condensed", uppercase: true, textScale: 1, showImages: true, transitionMs: 450 },
     favorites: [18],
     recent: [101, 1, 18],
     videos: [
@@ -215,6 +215,7 @@ export function install() {
       { id: 2, name: "Só o telão", outputs: [{ displayId: "tv", displayName: "Tela 2", width: 1920, height: 1080, role: "audience" }] },
     ],
     defaultProfile: 1,
+    remote: { enabled: params.get("remote") === "1", port: 7788, token: "k7m2p9qa" },
     screenStyle: { font: "condensed", textColor: "#ffffff", accentColor: "#ffc94a", background: "gradient", backgroundImage: null },
     notices: [
       { id: 1, title: "Santa Ceia", body: "Neste sábado, às 10h30. Prepare o coração." },
@@ -408,6 +409,38 @@ export function install() {
           stage = { ...stage, scene: a.scene, rev: stage.rev + 1 };
           changed("stage://changed", stage);
           return;
+        case "decks_list":
+          return [
+            { id: "a1", title: "Sermão — O Bom Pastor", pages: ["pagina-001.jpg", "pagina-002.jpg", "pagina-003.jpg"], createdAt: 2, source: "pdf" },
+            { id: "b2", title: "Lição 04 — A fé de Abraão", pages: ["pagina-001.jpg", "pagina-002.jpg"], createdAt: 1, source: "lesson" },
+          ];
+        case "decks_dir":
+          return "/mock/apresentacoes";
+        case "lesson_quarter":
+          return {
+            quarter: "2026-04",
+            title: "Gênesis: o livro das origens",
+            cover: null,
+            lessons: [
+              { number: "01", title: "No princípio", src: "" },
+              { number: "02", title: "A queda", src: "" },
+              { number: "04", title: "A fé de Abraão", src: "" },
+            ],
+          };
+        case "remote_info":
+          return { running: settings.remote.enabled, port: settings.remote.enabled ? 7788 : null, addresses: ["192.168.0.15"] };
+        case "remote_enable":
+          settings = { ...settings, remote: { ...settings.remote, enabled: a.enabled } };
+          changed("settings://changed", settings);
+          return { running: a.enabled, port: a.enabled ? 7788 : null, addresses: ["192.168.0.15"] };
+        case "remote_new_token":
+          settings = { ...settings, remote: { ...settings.remote, token: "n3w7ok3n" } };
+          changed("settings://changed", settings);
+          return settings;
+        case "remote_publish":
+          return;
+        case "system_fonts":
+          return ["Arial", "Calibri", "Cambria", "Comic Sans MS", "Georgia", "Segoe UI", "Times New Roman", "Trebuchet MS", "Verdana"];
         case "stage_pulpit":
           stage = { ...stage, pulpit: a.pulpit, rev: stage.rev + 1 };
           changed("stage://changed", stage);

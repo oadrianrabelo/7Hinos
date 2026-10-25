@@ -3,14 +3,18 @@ mod catalog;
 mod commands;
 #[cfg(test)]
 mod contract;
+mod decks;
 mod displays;
 mod downloads;
 mod error;
+mod fonts;
 mod legacy;
+mod lessons;
 mod library;
 mod media;
 mod media_server;
 mod package;
+mod remote;
 mod reset;
 mod settings;
 mod stage;
@@ -68,6 +72,9 @@ fn log_panics() {
         default(info);
     }));
 }
+
+/// Pasta das apresentações dentro dos dados do app (vai no pacote de pendrive).
+pub const DECKS_DIR: &str = "apresentacoes";
 
 pub fn run() {
     log_panics();
@@ -129,8 +136,11 @@ pub fn run() {
                 watcher: Default::default(),
                 downloads: Default::default(),
                 bible: bible::Bible::new(data_dir.join("bible.db")),
+                decks: decks::Decks::new(data_dir.join(DECKS_DIR)),
+                remote: Default::default(),
             });
             commands::apply_local_sources(app.handle());
+            commands::start_remote_if_enabled(app.handle());
             commands::resolve_pending_favorites(app.handle());
 
             tauri::async_runtime::spawn(updates::run(app.handle().clone()));
@@ -198,6 +208,22 @@ pub fn run() {
             commands::outputs_close_all,
             commands::outputs_reopen,
             commands::stage_pulpit,
+            commands::decks_list,
+            commands::decks_dir,
+            commands::deck_create,
+            commands::deck_add_page,
+            commands::deck_import_images,
+            commands::deck_rename,
+            commands::deck_delete,
+            commands::pdf_read,
+            commands::office_to_pdf,
+            commands::lesson_quarter,
+            commands::lesson_download,
+            commands::system_fonts,
+            commands::remote_info,
+            commands::remote_enable,
+            commands::remote_new_token,
+            commands::remote_publish,
             commands::video_tag,
             commands::displays_identify,
             commands::reset_all,

@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
   import { clockText, countdownText } from "../lib/clock";
-  import { mediaSrc } from "../lib/media";
+  import { fileSrc, mediaSrc } from "../lib/media";
   import { backgroundPosition, fitText } from "../lib/slides";
   import { timerDisplay } from "../lib/timer";
   import type { MonitorOptions, StageState } from "../lib/types";
@@ -50,7 +50,7 @@
 <div class="monitor" class:with-bg={!!backdrop} style:background={backdrop}>
   <header>
     <span class="title truncate">
-      {#if scene.kind !== "slide"}{status}{:else if options.showTitle}{scene.title}{/if}
+      {#if scene.kind === "image"}{options.showTitle ? `${scene.title} · ${scene.page}/${scene.total}` : ""}{:else if scene.kind !== "slide"}{status}{:else if options.showTitle}{scene.title}{/if}
     </span>
     {#if timer}
       <span class="timer" class:limited={timer.limited} class:warn={timer.warn} class:over={timer.over}>
@@ -76,6 +76,8 @@
       <p class="text" class:prose={current.kind === "verse" || current.kind === "text"} style:font-size="min({size.cqh}cqh, {size.cqw}cqw)">
         {current.text}
       </p>
+    {:else if scene.kind === "image"}
+      <img class="page" src={fileSrc(scene.src)} alt="" />
     {:else if scene.kind === "clock" && scene.until !== null}
       <p class="big">{countdownText(scene.until, now)}</p>
     {:else}
@@ -83,7 +85,17 @@
     {/if}
   </main>
 
-  {#if options.showNext}
+  {#if options.showNext && scene.kind === "image"}
+    <footer class:empty={!scene.next}>
+      <span class="tag">A seguir</span>
+      {#if scene.next}
+        <img class="next-page" src={fileSrc(scene.next)} alt="" />
+        <span class="next">Página {scene.page + 1}</span>
+      {:else}
+        <span class="next">Fim</span>
+      {/if}
+    </footer>
+  {:else if options.showNext}
   <footer class:empty={!next}>
     <span class="tag">A seguir</span>
     <span class="next truncate">{next ? next.text.replace(/\n+/g, " / ") : scene.kind === "slide" ? "Fim" : "—"}</span>
@@ -260,6 +272,18 @@
     letter-spacing: 0.05em;
     color: #000;
     background: #8fd18f;
+  }
+
+  .page {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .next-page {
+    height: 8vh;
+    border-radius: 0.6vh;
+    background: #fff;
   }
 
   .with-bg footer {

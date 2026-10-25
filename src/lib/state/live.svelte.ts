@@ -10,7 +10,7 @@ export interface Presenter {
   togglePlay?(): void;
 }
 
-export type Source = "song" | "bible" | "text" | "clock";
+export type Source = "song" | "bible" | "text" | "clock" | "deck";
 
 class Live {
   source = $state<Source | null>(null);

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#173b53" />
+<title>7Hinos · Controle</title>
+<style>
+  :root {
+    --bg: #0f2433; --surface: #173b53; --surface-2: #1f4a66; --text: #f1e4c6; --muted: #9fb3c2;
+    --accent: #e8b04b; --live: #ff5a4f; --radius: 16px;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--text); min-height: 100dvh; display: flex; flex-direction: column; }
+  header { padding: max(14px, env(safe-area-inset-top)) 16px 10px; display: flex; align-items: center; gap: 10px; }
+  header .brand { font-weight: 700; letter-spacing: .02em; }
+  header .state { margin-left: auto; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+  header .state.live { background: var(--live); color: #fff; }
+  .now { margin: 0 16px; padding: 14px 16px; border-radius: var(--radius); background: var(--surface); }
+  .now .title { font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .now .text { margin-top: 6px; font-size: 20px; font-weight: 600; line-height: 1.25; min-height: 50px; white-space: pre-line; }
+  .now .pos { margin-top: 6px; font-size: 13px; color: var(--muted); }
+  .pad { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; margin: 12px 16px 0; }
+  button { font: inherit; color: inherit; border: 0; border-radius: var(--radius); background: var(--surface-2); padding: 18px 10px; font-weight: 700; font-size: 18px; cursor: pointer; }
+  button:active { transform: scale(.98); filter: brightness(1.15); }
+  .next { background: var(--accent); color: #1c1c1c; font-size: 22px; }
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 16px 0; }
+  .row button { font-size: 15px; padding: 14px 6px; }
+  .on { background: var(--live); color: #fff; }
+  h2 { margin: 22px 16px 8px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  ul { list-style: none; margin: 0 16px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  li button { width: 100%; text-align: left; font-size: 15px; font-weight: 500; padding: 12px 14px; display: flex; gap: 10px; align-items: baseline; }
+  li button .n { color: var(--muted); min-width: 1.6em; font-variant-numeric: tabular-nums; }
+  li button.current { outline: 2px solid var(--accent); }
+  .song { display: flex; gap: 8px; margin: 0 16px; }
+  .song input { flex: 1; min-width: 0; font: inherit; font-size: 20px; padding: 14px; border-radius: var(--radius); border: 0; background: var(--surface); color: var(--text); }
+  .song button { padding: 0 20px; font-size: 16px; }
+  footer { margin-top: auto; padding: 18px 16px max(18px, env(safe-area-inset-bottom)); font-size: 12px; color: var(--muted); text-align: center; }
+  .error { margin: 12px 16px 0; padding: 12px 14px; border-radius: var(--radius); background: #5c1d1d; color: #ffd9d6; display: none; }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">7Hinos</span>
+  <span class="state" id="state">conectando…</span>
+</header>
+
+<div class="error" id="error"></div>
+
+<section class="now">
+  <div class="title" id="title">—</div>
+  <div class="text" id="text"></div>
+  <div class="pos" id="pos"></div>
+</section>
+
+<div class="pad">
+  <button id="prev" aria-label="Anterior">◀ Anterior</button>
+  <button id="next" class="next" aria-label="Próximo">Próximo ▶</button>
+</div>
+<div class="row">
+  <button id="black">Tela preta</button>
+  <button id="play">Pausar</button>
+  <button id="stop">Encerrar</button>
+</div>
+
+<h2>Hino pelo número</h2>
+<form class="song" id="song">
+  <input id="number" inputmode="numeric" pattern="[0-9]*" placeholder="Ex.: 18" autocomplete="off" />
+  <button type="submit">Tocar</button>
+</form>
+
+<h2 id="slidesTitle" hidden>Partes</h2>
+<ul id="slides"></ul>
+
+<h2 id="setlistTitle" hidden>Culto de hoje</h2>
+<ul id="setlist"></ul>
+
+<footer>Controle pelo Wi‑Fi da igreja · não precisa de internet</footer>
+
+<script>
+  const key = new URLSearchParams(location.search).get("k") || "";
+  const $ = (id) => document.getElementById(id);
+  let last = "";
+
+  async function send(action, extra = {}) {
+    try {
+      const res = await fetch(`/api/cmd?k=${encodeURIComponent(key)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...extra }),
+      });
+      if (res.status === 401) throw new Error("Código de acesso inválido. Leia o QR code de novo no computador.");
+      if (navigator.vibrate) navigator.vibrate(15);
+      setTimeout(poll, 150);
+    } catch (e) { showError(e.message); }
+  }
+
+  function showError(message) {
+    $("error").textContent = message;
+    $("error").style.display = message ? "block" : "none";
+  }
+
+  function list(el, titleEl, items, current, onPick) {
+    titleEl.hidden = !items.length;
+    el.innerHTML = "";
+    items.forEach((label, i) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.innerHTML = `<span class="n">${i + 1}</span><span></span>`;
+      b.lastChild.textContent = label;
+      if (i === current) b.classList.add("current");
+      b.onclick = () => onPick(i);
+      li.appendChild(b);
+      el.appendChild(li);
+    });
+  }
+
+  function render(s) {
+    $("state").textContent = s.live ? (s.blackout ? "tela preta" : "ao vivo") : "parado";
+    $("state").classList.toggle("live", !!s.live);
+    $("title").textContent = s.title || "Nada no telão";
+    $("text").textContent = s.text || "";
+    $("pos").textContent = s.total ? `${(s.index ?? 0) + 1} de ${s.total}` : "";
+    $("black").classList.toggle("on", !!s.blackout);
+    $("play").hidden = !s.canPause;
+    $("play").textContent = s.playing ? "Pausar" : "Continuar";
+    list($("slides"), $("slidesTitle"), s.slides || [], s.index, (i) => send("goto", { index: i }));
+    list($("setlist"), $("setlistTitle"), (s.setlist || []).map((x) => x.title), s.setlistCurrent ?? -1, (i) => send("setlist", { index: i }));
+  }
+
+  async function poll() {
+    try {
+      const res = await fetch(`/api/state?k=${encodeURIComponent(key)}`, { cache: "no-store" });
+      if (res.status === 401) throw new Error("Código de acesso inválido. Leia o QR code de novo no computador.");
+      const text = await res.text();
+      showError("");
+      if (text !== last) { last = text; render(JSON.parse(text)); }
+    } catch (e) {
+      $("state").textContent = "sem conexão";
+      $("state").classList.remove("live");
+      if (e.message.includes("Código")) showError(e.message);
+    }
+  }
+
+  $("next").onclick = () => send("next");
+  $("prev").onclick = () => send("previous");
+  $("black").onclick = () => send("blackout");
+  $("play").onclick = () => send("togglePlay");
+  $("stop").onclick = () => send("stop");
+  $("song").onsubmit = (e) => {
+    e.preventDefault();
+    const n = $("number").value.trim();
+    if (n) send("song", { query: n });
+    $("number").value = "";
+    $("number").blur();
+  };
+
+  if (!key) showError("Abra pelo QR code mostrado no 7Hinos (Ajustes → Controle pelo celular).");
+  poll();
+  setInterval(poll, 1000);
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@ const weekly = (tag: string | null | undefined) => (tagInfo(tag)?.weekly ? tag :
 
 export function sameItem(a: SetItem, b: SetItem): boolean {
   if (a.kind === "song" && b.kind === "song") return a.id === b.id;
+  if (a.kind === "deck" && b.kind === "deck") return a.id === b.id;
   if (a.kind === "video" && b.kind === "video") {
     // "Informativo de hoje" é um lugar na programação, não um arquivo.
     const wa = weekly(a.tag);

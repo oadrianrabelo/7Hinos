@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BookMarked, BookOpen, Clock, Film, Heart, Library, ListMusic, Megaphone } from "@lucide/svelte";
+  import { BookMarked, BookOpen, Clock, Film, Heart, Library, ListMusic, Megaphone, Presentation } from "@lucide/svelte";
   import SearchField from "../components/SearchField.svelte";
   import SongList from "../components/SongList.svelte";
   import { api } from "../lib/api";
@@ -33,6 +33,7 @@
     { label: "Favoritos", icon: Heart, route: { name: "favorites" }, tint: "#ff2d55" },
     { label: "Tocados por último", icon: Clock, route: { name: "recent" }, tint: "#ff9500" },
     { label: "Vídeos", icon: Film, route: { name: "videos" }, tint: "#30b0c7" },
+    { label: "Apresentações e lição", icon: Presentation, route: { name: "decks" }, tint: "#ff8a00" },
   ] satisfies { label: string; icon: unknown; route: Route; tint: string }[];
 </script>
 
@@ -49,7 +50,7 @@
   {:else}
     <div class="tiles">
       {#each tiles as t (t.label)}
-        <button class="tile card" class:wide={t.route.name === "setlist"} style:--tint={t.tint} onclick={() => nav.push(t.route)}>
+        <button class="tile card" class:wide={t.route.name === "setlist"} class:full={t.route.name === "decks"} style:--tint={t.tint} onclick={() => nav.push(t.route)}>
           <span class="icon"><t.icon size={30} /></span>
           <span class="label">
             {t.label}
@@ -107,6 +108,10 @@
     transition:
       transform var(--fast) var(--ease),
       box-shadow var(--normal);
+  }
+
+  .tile.full {
+    grid-column: 1 / -1;
   }
 
   .tile.wide {

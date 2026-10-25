@@ -31,6 +31,8 @@ pub enum Theme {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct SlideStyle {
+    /// Fonte da letra dos hinos (ver [`DEFAULT_FONT`]).
+    pub font: String,
     pub uppercase: bool,
     /// Multiplicador do tamanho da letra nos slides.
     pub text_scale: f32,
@@ -42,6 +44,7 @@ pub struct SlideStyle {
 impl Default for SlideStyle {
     fn default() -> Self {
         Self {
+            font: default_font(),
             uppercase: true,
             text_scale: 1.0,
             show_images: true,
@@ -87,6 +90,11 @@ pub enum SetItem {
         id: u32,
         title: String,
     },
+    /// Uma apresentação (PDF, imagens, lição).
+    Deck {
+        id: String,
+        title: String,
+    },
     Video {
         path: String,
         title: String,
@@ -95,6 +103,26 @@ pub enum SetItem {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         tag: Option<String>,
     },
+}
+
+/// Controle pelo celular na rede local.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct RemoteSettings {
+    pub enabled: bool,
+    pub port: u16,
+    /// Código de acesso que vai no QR code; gerado na primeira vez.
+    pub token: String,
+}
+
+impl Default for RemoteSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            port: 7788,
+            token: String::new(),
+        }
+    }
 }
 
 /// Uma combinação de telas salva com nome ("Culto normal", "Só retorno").
@@ -149,21 +177,20 @@ impl Default for MonitorOptions {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ScreenFont {
-    /// A mesma letra condensada dos hinos.
-    #[default]
-    Condensed,
-    Sans,
-    Serif,
+/// Fonte padrão: a condensada dos hinos. As fontes são guardadas por nome:
+/// "condensed", "sans", "serif", uma embutida ("montserrat"…), uma do
+/// computador ("system:Arial") ou um arquivo em user-media ("file:x.ttf").
+pub const DEFAULT_FONT: &str = "condensed";
+
+fn default_font() -> String {
+    DEFAULT_FONT.into()
 }
 
 /// Aparência dos avisos, da tela de espera e do relógio no telão.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ScreenStyle {
-    pub font: ScreenFont,
+    pub font: String,
     pub text_color: String,
     /// Títulos, frase da contagem e detalhes.
     pub accent_color: String,
@@ -176,7 +203,7 @@ pub struct ScreenStyle {
 impl Default for ScreenStyle {
     fn default() -> Self {
         Self {
-            font: ScreenFont::Condensed,
+            font: default_font(),
             text_color: "#ffffff".into(),
             accent_color: "#ffc94a".into(),
             background: "gradient".into(),
@@ -230,6 +257,7 @@ pub struct Settings {
     pub monitor: MonitorOptions,
     pub screen_style: ScreenStyle,
     pub screen_profiles: Vec<ScreenProfile>,
+    pub remote: RemoteSettings,
     /// Perfil aberto sozinho quando o app inicia.
     pub default_profile: Option<u32>,
     pub notices: Vec<Notice>,
@@ -265,6 +293,7 @@ impl Default for Settings {
             monitor: MonitorOptions::default(),
             screen_style: ScreenStyle::default(),
             screen_profiles: Vec::new(),
+            remote: RemoteSettings::default(),
             default_profile: None,
             notices: Vec::new(),
             bible_version: None,

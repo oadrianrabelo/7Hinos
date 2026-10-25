@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ChevronLeft, ChevronRight, LoaderCircle, Pause, Play, Square, SunMoon } from "@lucide/svelte";
   import SlideView from "../components/SlideView.svelte";
-  import { playVideo } from "../lib/actions";
+  import { openSetItem } from "../lib/actions";
   import { nextAfter } from "../lib/setlist";
   import { setlist } from "../lib/state/setlist.svelte";
   import { formatTime } from "../lib/format";
@@ -26,7 +26,7 @@
     player.stop();
     nav.back();
     if (next.kind === "song") nav.push({ name: "song", id: next.id });
-    else void playVideo({ path: next.path, title: next.title });
+    else void openSetItem(next);
   }
 </script>
 

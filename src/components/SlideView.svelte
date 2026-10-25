@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import { ensureFont, fontFamily } from "../lib/fonts";
   import { mediaSrc } from "../lib/media";
   import { backgroundPosition, fitText } from "../lib/slides";
   import type { Slide, SlideStyle } from "../lib/types";
@@ -18,12 +19,15 @@
   const key = $derived(
     slide ? [slide.kind, slide.text, slide.aux, slide.image?.url, slide.repeat].join("|") : "black",
   );
+  // A fonte escolhida em Ajustes → Slides vale para hinos e versículos.
+  const family = $derived(fontFamily(style.font));
+  $effect(() => ensureFont(style.font));
   const image = $derived(style.showImages ? mediaSrc(slide?.image) : null);
   const size = $derived(slide ? fitText(slide.text, slide.kind, style.textScale) : null);
   const duration = $derived(animate ? style.transitionMs : 0);
 </script>
 
-<div class="frame">
+<div class="frame" style:--font-slide={family}>
   {#key key}
     <div class="layer" transition:fade={{ duration }}>
       {#if slide}

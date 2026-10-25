@@ -5,18 +5,14 @@
   import { api, errorMessage } from "../lib/api";
   import { settings } from "../lib/state/settings.svelte";
   import { toasts } from "../lib/state/toasts.svelte";
-  import type { Scene, ScreenFont, ScreenStyle } from "../lib/types";
+  import type { Scene, ScreenStyle } from "../lib/types";
+  import FontPicker from "./FontPicker.svelte";
   import SceneView from "./SceneView.svelte";
 
   const s = $derived(settings.current);
   const st = $derived(s.screenStyle);
   const save = (patch: Partial<ScreenStyle>) => settings.save({ screenStyle: patch });
 
-  const fonts: [ScreenFont, string, string][] = [
-    ["condensed", "Condensada", "var(--font-slide)"],
-    ["sans", "Moderna", "var(--font-ui)"],
-    ["serif", "Clássica", 'Georgia, "Times New Roman", serif'],
-  ];
   const textColors = [
     ["#ffffff", "Branco"],
     ["#f1e4c6", "Creme"],
@@ -96,11 +92,7 @@
     <div class="options">
       <div class="option">
         <span class="section-title">Letra</span>
-        <div class="segmented">
-          {#each fonts as [value, label, family] (value)}
-            <button aria-pressed={st.font === value} style:font-family={family} onclick={() => save({ font: value })}>{label}</button>
-          {/each}
-        </div>
+        <FontPicker value={st.font} onchange={(font) => save({ font })} sample="Santa Ceia neste sábado" />
       </div>
 
       <div class="option">

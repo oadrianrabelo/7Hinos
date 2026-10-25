@@ -18,6 +18,10 @@ import type {
   Output,
   OutputRole,
   Pulpit,
+  RemoteInfo,
+  Deck,
+  Lesson,
+  LessonQuarter,
   PackageManifest,
   Scope,
   Scene,
@@ -83,6 +87,26 @@ export const api = {
   show: (scene: Scene) => invoke<void>("stage_show", { scene }),
   setVideo: (video: VideoState | null) => invoke<void>("stage_video", { video }),
   setPulpit: (pulpit: Pulpit) => invoke<void>("stage_pulpit", { pulpit }),
+  decks: () => invoke<Deck[]>("decks_list"),
+  decksDir: () => invoke<string>("decks_dir"),
+  createDeck: (title: string, source: string) => invoke<Deck>("deck_create", { title, source }),
+  /** Página já desenhada, enviada em bytes (sem JSON). */
+  addDeckPage: (id: string, bytes: Uint8Array, ext: string) =>
+    invoke<Deck>("deck_add_page", bytes, { headers: { "deck-id": id, ext } }),
+  importImages: (title: string, paths: string[]) => invoke<Deck>("deck_import_images", { title, paths }),
+  renameDeck: (id: string, title: string) => invoke<Deck>("deck_rename", { id, title }),
+  deleteDeck: (id: string) => invoke<void>("deck_delete", { id }),
+  readPdf: (path: string) => invoke<ArrayBuffer>("pdf_read", { path }),
+  officeToPdf: (path: string) => invoke<string>("office_to_pdf", { path }),
+  lessonQuarter: (quarter?: string) => invoke<LessonQuarter>("lesson_quarter", { quarter: quarter ?? null }),
+  downloadLesson: (quarter: string, lesson: Lesson) =>
+    invoke<string>("lesson_download", { quarter, number: lesson.number, title: lesson.title, src: lesson.src }),
+  remoteInfo: () => invoke<RemoteInfo>("remote_info"),
+  remoteEnable: (enabled: boolean) => invoke<RemoteInfo>("remote_enable", { enabled }),
+  remoteNewToken: () => invoke<Settings>("remote_new_token"),
+  remotePublish: (status: string) => invoke<void>("remote_publish", { status }),
+  /** Famílias de fonte instaladas no computador. */
+  systemFonts: () => invoke<string[]>("system_fonts"),
   identifyDisplays: () => invoke<void>("displays_identify"),
   /** Apaga acervo, mídias, Bíblia, músicas e preferências, e reinicia. */
   resetAll: () => invoke<void>("reset_all"),
@@ -110,6 +134,8 @@ export interface Events {
   "video://failed": { path: string; title: string };
   /** O vídeo chegou ao fim (avisado pela tela que toca o som). */
   "video://ended": { path: string };
+  /** Um comando do celular (próximo, anterior, tela preta, hino pelo número…). */
+  "remote://command": { action: string; index?: number; query?: string };
   "package://progress": { done: number; total: number };
   "bible://progress": { phase: "download" | "install"; done: number; total: number };
 }

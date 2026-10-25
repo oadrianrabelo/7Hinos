@@ -66,6 +66,8 @@ export interface Song {
 }
 
 export interface SlideStyle {
+  /** Fonte da letra dos hinos (ver lib/fonts.ts). */
+  font: string;
   uppercase: boolean;
   textScale: number;
   showImages: boolean;
@@ -75,6 +77,7 @@ export interface SlideStyle {
 /** Um item da programação do culto. */
 export type SetItem =
   | { kind: "song"; id: number; title: string }
+  | { kind: "deck"; id: string; title: string }
   /** `tag` semanal: na hora toca o vídeo "de hoje" daquele tipo. */
   | { kind: "video"; path: string; title: string; tag?: string | null };
 
@@ -86,6 +89,19 @@ export interface MonitorOptions {
   /** A mesma imagem de fundo do telão, escurecida. */
   showBackground: boolean;
   textScale: number;
+}
+
+/** Controle pelo celular na rede local. */
+export interface RemoteSettings {
+  enabled: boolean;
+  port: number;
+  token: string;
+}
+
+export interface RemoteInfo {
+  running: boolean;
+  port: number | null;
+  addresses: string[];
 }
 
 /** Uma tela de um perfil; nome e tamanho ajudam a reconhecê-la depois. */
@@ -104,7 +120,8 @@ export interface ScreenProfile {
   outputs: ProfileOutput[];
 }
 
-export type ScreenFont = "condensed" | "sans" | "serif";
+/** Ver lib/fonts.ts: "condensed", "lora", "system:Arial", "file:x.ttf"… */
+export type ScreenFont = string;
 
 /** Aparência dos avisos, da tela de espera e do relógio. */
 export interface ScreenStyle {
@@ -138,6 +155,7 @@ export interface Settings {
   monitor: MonitorOptions;
   screenStyle: ScreenStyle;
   screenProfiles: ScreenProfile[];
+  remote: RemoteSettings;
   defaultProfile: number | null;
   notices: Notice[];
   bibleVersion: number | null;
@@ -212,6 +230,8 @@ export type Scene =
   | { kind: "black" }
   /** `next`: o slide seguinte, para o monitor de retorno. */
   | { kind: "slide"; slide: Slide; title: string; next?: Slide | null }
+  /** Página de apresentação (PDF, imagem, lição), mostrada inteira. */
+  | { kind: "image"; src: string; title: string; page: number; total: number; next?: string | null }
   /** Tela de espera (logo e texto da igreja). */
   | { kind: "idle" }
   /** Relógio, ou contagem regressiva até `until` (epoch em ms). */
@@ -343,4 +363,27 @@ export interface UserSong {
   audio: string | null;
   background: string | null;
   updatedAt: number;
+}
+
+/** Apresentação: páginas em imagem numa pasta do app. */
+export interface Deck {
+  id: string;
+  title: string;
+  /** Nomes dos arquivos, em ordem, dentro da pasta da apresentação. */
+  pages: string[];
+  createdAt: number;
+  source: string;
+}
+
+export interface Lesson {
+  number: string;
+  title: string;
+  src: string;
+}
+
+export interface LessonQuarter {
+  quarter: string;
+  title: string;
+  cover: string | null;
+  lessons: Lesson[];
 }

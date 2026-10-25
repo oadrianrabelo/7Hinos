@@ -30,6 +30,7 @@
   import { nav } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
   import { player } from "../lib/state/player.svelte";
+  import { decks } from "../lib/state/decks.svelte";
   import { pulpit } from "../lib/state/pulpit.svelte";
   import { screen } from "../lib/state/screen.svelte";
   import { stage } from "../lib/state/stage.svelte";
@@ -54,7 +55,7 @@
   const previewSlide = $derived(onBible ? bible.slide : player.slide);
   const isLive = $derived(onBible ? bible.live : player.live);
   const isBlack = $derived(onBible ? bible.blackout : player.blackout);
-  const onScreen = $derived(live.source === "text" || live.source === "clock");
+  const onScreen = $derived(live.source === "text" || live.source === "clock" || live.source === "deck");
   // Sem nada para mostrar, a prévia mostra o telão (tela de espera, preta...).
   const showStage = $derived(onScreen || (!previewSlide && !isLive));
   const nextInSetlist = $derived(
@@ -67,7 +68,7 @@
 <aside class="stage">
   <header data-tauri-drag-region>
     {#if onScreen}
-      <span class="pill live">{live.source === "clock" ? "Relógio" : "Aviso"}</span>
+      <span class="pill live">{live.source === "clock" ? "Relógio" : live.source === "deck" ? "Apresentação" : "Aviso"}</span>
     {:else if isLive}
       <span class="pill live">{isBlack ? "Tela preta" : onBible ? "Bíblia ao vivo" : "Ao vivo"}</span>
     {:else}
@@ -96,7 +97,18 @@
     {/if}
   </div>
 
-  {#if onScreen}
+  {#if live.source === "deck" && decks.deck}
+    <div class="bible-live">
+      <h3 class="truncate">{decks.deck.title} · {decks.index + 1}/{decks.deck.pages.length}</h3>
+      <div class="buttons">
+        <button class="btn btn-lg btn-icon" aria-label="Página anterior" onclick={() => decks.previous()}><ChevronLeft size={20} /></button>
+        <button class="btn btn-lg btn-primary" onclick={() => decks.next()}>Próxima <ChevronRight size={18} /></button>
+        <button class="btn btn-lg btn-icon" class:on={decks.blackout} aria-label="Tela preta" title="Tela preta (B)" onclick={() => decks.toggleBlackout()}><SunMoon size={18} /></button>
+        <button class="btn btn-lg btn-icon" aria-label="Encerrar" title="Encerrar" onclick={() => decks.stop()}><Square size={16} /></button>
+      </div>
+      <button class="btn btn-plain" onclick={() => nav.reset({ name: "decks" })}>Abrir Apresentações</button>
+    </div>
+  {:else if onScreen}
     <div class="bible-live">
       <div class="buttons">
         {#if live.source === "text"}

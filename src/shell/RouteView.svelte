@@ -4,6 +4,7 @@
   import BiblePage from "../views/BiblePage.svelte";
   import CollectionPage from "../views/CollectionPage.svelte";
   import CollectionsPage from "../views/CollectionsPage.svelte";
+  import DecksPage from "../views/DecksPage.svelte";
   import EditorPage from "../views/EditorPage.svelte";
   import MySongsPage from "../views/MySongsPage.svelte";
   import DisplaysPage from "../views/DisplaysPage.svelte";
@@ -34,6 +35,8 @@
   <EditorPage id={route.id} basedOn={route.basedOn} />
 {:else if route.name === "bible"}
   <BiblePage {simple} />
+{:else if route.name === "decks"}
+  <DecksPage {simple} />
 {:else if route.name === "screen"}
   <ScreenPage {simple} />
 {:else if route.name === "setlist"}

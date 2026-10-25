@@ -4,12 +4,16 @@
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 
+use std::path::PathBuf;
+
 use crate::bible::{BibleBook, BibleVersion, SearchHit, Verse};
 use crate::catalog::louvorja::{self, Install};
 use crate::catalog::model::{Album, Collection, Song, SongSummary};
+use crate::decks::Deck;
 use crate::displays::{self, Display, Output, Role};
 use crate::downloads;
 use crate::error::{Error, Result};
+use crate::lessons::LessonQuarter;
 use crate::library::{CatalogStatus, OfflineStatus, Scope};
 use crate::package;
 use crate::settings::{self, Settings, VideoItem};
@@ -297,6 +301,7 @@ pub fn apply_local_sources(app: &AppHandle) {
         .chain(std::iter::once(
             state.library.user().media_dir().to_path_buf(),
         ))
+        .chain(std::iter::once(state.decks.root().to_path_buf()))
         .chain(folders.music.iter().cloned())
         .chain(folders.images.iter().cloned())
         .chain(folders.covers.iter().cloned());
@@ -597,7 +602,7 @@ pub async fn package_import(app: AppHandle, path: String) -> Result<package::Man
 
 /// Arquivos de dados que viajam no pacote além do catálogo e da mídia.
 fn package_extras(data_dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-    ["bible.db", "user-songs.json"]
+    ["bible.db", "user-songs.json", crate::DECKS_DIR]
         .iter()
         .map(|n| data_dir.join(n))
         .collect()
@@ -653,6 +658,216 @@ pub fn stage_show(app: AppHandle, state: State<AppState>, scene: Scene) {
 #[tauri::command]
 pub fn stage_video(app: AppHandle, state: State<AppState>, video: Option<VideoState>) {
     state.stage.set_video(&app, video);
+}
+
+/// Famílias de fonte instaladas no computador. Lento na primeira vez em
+/// computadores com muitas fontes, por isso assíncrono.
+#[tauri::command]
+pub async fn system_fonts() -> Vec<String> {
+    tauri::async_runtime::spawn_blocking(crate::fonts::system_families)
+        .await
+        .unwrap_or_default()
+}
+
+// ── Controle pelo celular ───────────────────────────────────────────────────
+
+fn remote_start(app: &AppHandle, settings: &Settings) -> Result<u16> {
+    let state = app.state::<AppState>();
+    let emitter = app.clone();
+    state
+        .remote
+        .start(
+            settings.remote.port,
+            &settings.remote.token,
+            std::sync::Arc::new(move |command| {
+                let _ = emitter.emit(crate::remote::COMMAND_EVENT, command);
+            }),
+        )
+        .map_err(|e| Error::other(format!("Não deu para ligar o controle pelo celular: {e}")))
+}
+
+/// Garante um código de acesso; liga o servidor se estiver ligado nos ajustes.
+pub fn start_remote_if_enabled(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let settings = match state.settings.get().remote.token.is_empty() {
+        true => state
+            .settings
+            .update(|s| s.remote.token = crate::remote::new_token())
+            .unwrap_or_else(|_| state.settings.get()),
+        false => state.settings.get(),
+    };
+    if settings.remote.enabled {
+        if let Err(e) = remote_start(app, &settings) {
+            log::warn!("{e}");
+        }
+    }
+}
+
+#[tauri::command]
+pub fn remote_info(state: State<AppState>) -> crate::remote::RemoteInfo {
+    state.remote.info()
+}
+
+#[tauri::command]
+pub fn remote_enable(
+    app: AppHandle,
+    state: State<AppState>,
+    enabled: bool,
+) -> Result<crate::remote::RemoteInfo> {
+    let saved = state.settings.update(|s| s.remote.enabled = enabled)?;
+    let _ = app.emit(SETTINGS_EVENT, &saved);
+    if enabled {
+        remote_start(&app, &saved)?;
+    } else {
+        state.remote.stop();
+    }
+    Ok(state.remote.info())
+}
+
+/// Troca o código de acesso (quem tinha o QR antigo perde o acesso).
+#[tauri::command]
+pub fn remote_new_token(app: AppHandle, state: State<AppState>) -> Result<Settings> {
+    let saved = state
+        .settings
+        .update(|s| s.remote.token = crate::remote::new_token())?;
+    let _ = app.emit(SETTINGS_EVENT, &saved);
+    if state.remote.info().running {
+        state.remote.stop();
+        remote_start(&app, &saved)?;
+    }
+    Ok(saved)
+}
+
+/// A janela de controle conta o que está no ar, para o celular mostrar.
+#[tauri::command]
+pub fn remote_publish(state: State<AppState>, status: String) {
+    state.remote.publish(status);
+}
+
+// ── Apresentações (PDF, imagens, lição) ─────────────────────────────────────
+
+#[tauri::command]
+pub fn decks_list(state: State<AppState>) -> Vec<Deck> {
+    state.decks.list()
+}
+
+#[tauri::command]
+pub fn decks_dir(state: State<AppState>) -> String {
+    state.decks.root().to_string_lossy().into_owned()
+}
+
+#[tauri::command]
+pub fn deck_create(state: State<AppState>, title: String, source: String) -> Result<Deck> {
+    state.decks.create(&title, &source)
+}
+
+/// Recebe uma página já desenhada (bytes da imagem no corpo da chamada, sem
+/// passar por JSON) e a acrescenta no fim da apresentação.
+#[tauri::command]
+pub fn deck_add_page(state: State<AppState>, request: tauri::ipc::Request<'_>) -> Result<Deck> {
+    let header = |name: &str| {
+        request
+            .headers()
+            .get(name)
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_owned)
+            .ok_or_else(|| Error::other("Página sem identificação."))
+    };
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(Error::other("Página vazia."));
+    };
+    state
+        .decks
+        .add_page(&header("deck-id")?, bytes, &header("ext")?)
+}
+
+#[tauri::command]
+pub fn deck_import_images(
+    state: State<AppState>,
+    title: String,
+    paths: Vec<String>,
+) -> Result<Deck> {
+    let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+    state.decks.import_images(&title, &paths)
+}
+
+#[tauri::command]
+pub fn deck_rename(state: State<AppState>, id: String, title: String) -> Result<Deck> {
+    state.decks.rename(&id, &title)
+}
+
+#[tauri::command]
+pub fn deck_delete(state: State<AppState>, id: String) -> Result<()> {
+    state.decks.delete(&id)
+}
+
+/// Lê um PDF escolhido pela pessoa, para a interface desenhar as páginas.
+#[tauri::command]
+pub fn pdf_read(path: String) -> Result<tauri::ipc::Response> {
+    let path = PathBuf::from(path);
+    let is_pdf = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("pdf"));
+    if !is_pdf {
+        return Err(Error::other("Escolha um arquivo PDF."));
+    }
+    Ok(tauri::ipc::Response::new(std::fs::read(path)?))
+}
+
+/// PowerPoint/Impress → PDF pelo LibreOffice (se instalado). Devolve o PDF.
+#[tauri::command]
+pub async fn office_to_pdf(app: AppHandle, path: String) -> Result<String> {
+    let out = app.path().app_cache_dir()?.join("conversoes");
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::decks::office_to_pdf(std::path::Path::new(&path), &out)
+    })
+    .await
+    .map_err(|e| Error::other(e.to_string()))?
+    .map(|p| p.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub async fn lesson_quarter(
+    state: State<'_, AppState>,
+    quarter: Option<String>,
+) -> Result<LessonQuarter> {
+    let lang = state.settings.get().language.code().to_owned();
+    let quarter = quarter.unwrap_or_else(|| {
+        let today = chrono_like_today();
+        crate::lessons::quarter_of(today.0, today.1)
+    });
+    crate::lessons::quarter(&crate::lessons::client()?, &lang, &quarter).await
+}
+
+/// Baixa o PDF de uma lição para a pasta do app e devolve o caminho.
+#[tauri::command]
+pub async fn lesson_download(
+    app: AppHandle,
+    quarter: String,
+    number: String,
+    title: String,
+    src: String,
+) -> Result<String> {
+    let dest = app
+        .path()
+        .app_data_dir()?
+        .join("licoes")
+        .join(quarter.replace(['/', '\\', '.'], "_"))
+        .join(crate::lessons::file_name(&number, &title));
+    if !dest.is_file() {
+        crate::lessons::download(&crate::lessons::client()?, &src, &dest).await?;
+    }
+    Ok(dest.to_string_lossy().into_owned())
+}
+
+/// (ano, mês) de hoje, sem depender de biblioteca de datas.
+fn chrono_like_today() -> (i32, u32) {
+    let days = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() / 86_400)
+        .unwrap_or_default();
+    crate::lessons::year_month(days as i64)
 }
 
 #[tauri::command]
