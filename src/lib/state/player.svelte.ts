@@ -2,7 +2,7 @@
 // está no palco. É o único lugar que manda slides para as telas.
 
 import { api, errorMessage } from "../api";
-import { mediaSrc } from "../media";
+import { mediaSrc, mp3Fallback } from "../media";
 import { slideIndexAt, slideTimes, type PlayMode } from "../slides";
 import type { Scene, Song } from "../types";
 import { outputs } from "./outputs.svelte";
@@ -41,7 +41,16 @@ class Player {
     audio.addEventListener("playing", () => (this.loading = false));
     audio.addEventListener("ended", () => this.#finished());
     audio.addEventListener("error", () => {
-      if (!audio.getAttribute("src")) return;
+      const src = audio.getAttribute("src");
+      if (!src) return;
+      const fallback = mp3Fallback(src);
+      if (fallback) {
+        const at = audio.currentTime;
+        audio.src = fallback;
+        audio.currentTime = at;
+        void audio.play().catch(() => {});
+        return;
+      }
       this.loading = false;
       toasts.error("Não foi possível tocar o áudio. Confira a internet ou baixe o álbum.");
       this.#switchToLyrics();

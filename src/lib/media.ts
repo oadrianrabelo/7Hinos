@@ -20,3 +20,12 @@ export function mediaSrc(media: Media | null | undefined): string | null {
   if (!media) return null;
   return media.path ? fileSrc(media.path) : media.url;
 }
+
+/**
+ * O LouvorJA guarda o MP3 original de cada áudio publicado em Opus. Quando o
+ * sistema não toca Opus (macOS antigo, Linux sem plugins), tentamos o MP3.
+ */
+export function mp3Fallback(src: string): string | null {
+  const match = /^https:\/\/files\.louvorja\.com\.br\/(musics\/.+)\.opus$/i.exec(src);
+  return match ? `https://mp3.louvorja.com.br/${match[1]}.mp3` : null;
+}

@@ -61,3 +61,15 @@ describe("backgroundPosition", () => {
     expect(backgroundPosition(0)).toBe("center center");
   });
 });
+
+import { mp3Fallback } from "./media";
+
+describe("mp3Fallback", () => {
+  it("points Opus files to the original MP3", () => {
+    expect(mp3Fallback("https://files.louvorja.com.br/musics/pt/Album%201/Faixa.opus")).toBe(
+      "https://mp3.louvorja.com.br/musics/pt/Album%201/Faixa.mp3",
+    );
+    expect(mp3Fallback("https://files.louvorja.com.br/musics/pt/x.mp3")).toBeNull();
+    expect(mp3Fallback("http://127.0.0.1:1234/tok/%2Fx.opus")).toBeNull();
+  });
+});
