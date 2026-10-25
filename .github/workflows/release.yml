@@ -2,8 +2,7 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: write
@@ -15,112 +14,73 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
-
     steps:
-      - name: Release Please
-        uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  publish:
-    runs-on: windows-latest
+  build:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ""
+          - platform: macos-latest
+            args: --target universal-apple-darwin
+          - platform: ubuntu-22.04
+            args: ""
+    runs-on: ${{ matrix.platform }}
     env:
-      WINDOWS_CODESIGN_CERT_BASE64: ${{ secrets.WINDOWS_CODESIGN_CERT_BASE64 }}
-      WINDOWS_CODESIGN_CERT_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_CERT_PASSWORD }}
-
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Dependências do sistema (Linux)
+        if: startsWith(matrix.platform, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
+          node-version: 22
+          cache: npm
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          dotnet-version: "9.0.x"
+          targets: ${{ startsWith(matrix.platform, 'macos') && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Resolve release version
-        id: version
-        shell: pwsh
-        run: |
-          $tag = "${{ needs.release-please.outputs.tag_name }}".Trim()
-          if (-not $tag) {
-            throw "Tag de release nao informado pelo release-please."
-          }
-
-          if ($tag.StartsWith("v")) {
-            $tag = $tag.Substring(1)
-          }
-
-          "value=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-
-      - name: Build portable + MSI
-        shell: pwsh
-        run: |
-          pwsh .\tools\Build-Installer.ps1 `
-            -Configuration Release `
-            -VersionOverride "${{ steps.version.outputs.value }}"
-
-      - name: Optional MSI signing
-        if: ${{ env.WINDOWS_CODESIGN_CERT_BASE64 != '' && env.WINDOWS_CODESIGN_CERT_PASSWORD != '' }}
-        shell: pwsh
-        run: |
-          $pfxPath = Join-Path $env:RUNNER_TEMP "codesign.pfx"
-          [System.IO.File]::WriteAllBytes(
-            $pfxPath,
-            [System.Convert]::FromBase64String("$env:WINDOWS_CODESIGN_CERT_BASE64")
-          )
-
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
-            $pfxPath,
-            "$env:WINDOWS_CODESIGN_CERT_PASSWORD",
-            "Exportable,PersistKeySet"
-          )
-
-          Get-ChildItem .\.artifacts\installer\*.msi | ForEach-Object {
-            Set-AuthenticodeSignature `
-              -FilePath $_.FullName `
-              -Certificate $cert `
-              -TimestampServer "http://timestamp.digicert.com" `
-              -HashAlgorithm SHA256 | Out-Null
-          }
-
-      - name: Generate SHA256 sums
-        shell: pwsh
-        run: |
-          $files = @(
-            ".\.artifacts\publish\win-x64-portable.zip"
-          )
-
-          $msi = Get-ChildItem .\.artifacts\installer\*.msi |
-            Sort-Object LastWriteTimeUtc -Descending |
-            Select-Object -First 1
-
-          if (-not $msi) {
-            throw "Nenhum MSI encontrado para gerar hash."
-          }
-
-          $files += $msi.FullName
-
-          New-Item -ItemType Directory -Path .\.artifacts -Force | Out-Null
-
-          $hashLines = foreach ($file in $files) {
-            $hash = (Get-FileHash -Path $file -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$hash *$([System.IO.Path]::GetFileName($file))"
-          }
-
-          Set-Content -Path .\.artifacts\SHA256SUMS.txt -Value $hashLines -Encoding utf8
-
-      - name: Upload artifacts na Release
-        uses: softprops/action-gh-release@v2
+      - uses: swatinem/rust-cache@v2
         with:
-          tag_name: ${{ needs.release-please.outputs.tag_name }}
-          files: |
-            ./.artifacts/publish/win-x64-portable.zip
-            ./.artifacts/installer/*.msi
-            ./.artifacts/installer/*.cab
-            ./.artifacts/SHA256SUMS.txt
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      # Sem a chave de assinatura o app é publicado mesmo assim, só que sem
+      # os arquivos da atualização automática.
+      - name: Atualização automática
+        id: updater
+        shell: bash
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "args=--config src-tauri/tauri.release.conf.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::TAURI_SIGNING_PRIVATE_KEY não configurada: release sem atualização automática."
+          fi
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ needs.release-please.outputs.tag_name }}
+          releaseName: 7Hinos ${{ needs.release-please.outputs.tag_name }}
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+          args: ${{ matrix.args }} ${{ steps.updater.outputs.args }}

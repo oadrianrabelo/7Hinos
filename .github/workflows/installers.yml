@@ -1,0 +1,90 @@
+# Instaladores de prévia para testar uma branch antes do release oficial.
+# Roda manualmente (Actions → Instaladores → Run workflow) ou em qualquer push
+# cuja mensagem de commit contenha "[instaladores]".
+name: Instaladores
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  # Cria a pré-release antes, para os três builds anexarem nela sem disputa.
+  release:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[instaladores]')
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.create.outputs.result }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/github-script@v7
+        id: create
+        env:
+          NOTES: |
+            Instaladores de teste gerados a partir da branch `${BRANCH}`.
+
+            - **Windows**: `.exe` (recomendado) ou `.msi`. Se o Windows avisar “O Windows protegeu o computador”, clique em *Mais informações → Executar assim mesmo* (o instalador ainda não tem assinatura digital paga).
+            - **macOS**: `.dmg` (funciona em Mac Intel e Apple Silicon). Na primeira vez, clique com o botão direito no 7Hinos → *Abrir*. Se aparecer “está danificado”, rode no Terminal: `xattr -cr /Applications/7Hinos.app`.
+            - **Linux**: `.AppImage` (qualquer distribuição), `.deb` (Ubuntu/Debian) ou `.rpm` (Fedora).
+        with:
+          script: |
+            const version = require('./package.json').version;
+            const run = context.runNumber;
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${version}-previa.${run}`,
+              name: `7Hinos ${version} (prévia ${run})`,
+              body: process.env.NOTES.replace('${BRANCH}', context.ref.replace('refs/heads/', '')),
+              target_commitish: context.sha,
+              prerelease: true,
+            });
+            return data.id;
+
+  build:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ""
+          - platform: macos-latest
+            args: --target universal-apple-darwin
+          - platform: ubuntu-22.04
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependências do sistema (Linux)
+        if: startsWith(matrix.platform, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ startsWith(matrix.platform, 'macos') && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.release.outputs.id }}
+          includeUpdaterJson: false
+          args: ${{ matrix.args }}
