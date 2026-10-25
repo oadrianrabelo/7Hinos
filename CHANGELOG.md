@@ -5,192 +5,24 @@
 
 ### ⚠ BREAKING CHANGES
 
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo
+* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo. Favoritos, vídeos, tema e músicas baixadas da versão anterior são trazidos na primeira abertura. ([3a535f8](https://github.com/oadrianrabelo/7Hinos/commit/3a535f8dd2a09654a7ccd3b61f5ddba13c1a3797))
 
 ### ✨ Novas Funcionalidades
 
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([3a535f8](https://github.com/oadrianrabelo/7Hinos/commit/3a535f8dd2a09654a7ccd3b61f5ddba13c1a3797))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([e86316b](https://github.com/oadrianrabelo/7Hinos/commit/e86316be082ec00b35b028516684ce26579ae75f))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([a999692](https://github.com/oadrianrabelo/7Hinos/commit/a9996923ce813c38b7ec7ece706af2ac31607b73))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([2c744fe](https://github.com/oadrianrabelo/7Hinos/commit/2c744fed74459a7412f97ec1671eca1666fc9646))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([1f426f5](https://github.com/oadrianrabelo/7Hinos/commit/1f426f5b632450d056340cbf7e650dc0034e1ea7))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([edabe9e](https://github.com/oadrianrabelo/7Hinos/commit/edabe9eede754ecb948f98dcdc18f47d7f5dd900))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([925cc4d](https://github.com/oadrianrabelo/7Hinos/commit/925cc4d997f060d3ae25ef4b166d4fd8331d0241))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([9e3eafb](https://github.com/oadrianrabelo/7Hinos/commit/9e3eafb78198d814b325bdfeed46ff00a1b98d29))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([9d9f17b](https://github.com/oadrianrabelo/7Hinos/commit/9d9f17be9c857f29378739f54eedce4c9ddcf854))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([4b54e51](https://github.com/oadrianrabelo/7Hinos/commit/4b54e514142b468d07a340171e79b8455dc03c0e))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([562c936](https://github.com/oadrianrabelo/7Hinos/commit/562c936344af625fcec9177b984e6fb42f5cb9ae))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([6522693](https://github.com/oadrianrabelo/7Hinos/commit/6522693aa6f08f2237464f2954de9fe9b6e90a34))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([b455625](https://github.com/oadrianrabelo/7Hinos/commit/b4556258c479799e1664c631810cea8eaff8f061))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([2029897](https://github.com/oadrianrabelo/7Hinos/commit/202989744e8a5b9c6a15161968a462b4c46dfdcd))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([fa57fea](https://github.com/oadrianrabelo/7Hinos/commit/fa57fea7047f4362330f15c15e074ac2c8b0d5f3))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([c8a9baf](https://github.com/oadrianrabelo/7Hinos/commit/c8a9baf362fe36a92434582e23b317efeeb7aba5))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([9da0682](https://github.com/oadrianrabelo/7Hinos/commit/9da0682401fc0ded2541654f9144a9128f0b9b08))
-* 7Hinos reescrito em Tauri (Rust + Svelte) para Windows, macOS e Linux, com modo simples e modo completo ([5d17edb](https://github.com/oadrianrabelo/7Hinos/commit/5d17edbc98d242b338a873e8dee4d5572a77439c))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([3a535f8](https://github.com/oadrianrabelo/7Hinos/commit/3a535f8dd2a09654a7ccd3b61f5ddba13c1a3797))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([e86316b](https://github.com/oadrianrabelo/7Hinos/commit/e86316be082ec00b35b028516684ce26579ae75f))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([a999692](https://github.com/oadrianrabelo/7Hinos/commit/a9996923ce813c38b7ec7ece706af2ac31607b73))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([2c744fe](https://github.com/oadrianrabelo/7Hinos/commit/2c744fed74459a7412f97ec1671eca1666fc9646))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([1f426f5](https://github.com/oadrianrabelo/7Hinos/commit/1f426f5b632450d056340cbf7e650dc0034e1ea7))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([edabe9e](https://github.com/oadrianrabelo/7Hinos/commit/edabe9eede754ecb948f98dcdc18f47d7f5dd900))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([925cc4d](https://github.com/oadrianrabelo/7Hinos/commit/925cc4d997f060d3ae25ef4b166d4fd8331d0241))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([9e3eafb](https://github.com/oadrianrabelo/7Hinos/commit/9e3eafb78198d814b325bdfeed46ff00a1b98d29))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([9d9f17b](https://github.com/oadrianrabelo/7Hinos/commit/9d9f17be9c857f29378739f54eedce4c9ddcf854))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([4b54e51](https://github.com/oadrianrabelo/7Hinos/commit/4b54e514142b468d07a340171e79b8455dc03c0e))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([562c936](https://github.com/oadrianrabelo/7Hinos/commit/562c936344af625fcec9177b984e6fb42f5cb9ae))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([6522693](https://github.com/oadrianrabelo/7Hinos/commit/6522693aa6f08f2237464f2954de9fe9b6e90a34))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([b455625](https://github.com/oadrianrabelo/7Hinos/commit/b4556258c479799e1664c631810cea8eaff8f061))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([2029897](https://github.com/oadrianrabelo/7Hinos/commit/202989744e8a5b9c6a15161968a462b4c46dfdcd))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([fa57fea](https://github.com/oadrianrabelo/7Hinos/commit/fa57fea7047f4362330f15c15e074ac2c8b0d5f3))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([c8a9baf](https://github.com/oadrianrabelo/7Hinos/commit/c8a9baf362fe36a92434582e23b317efeeb7aba5))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([9da0682](https://github.com/oadrianrabelo/7Hinos/commit/9da0682401fc0ded2541654f9144a9128f0b9b08))
-* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet ([5d17edb](https://github.com/oadrianrabelo/7Hinos/commit/5d17edbc98d242b338a873e8dee4d5572a77439c))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([3a535f8](https://github.com/oadrianrabelo/7Hinos/commit/3a535f8dd2a09654a7ccd3b61f5ddba13c1a3797))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([e86316b](https://github.com/oadrianrabelo/7Hinos/commit/e86316be082ec00b35b028516684ce26579ae75f))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([a999692](https://github.com/oadrianrabelo/7Hinos/commit/a9996923ce813c38b7ec7ece706af2ac31607b73))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([2c744fe](https://github.com/oadrianrabelo/7Hinos/commit/2c744fed74459a7412f97ec1671eca1666fc9646))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([1f426f5](https://github.com/oadrianrabelo/7Hinos/commit/1f426f5b632450d056340cbf7e650dc0034e1ea7))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([edabe9e](https://github.com/oadrianrabelo/7Hinos/commit/edabe9eede754ecb948f98dcdc18f47d7f5dd900))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([925cc4d](https://github.com/oadrianrabelo/7Hinos/commit/925cc4d997f060d3ae25ef4b166d4fd8331d0241))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([9e3eafb](https://github.com/oadrianrabelo/7Hinos/commit/9e3eafb78198d814b325bdfeed46ff00a1b98d29))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([9d9f17b](https://github.com/oadrianrabelo/7Hinos/commit/9d9f17be9c857f29378739f54eedce4c9ddcf854))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([4b54e51](https://github.com/oadrianrabelo/7Hinos/commit/4b54e514142b468d07a340171e79b8455dc03c0e))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([562c936](https://github.com/oadrianrabelo/7Hinos/commit/562c936344af625fcec9177b984e6fb42f5cb9ae))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([6522693](https://github.com/oadrianrabelo/7Hinos/commit/6522693aa6f08f2237464f2954de9fe9b6e90a34))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([b455625](https://github.com/oadrianrabelo/7Hinos/commit/b4556258c479799e1664c631810cea8eaff8f061))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([2029897](https://github.com/oadrianrabelo/7Hinos/commit/202989744e8a5b9c6a15161968a462b4c46dfdcd))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([fa57fea](https://github.com/oadrianrabelo/7Hinos/commit/fa57fea7047f4362330f15c15e074ac2c8b0d5f3))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([c8a9baf](https://github.com/oadrianrabelo/7Hinos/commit/c8a9baf362fe36a92434582e23b317efeeb7aba5))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([9da0682](https://github.com/oadrianrabelo/7Hinos/commit/9da0682401fc0ded2541654f9144a9128f0b9b08))
-* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera ([5d17edb](https://github.com/oadrianrabelo/7Hinos/commit/5d17edbc98d242b338a873e8dee4d5572a77439c))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([3a535f8](https://github.com/oadrianrabelo/7Hinos/commit/3a535f8dd2a09654a7ccd3b61f5ddba13c1a3797))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([e86316b](https://github.com/oadrianrabelo/7Hinos/commit/e86316be082ec00b35b028516684ce26579ae75f))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([a999692](https://github.com/oadrianrabelo/7Hinos/commit/a9996923ce813c38b7ec7ece706af2ac31607b73))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([2c744fe](https://github.com/oadrianrabelo/7Hinos/commit/2c744fed74459a7412f97ec1671eca1666fc9646))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([1f426f5](https://github.com/oadrianrabelo/7Hinos/commit/1f426f5b632450d056340cbf7e650dc0034e1ea7))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([edabe9e](https://github.com/oadrianrabelo/7Hinos/commit/edabe9eede754ecb948f98dcdc18f47d7f5dd900))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([925cc4d](https://github.com/oadrianrabelo/7Hinos/commit/925cc4d997f060d3ae25ef4b166d4fd8331d0241))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([9e3eafb](https://github.com/oadrianrabelo/7Hinos/commit/9e3eafb78198d814b325bdfeed46ff00a1b98d29))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([9d9f17b](https://github.com/oadrianrabelo/7Hinos/commit/9d9f17be9c857f29378739f54eedce4c9ddcf854))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([4b54e51](https://github.com/oadrianrabelo/7Hinos/commit/4b54e514142b468d07a340171e79b8455dc03c0e))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([562c936](https://github.com/oadrianrabelo/7Hinos/commit/562c936344af625fcec9177b984e6fb42f5cb9ae))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([6522693](https://github.com/oadrianrabelo/7Hinos/commit/6522693aa6f08f2237464f2954de9fe9b6e90a34))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([b455625](https://github.com/oadrianrabelo/7Hinos/commit/b4556258c479799e1664c631810cea8eaff8f061))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([2029897](https://github.com/oadrianrabelo/7Hinos/commit/202989744e8a5b9c6a15161968a462b4c46dfdcd))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([fa57fea](https://github.com/oadrianrabelo/7Hinos/commit/fa57fea7047f4362330f15c15e074ac2c8b0d5f3))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([c8a9baf](https://github.com/oadrianrabelo/7Hinos/commit/c8a9baf362fe36a92434582e23b317efeeb7aba5))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([9da0682](https://github.com/oadrianrabelo/7Hinos/commit/9da0682401fc0ded2541654f9144a9128f0b9b08))
-* busca por número com Enter para tocar, e Apagar tudo em Ajustes ([5d17edb](https://github.com/oadrianrabelo/7Hinos/commit/5d17edbc98d242b338a873e8dee4d5572a77439c))
-* logo mais simples e o app nas cores do logo ([1a76422](https://github.com/oadrianrabelo/7Hinos/commit/1a7642210b4431ef5c55b18a784addcd9bc604a8))
-* logo novo, mais próximo da estética adventista ([e81148f](https://github.com/oadrianrabelo/7Hinos/commit/e81148f6236b3068b50888f03464823fc37e6413))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([3a535f8](https://github.com/oadrianrabelo/7Hinos/commit/3a535f8dd2a09654a7ccd3b61f5ddba13c1a3797))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([e86316b](https://github.com/oadrianrabelo/7Hinos/commit/e86316be082ec00b35b028516684ce26579ae75f))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([a999692](https://github.com/oadrianrabelo/7Hinos/commit/a9996923ce813c38b7ec7ece706af2ac31607b73))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([2c744fe](https://github.com/oadrianrabelo/7Hinos/commit/2c744fed74459a7412f97ec1671eca1666fc9646))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([1f426f5](https://github.com/oadrianrabelo/7Hinos/commit/1f426f5b632450d056340cbf7e650dc0034e1ea7))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([edabe9e](https://github.com/oadrianrabelo/7Hinos/commit/edabe9eede754ecb948f98dcdc18f47d7f5dd900))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([925cc4d](https://github.com/oadrianrabelo/7Hinos/commit/925cc4d997f060d3ae25ef4b166d4fd8331d0241))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([9e3eafb](https://github.com/oadrianrabelo/7Hinos/commit/9e3eafb78198d814b325bdfeed46ff00a1b98d29))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([9d9f17b](https://github.com/oadrianrabelo/7Hinos/commit/9d9f17be9c857f29378739f54eedce4c9ddcf854))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([4b54e51](https://github.com/oadrianrabelo/7Hinos/commit/4b54e514142b468d07a340171e79b8455dc03c0e))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([562c936](https://github.com/oadrianrabelo/7Hinos/commit/562c936344af625fcec9177b984e6fb42f5cb9ae))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([6522693](https://github.com/oadrianrabelo/7Hinos/commit/6522693aa6f08f2237464f2954de9fe9b6e90a34))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([b455625](https://github.com/oadrianrabelo/7Hinos/commit/b4556258c479799e1664c631810cea8eaff8f061))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([2029897](https://github.com/oadrianrabelo/7Hinos/commit/202989744e8a5b9c6a15161968a462b4c46dfdcd))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([fa57fea](https://github.com/oadrianrabelo/7Hinos/commit/fa57fea7047f4362330f15c15e074ac2c8b0d5f3))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([c8a9baf](https://github.com/oadrianrabelo/7Hinos/commit/c8a9baf362fe36a92434582e23b317efeeb7aba5))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([9da0682](https://github.com/oadrianrabelo/7Hinos/commit/9da0682401fc0ded2541654f9144a9128f0b9b08))
-* migra favoritos, vídeos, tema e músicas baixadas da versão anterior ([5d17edb](https://github.com/oadrianrabelo/7Hinos/commit/5d17edbc98d242b338a873e8dee4d5572a77439c))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([3a535f8](https://github.com/oadrianrabelo/7Hinos/commit/3a535f8dd2a09654a7ccd3b61f5ddba13c1a3797))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([e86316b](https://github.com/oadrianrabelo/7Hinos/commit/e86316be082ec00b35b028516684ce26579ae75f))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([a999692](https://github.com/oadrianrabelo/7Hinos/commit/a9996923ce813c38b7ec7ece706af2ac31607b73))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([2c744fe](https://github.com/oadrianrabelo/7Hinos/commit/2c744fed74459a7412f97ec1671eca1666fc9646))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([1f426f5](https://github.com/oadrianrabelo/7Hinos/commit/1f426f5b632450d056340cbf7e650dc0034e1ea7))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([edabe9e](https://github.com/oadrianrabelo/7Hinos/commit/edabe9eede754ecb948f98dcdc18f47d7f5dd900))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([925cc4d](https://github.com/oadrianrabelo/7Hinos/commit/925cc4d997f060d3ae25ef4b166d4fd8331d0241))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([9e3eafb](https://github.com/oadrianrabelo/7Hinos/commit/9e3eafb78198d814b325bdfeed46ff00a1b98d29))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([9d9f17b](https://github.com/oadrianrabelo/7Hinos/commit/9d9f17be9c857f29378739f54eedce4c9ddcf854))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([4b54e51](https://github.com/oadrianrabelo/7Hinos/commit/4b54e514142b468d07a340171e79b8455dc03c0e))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([562c936](https://github.com/oadrianrabelo/7Hinos/commit/562c936344af625fcec9177b984e6fb42f5cb9ae))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([6522693](https://github.com/oadrianrabelo/7Hinos/commit/6522693aa6f08f2237464f2954de9fe9b6e90a34))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([b455625](https://github.com/oadrianrabelo/7Hinos/commit/b4556258c479799e1664c631810cea8eaff8f061))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([2029897](https://github.com/oadrianrabelo/7Hinos/commit/202989744e8a5b9c6a15161968a462b4c46dfdcd))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([fa57fea](https://github.com/oadrianrabelo/7Hinos/commit/fa57fea7047f4362330f15c15e074ac2c8b0d5f3))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([c8a9baf](https://github.com/oadrianrabelo/7Hinos/commit/c8a9baf362fe36a92434582e23b317efeeb7aba5))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([9da0682](https://github.com/oadrianrabelo/7Hinos/commit/9da0682401fc0ded2541654f9144a9128f0b9b08))
-* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela ([5d17edb](https://github.com/oadrianrabelo/7Hinos/commit/5d17edbc98d242b338a873e8dee4d5572a77439c))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([3a535f8](https://github.com/oadrianrabelo/7Hinos/commit/3a535f8dd2a09654a7ccd3b61f5ddba13c1a3797))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([e86316b](https://github.com/oadrianrabelo/7Hinos/commit/e86316be082ec00b35b028516684ce26579ae75f))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([a999692](https://github.com/oadrianrabelo/7Hinos/commit/a9996923ce813c38b7ec7ece706af2ac31607b73))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([2c744fe](https://github.com/oadrianrabelo/7Hinos/commit/2c744fed74459a7412f97ec1671eca1666fc9646))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([1f426f5](https://github.com/oadrianrabelo/7Hinos/commit/1f426f5b632450d056340cbf7e650dc0034e1ea7))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([edabe9e](https://github.com/oadrianrabelo/7Hinos/commit/edabe9eede754ecb948f98dcdc18f47d7f5dd900))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([925cc4d](https://github.com/oadrianrabelo/7Hinos/commit/925cc4d997f060d3ae25ef4b166d4fd8331d0241))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([9e3eafb](https://github.com/oadrianrabelo/7Hinos/commit/9e3eafb78198d814b325bdfeed46ff00a1b98d29))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([9d9f17b](https://github.com/oadrianrabelo/7Hinos/commit/9d9f17be9c857f29378739f54eedce4c9ddcf854))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([4b54e51](https://github.com/oadrianrabelo/7Hinos/commit/4b54e514142b468d07a340171e79b8455dc03c0e))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([562c936](https://github.com/oadrianrabelo/7Hinos/commit/562c936344af625fcec9177b984e6fb42f5cb9ae))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([6522693](https://github.com/oadrianrabelo/7Hinos/commit/6522693aa6f08f2237464f2954de9fe9b6e90a34))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([b455625](https://github.com/oadrianrabelo/7Hinos/commit/b4556258c479799e1664c631810cea8eaff8f061))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([2029897](https://github.com/oadrianrabelo/7Hinos/commit/202989744e8a5b9c6a15161968a462b4c46dfdcd))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([fa57fea](https://github.com/oadrianrabelo/7Hinos/commit/fa57fea7047f4362330f15c15e074ac2c8b0d5f3))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([c8a9baf](https://github.com/oadrianrabelo/7Hinos/commit/c8a9baf362fe36a92434582e23b317efeeb7aba5))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([9da0682](https://github.com/oadrianrabelo/7Hinos/commit/9da0682401fc0ded2541654f9144a9128f0b9b08))
-* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas ([5d17edb](https://github.com/oadrianrabelo/7Hinos/commit/5d17edbc98d242b338a873e8dee4d5572a77439c))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([3a535f8](https://github.com/oadrianrabelo/7Hinos/commit/3a535f8dd2a09654a7ccd3b61f5ddba13c1a3797))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([e86316b](https://github.com/oadrianrabelo/7Hinos/commit/e86316be082ec00b35b028516684ce26579ae75f))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([a999692](https://github.com/oadrianrabelo/7Hinos/commit/a9996923ce813c38b7ec7ece706af2ac31607b73))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([2c744fe](https://github.com/oadrianrabelo/7Hinos/commit/2c744fed74459a7412f97ec1671eca1666fc9646))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([1f426f5](https://github.com/oadrianrabelo/7Hinos/commit/1f426f5b632450d056340cbf7e650dc0034e1ea7))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([edabe9e](https://github.com/oadrianrabelo/7Hinos/commit/edabe9eede754ecb948f98dcdc18f47d7f5dd900))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([925cc4d](https://github.com/oadrianrabelo/7Hinos/commit/925cc4d997f060d3ae25ef4b166d4fd8331d0241))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([9e3eafb](https://github.com/oadrianrabelo/7Hinos/commit/9e3eafb78198d814b325bdfeed46ff00a1b98d29))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([9d9f17b](https://github.com/oadrianrabelo/7Hinos/commit/9d9f17be9c857f29378739f54eedce4c9ddcf854))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([4b54e51](https://github.com/oadrianrabelo/7Hinos/commit/4b54e514142b468d07a340171e79b8455dc03c0e))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([562c936](https://github.com/oadrianrabelo/7Hinos/commit/562c936344af625fcec9177b984e6fb42f5cb9ae))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([6522693](https://github.com/oadrianrabelo/7Hinos/commit/6522693aa6f08f2237464f2954de9fe9b6e90a34))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([b455625](https://github.com/oadrianrabelo/7Hinos/commit/b4556258c479799e1664c631810cea8eaff8f061))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([2029897](https://github.com/oadrianrabelo/7Hinos/commit/202989744e8a5b9c6a15161968a462b4c46dfdcd))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([fa57fea](https://github.com/oadrianrabelo/7Hinos/commit/fa57fea7047f4362330f15c15e074ac2c8b0d5f3))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([c8a9baf](https://github.com/oadrianrabelo/7Hinos/commit/c8a9baf362fe36a92434582e23b317efeeb7aba5))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([9da0682](https://github.com/oadrianrabelo/7Hinos/commit/9da0682401fc0ded2541654f9144a9128f0b9b08))
-* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje ([5d17edb](https://github.com/oadrianrabelo/7Hinos/commit/5d17edbc98d242b338a873e8dee4d5572a77439c))
-
-
-### 🐛 Correções
-
-* cruz do logo encostada na Bíblia e com pontas retas ([d26f6b6](https://github.com/oadrianrabelo/7Hinos/commit/d26f6b6d48a5bb313ca20702b8ea9c0c940a0f3b))
-* cruz do logo maior em relação à Bíblia ([30587c3](https://github.com/oadrianrabelo/7Hinos/commit/30587c3f8ee854c6cddf64cc8f2948a9faecaa7e))
-* pontas da cruz do logo levemente arredondadas ([9348d6e](https://github.com/oadrianrabelo/7Hinos/commit/9348d6e0cdc9f42040fc84e50c8f9cf2a878be41))
+* acervo do LouvorJA sempre em dia, importação do LouvorJA desktop e pacote de pendrive para igrejas sem internet
+* slides sincronizados com a música em várias telas, e vídeos em uma ou mais telas
+* Bíblia, músicas da igreja, culto de hoje, avisos, relógio, contagem regressiva e tela de espera
+* monitor de retorno com recado e cronômetro do pregador, reconexão de telas e telas em janela
+* tipos de vídeo, com botões do Informativo Mundial das Missões e do Provai e Vede de hoje
+* busca por número com Enter para tocar, e Apagar tudo em Ajustes
+* logo novo (Bíblia aberta e cruz) e o app nas cores do logo
+* atualização automática assinada ([ba2f2e6](https://github.com/oadrianrabelo/7Hinos/commit/ba2f2e623dfe951d601fd451fe77567f3432ce59))
 
 
 ### 👷 CI/CD
 
 * **release:** latest.json montado no fim, release conferida e notas de instalação ([a1da495](https://github.com/oadrianrabelo/7Hinos/commit/a1da4953522a50ba01cc5d321150a6ee6cfe00ad))
-* **release:** tags vX.Y.Z e primeira versão oficial como 1.0.0 ([cfa0f2a](https://github.com/oadrianrabelo/7Hinos/commit/cfa0f2a4900f7857d3ff4fb4dcf84de7679714ff))
-
-
-### 🔧 Manutenção
-
-* chave da atualização automática e release mais robusto ([ba2f2e6](https://github.com/oadrianrabelo/7Hinos/commit/ba2f2e623dfe951d601fd451fe77567f3432ce59))
-* **updater:** chave pública da atualização automática ([a220168](https://github.com/oadrianrabelo/7Hinos/commit/a220168c2cf43ed2c7d1b5f1afb99b1a9e575495))
+* **release:** tags vX.Y.Z ([cfa0f2a](https://github.com/oadrianrabelo/7Hinos/commit/cfa0f2a4900f7857d3ff4fb4dcf84de7679714ff))
 
 ## [0.4.0](https://github.com/oadrianrabelo/7Hinos/compare/v0.3.0...v0.4.0) (2026-03-17)
 
