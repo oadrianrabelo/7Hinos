@@ -238,8 +238,11 @@ O workflow **Instaladores** gera uma pré-release com os instaladores das três
 plataformas a partir de qualquer branch: rode-o em *Actions → Instaladores →
 Run workflow* ou inclua `[instaladores]` na mensagem do commit.
 
-- **Windows**: o instalador já traz o WebView2 embutido, para funcionar em
-  computadores sem internet.
+- **Windows**: o `_x64-setup.exe` é pequeno e só baixa o WebView2 se o
+  computador não tiver (o Windows 11 e o 10 atualizado já têm). Para um
+  computador sem internet que nunca teve o WebView2, há o
+  `_x64-offline-setup.exe`, com ele embutido. O instalador é em português, com
+  a identidade do app (imagens em `src-tauri/icons/installer/`).
 - **macOS**: app universal (Intel e Apple Silicon), sem assinatura da Apple.
   Na primeira vez: botão direito → *Abrir*.
 

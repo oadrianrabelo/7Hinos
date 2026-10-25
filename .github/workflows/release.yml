@@ -92,6 +92,22 @@ jobs:
           includeUpdaterJson: false
           args: ${{ matrix.args }} ${{ steps.updater.outputs.args }}
 
+      # Instalador alternativo com o WebView2 embutido (~180 MB a mais), para
+      # computadores sem internet que nunca tiveram o WebView2. O principal
+      # fica pequeno: o Windows 10 atualizado e o 11 já trazem o WebView2.
+      - name: Instalador sem internet (Windows)
+        if: startsWith(matrix.platform, 'windows')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          npm run tauri build -- --bundles nsis --config src-tauri/tauri.offline.conf.json
+          dir=src-tauri/target/release/bundle/nsis
+          version=$(node -p "require('./package.json').version")
+          mv "$dir"/*_x64-setup.exe "$dir/7Hinos_${version}_x64-offline-setup.exe"
+          gh release upload "$TAG" "$dir/7Hinos_${version}_x64-offline-setup.exe" --clobber
+
   # Confere a release, monta o latest.json da atualização automática e
   # completa as notas com instruções de instalação.
   publish:
@@ -114,6 +130,7 @@ jobs:
             // 1. Os instaladores das três plataformas precisam estar lá.
             const expected = {
               "Windows (.exe)": /_x64-setup\.exe$/,
+              "Windows sem internet (.exe)": /_x64-offline-setup\.exe$/,
               "Windows (.msi)": /_x64_.*\.msi$/,
               "macOS (.dmg)": /_universal\.dmg$/,
               "Linux (.AppImage)": /_amd64\.AppImage$/,
@@ -169,7 +186,7 @@ jobs:
               const howto = [
                 marker,
                 "### Como instalar",
-                "- **Windows**: baixe o `.exe` (recomendado) ou o `.msi`. O instalador já traz tudo para funcionar sem internet. Se aparecer “O Windows protegeu o computador”, clique em *Mais informações → Executar assim mesmo*.",
+                "- **Windows**: baixe o `_x64-setup.exe` (recomendado, poucos MB). Se o computador **não tem internet** e é um Windows 10 antigo, sem atualizações, baixe o `_x64-offline-setup.exe`, que já traz o WebView2. Se aparecer “O Windows protegeu o computador”, clique em *Mais informações → Executar assim mesmo*.",
                 "- **macOS** (Intel e Apple Silicon): baixe o `.dmg`. Na primeira vez, clique com o botão direito no 7Hinos → *Abrir*. Se aparecer “está danificado”, rode no Terminal: `xattr -cr /Applications/7Hinos.app`.",
                 "- **Linux**: `.AppImage` (qualquer distribuição), `.deb` (Ubuntu/Debian) ou `.rpm` (Fedora).",
                 "",
