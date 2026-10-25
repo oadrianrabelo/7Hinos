@@ -80,6 +80,8 @@ export type SetItem =
 export interface VideoItem {
   path: string;
   title: string;
+  /** Tipo ("missoes", "provai", "abertura"…); ver lib/videoTags.ts. */
+  tag?: string | null;
 }
 
 export interface Settings {

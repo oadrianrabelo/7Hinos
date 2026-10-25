@@ -197,6 +197,7 @@ pub fn run() {
             commands::output_close,
             commands::outputs_close_all,
             commands::stage_pulpit,
+            commands::video_tag,
             commands::displays_identify,
             commands::reset_all,
         ])

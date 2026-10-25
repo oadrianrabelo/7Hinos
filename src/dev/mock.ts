@@ -190,7 +190,7 @@ export function install() {
     recent: [101, 1, 18],
     videos: [
       { path: "/Users/igreja/Videos/Abertura Escola Sabatina.mp4", title: "Abertura Escola Sabatina" },
-      { path: "/Users/igreja/Videos/Informativo Mundial das Missões.mp4", title: "Informativo Mundial das Missões" },
+      { path: "/Users/igreja/Videos/Informativo Mundial das Missões.mp4", title: "Informativo Mundial das Missões", tag: "missoes" },
     ],
     setlist:
       params.get("setlist") === "0"
@@ -269,6 +269,17 @@ export function install() {
         case "videos_add":
         case "videos_remove":
           return settings;
+        case "video_tag": {
+          const weekly = ["missoes", "provai"].includes(a.tag);
+          settings = {
+            ...settings,
+            videos: settings.videos.map((v) =>
+              v.path === a.path ? { ...v, tag: a.tag } : weekly && v.tag === a.tag ? { ...v, tag: null } : v,
+            ),
+          };
+          changed("settings://changed", settings);
+          return settings;
+        }
         case "catalog_status":
           return status();
         case "catalog_sync":

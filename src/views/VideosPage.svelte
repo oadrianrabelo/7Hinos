@@ -13,6 +13,7 @@
   import { video } from "../lib/state/video.svelte";
   import type { VideoItem } from "../lib/types";
   import { formatWarning, VIDEO_EXTENSIONS } from "../lib/videoFormats";
+  import { guessTag, tagInfo, VIDEO_TAGS, WEEKLY_TAGS } from "../lib/videoTags";
 
   let { simple = false }: { simple?: boolean } = $props();
 
@@ -40,6 +41,13 @@
     }
     const warning = paths.map(formatWarning).find((w) => w !== null);
     if (warning) toasts.show(warning, "info", undefined, 12_000);
+    // "Informativo…" e "Provai e Vede…" viram os de hoje sozinhos.
+    for (const path of paths) {
+      const tag = guessTag(path);
+      if (!tag) continue;
+      await setTag(path, tag);
+      toasts.show(`“${tagInfo(tag)?.label}” de hoje atualizado.`, "success");
+    }
   }
 
   function play(item: VideoItem) {
@@ -52,6 +60,19 @@
     chosen = next;
     if (video.state) video.setTargets(next);
   }
+
+  async function setTag(path: string, tag: string | null) {
+    try {
+      settings.value = await api.tagVideo(path, tag);
+    } catch (e) {
+      toasts.error(errorMessage(e));
+    }
+  }
+
+  /** O vídeo "de hoje" de cada tipo semanal. */
+  const weekly = $derived(
+    WEEKLY_TAGS.map((tag) => ({ tag, item: settings.current.videos.find((v) => v.tag === tag.id) ?? null })),
+  );
 
   const live = $derived(video.state);
   const progress = $derived(video.duration ? (video.position / video.duration) * 100 : 0);
@@ -125,6 +146,21 @@
   </section>
 {/if}
 
+<section class="weekly">
+  {#each weekly as { tag, item } (tag.id)}
+    <div class="week card" style:--tint={tag.tint}>
+      <span class="week-icon"><Film size={22} /></span>
+      <span class="week-info">
+        <span class="week-label">{tag.label} <span class="muted">de hoje</span></span>
+        <span class="truncate muted">{item ? item.title : "Escolha o vídeo na lista abaixo, em “Tipo”."}</span>
+      </span>
+      {#if item}
+        <button class="btn btn-primary" class:btn-lg={simple} onclick={() => play(item)}><Play size={15} fill="currentColor" /> Exibir</button>
+      {/if}
+    </div>
+  {/each}
+</section>
+
 <section class="targets">
   <span class="section-title">Exibir em</span>
   <div class="chips">
@@ -142,12 +178,28 @@
   <ul class="videos">
     {#each settings.current.videos as item (item.path)}
       {@const inSetlist = setlist.has({ kind: "video", ...item })}
+      {@const tag = tagInfo(item.tag)}
       <li class="video" class:playing={live?.path === item.path}>
         <span class="thumb"><Film size={20} /></span>
         <span class="info">
-          <span class="truncate name">{item.title}</span>
+          <span class="truncate name">
+            {item.title}
+            {#if tag}<span class="tag" style:--tint={tag.tint}>{tag.short}{tag.weekly ? " · hoje" : ""}</span>{/if}
+          </span>
           <span class="truncate path">{item.path}</span>
         </span>
+        <select
+          class="kind"
+          aria-label="Tipo do vídeo"
+          title="Tipo do vídeo"
+          value={item.tag ?? ""}
+          onchange={(e) => setTag(item.path, e.currentTarget.value || null)}
+        >
+          <option value="">Tipo…</option>
+          {#each VIDEO_TAGS as t (t.id)}
+            <option value={t.id}>{t.short}{t.weekly ? " (de hoje)" : ""}</option>
+          {/each}
+        </select>
         <button
           class="btn btn-plain btn-icon"
           class:on={inSetlist}
@@ -173,6 +225,66 @@
 {/if}
 
 <style>
+  .weekly {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .week {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 0.8rem 0.9rem;
+  }
+
+  .week-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: var(--radius);
+    color: #fff;
+    background: var(--tint);
+  }
+
+  .week-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .week-label {
+    font-weight: 600;
+  }
+
+  .tag {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--tint);
+    vertical-align: middle;
+  }
+
+  .kind {
+    flex: none;
+    max-width: 11rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.85rem;
+  }
+
   .player {
     display: grid;
     grid-template-columns: minmax(14rem, 22rem) 1fr;

@@ -55,6 +55,28 @@ impl Default for SlideStyle {
 pub struct VideoItem {
     pub path: String,
     pub title: String,
+    /// Tipo do vídeo ("missoes", "provai", "abertura"...). Os semanais têm um
+    /// só "de hoje" por vez; ver [`WEEKLY_VIDEO_TAGS`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+}
+
+/// Vídeos que mudam toda semana: marcar um novo tira a marca do anterior.
+pub const WEEKLY_VIDEO_TAGS: [&str; 2] = ["missoes", "provai"];
+
+/// Marca o tipo de um vídeo. Num tipo semanal, ele passa a ser o único.
+pub fn tag_video(videos: &mut [VideoItem], path: &str, tag: Option<String>) {
+    if let Some(t) = tag.as_deref().filter(|t| WEEKLY_VIDEO_TAGS.contains(t)) {
+        for v in videos
+            .iter_mut()
+            .filter(|v| v.path != path && v.tag.as_deref() == Some(t))
+        {
+            v.tag = None;
+        }
+    }
+    if let Some(v) = videos.iter_mut().find(|v| v.path == path) {
+        v.tag = tag;
+    }
 }
 
 /// Um item da programação do culto.
@@ -247,6 +269,40 @@ impl SettingsStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn video(path: &str, tag: Option<&str>) -> VideoItem {
+        VideoItem {
+            path: path.into(),
+            title: path.into(),
+            tag: tag.map(Into::into),
+        }
+    }
+
+    #[test]
+    fn weekly_tag_moves_to_the_new_video() {
+        let mut videos = vec![
+            video("a.mp4", Some("missoes")),
+            video("b.mp4", Some("abertura")),
+            video("c.mp4", None),
+        ];
+        tag_video(&mut videos, "c.mp4", Some("missoes".into()));
+        assert_eq!(videos[0].tag, None);
+        assert_eq!(videos[2].tag.as_deref(), Some("missoes"));
+
+        // Tipos de evento podem se repetir.
+        tag_video(&mut videos, "a.mp4", Some("abertura".into()));
+        assert_eq!(videos[1].tag.as_deref(), Some("abertura"));
+        assert_eq!(videos[0].tag.as_deref(), Some("abertura"));
+
+        tag_video(&mut videos, "a.mp4", None);
+        assert_eq!(videos[0].tag, None);
+    }
+
+    #[test]
+    fn old_videos_without_tag_still_read() {
+        let v: VideoItem = serde_json::from_str(r#"{"path":"x.mp4","title":"X"}"#).unwrap();
+        assert_eq!(v.tag, None);
+    }
 
     #[test]
     fn recent_list_is_unique_newest_first_and_bounded() {

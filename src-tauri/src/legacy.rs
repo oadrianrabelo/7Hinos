@@ -70,6 +70,7 @@ pub fn read(database: &Path, lang: Lang) -> Result<Legacy> {
             .map(|r| VideoItem {
                 path: text(&r[0]),
                 title: text(&r[1]),
+                tag: None,
             })
             .collect();
     }
@@ -188,6 +189,7 @@ mod tests {
         settings.videos.push(VideoItem {
             path: "C:\\v\\a.mp4".into(),
             title: "A".into(),
+            tag: None,
         });
         apply(&mut settings, legacy);
         assert!(settings.legacy_migrated);

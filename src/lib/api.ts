@@ -42,6 +42,7 @@ export const api = {
   toggleFavorite: (id: number) => invoke<Settings>("favorite_toggle", { id }),
   addVideos: (paths: string[]) => invoke<Settings>("videos_add", { paths }),
   removeVideo: (path: string) => invoke<Settings>("videos_remove", { path }),
+  tagVideo: (path: string, tag: string | null) => invoke<Settings>("video_tag", { path, tag }),
 
   catalogStatus: () => invoke<CatalogStatus>("catalog_status"),
   syncCatalog: (force = false) => invoke<CatalogStatus>("catalog_sync", { force }),

@@ -130,6 +130,7 @@ pub fn export(
                 videos.push(VideoItem {
                     path: name,
                     title: video.title.clone(),
+                    tag: video.tag.clone(),
                 });
             }
             _ => videos.push(video.clone()),
@@ -369,6 +370,7 @@ mod tests {
             videos: vec![VideoItem {
                 path: video.to_string_lossy().into(),
                 title: "Abertura".into(),
+                tag: Some("abertura".into()),
             }],
             ..Settings::default()
         };

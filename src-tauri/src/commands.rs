@@ -144,9 +144,24 @@ pub fn videos_add(app: AppHandle, state: State<AppState>, paths: Vec<String>) ->
             s.videos.push(VideoItem {
                 title: file_title(&path),
                 path,
+                tag: None,
             });
         }
     })?;
+    let _ = app.emit(SETTINGS_EVENT, &saved);
+    Ok(saved)
+}
+
+#[tauri::command]
+pub fn video_tag(
+    app: AppHandle,
+    state: State<AppState>,
+    path: String,
+    tag: Option<String>,
+) -> Result<Settings> {
+    let saved = state
+        .settings
+        .update(|s| crate::settings::tag_video(&mut s.videos, &path, tag))?;
     let _ = app.emit(SETTINGS_EVENT, &saved);
     Ok(saved)
 }
