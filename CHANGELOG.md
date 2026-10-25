@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.1.0...v1.2.0) (2026-10-25)
+
+
+### ✨ Novas Funcionalidades
+
+* retorno configurável, hino depois do vídeo, etiquetas no culto e aparência dos avisos ([d65a136](https://github.com/oadrianrabelo/7Hinos/commit/d65a1368c309adcdd1a0435debd7aed2d1565f52))
+* retorno configurável, perfis de telas, hino depois do vídeo e aparência dos avisos ([83859c0](https://github.com/oadrianrabelo/7Hinos/commit/83859c0eef234a9175bf5eb4fd2b0c07980283dd))
+* **telas:** perfis, reabrir telas, ressincronização e fundo no retorno ([085e0f5](https://github.com/oadrianrabelo/7Hinos/commit/085e0f53f378a543df38e28f1e8f3ec690a6a2f3))
+
 ## [1.1.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.0.0...v1.1.0) (2026-10-25)
 
 
