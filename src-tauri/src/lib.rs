@@ -9,6 +9,7 @@ mod legacy;
 mod library;
 mod media;
 mod media_server;
+mod package;
 mod settings;
 mod stage;
 mod state;
@@ -161,6 +162,9 @@ pub fn run() {
             commands::album,
             commands::song,
             commands::song_played,
+            commands::package_inspect,
+            commands::package_export,
+            commands::package_import,
             commands::offline_status,
             commands::songs_available,
             commands::download_start,

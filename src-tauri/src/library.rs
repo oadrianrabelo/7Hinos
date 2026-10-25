@@ -80,6 +80,7 @@ const EXTRA_COLLECTIONS: [(u32, &str, &str); 2] = [
 ];
 
 pub struct Library {
+    data_dir: PathBuf,
     store: Store,
     remote: Remote,
     media: MediaCache,
@@ -102,6 +103,7 @@ impl Library {
             .build()
             .expect("cliente HTTP");
         Self {
+            data_dir: data_dir.clone(),
             store: Store::new(data_dir.join("catalog")),
             remote: Remote::new(client.clone(), api),
             media: MediaCache::new(data_dir.join("media"), client),
@@ -113,6 +115,37 @@ impl Library {
 
     pub fn media(&self) -> &MediaCache {
         &self.media
+    }
+
+    pub fn data_dir(&self) -> &std::path::Path {
+        &self.data_dir
+    }
+
+    pub fn catalog_dir(&self) -> &std::path::Path {
+        self.store.dir()
+    }
+
+    /// Instala o catálogo de uma pasta (a `acervo/` de um pacote de pendrive).
+    pub async fn import_catalog_dir(&self, dir: PathBuf, lang: Lang) -> Result<()> {
+        let _guard = self.sync_lock.lock().await;
+        let store = Store::new(self.store.dir().to_path_buf());
+        tokio::task::spawn_blocking(move || -> Result<()> {
+            let source = Store::new(dir.clone());
+            let mut entries = Vec::new();
+            for entry in std::fs::read_dir(&dir)?.flatten() {
+                let name = entry.file_name().to_string_lossy().into_owned();
+                if let Some(key) = name.strip_suffix(".json") {
+                    if let Some(bytes) = source.read(key) {
+                        entries.push((key.to_owned(), bytes));
+                    }
+                }
+            }
+            store.install_entries(&entries, source.version().unwrap_or(0))?;
+            Ok(())
+        })
+        .await
+        .map_err(|e| Error::other(e.to_string()))??;
+        self.load(lang)
     }
 
     /// (Re)carrega as listas do idioma. Sem catálogo baixado, fica vazio.

@@ -13,6 +13,7 @@ import type {
   Install,
   OfflineStatus,
   Output,
+  PackageManifest,
   Scope,
   Scene,
   Settings,
@@ -48,6 +49,10 @@ export const api = {
   album: (id: number) => invoke<Album>("album", { id }),
   song: (id: number) => invoke<Song>("song", { id }),
   songPlayed: (id: number) => invoke<void>("song_played", { id }),
+  inspectPackage: (path: string) => invoke<PackageManifest>("package_inspect", { path }),
+  exportPackage: (dir: string, includeVideos: boolean) =>
+    invoke<PackageManifest>("package_export", { dir, includeVideos }),
+  importPackage: (path: string) => invoke<PackageManifest>("package_import", { path }),
   offlineStatus: (scope: Scope) => invoke<OfflineStatus>("offline_status", { scope }),
   songsAvailable: (ids: number[]) => invoke<number[]>("songs_available", { ids }),
   startDownload: (scope: Scope, label: string) => invoke<number>("download_start", { scope, label }),
@@ -73,6 +78,7 @@ export interface Events {
   "catalog://progress": { done: number; total: number | null };
   "download://progress": DownloadProgress;
   "displays://changed": null;
+  "package://progress": { done: number; total: number };
 }
 
 export function on<K extends keyof Events>(

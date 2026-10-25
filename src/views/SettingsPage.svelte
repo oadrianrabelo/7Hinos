@@ -2,6 +2,7 @@
   import { ClipboardCopy, FileText, FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Trash2, X } from "@lucide/svelte";
   import DownloadButton from "../components/DownloadButton.svelte";
   import PageHeader from "../components/PageHeader.svelte";
+  import TransferPanel from "../components/TransferPanel.svelte";
   import SlideView from "../components/SlideView.svelte";
   import { api } from "../lib/api";
   import { errorMessage } from "../lib/api";
@@ -264,6 +265,12 @@
         <button class="btn" onclick={clearMedia} disabled={!usage}><Trash2 size={15} /> Apagar</button>
       </div>
     </div>
+  </section>
+
+  <section>
+    <h2>Levar para outro computador</h2>
+    <p class="muted">Para a igreja sem internet: prepare tudo em casa e leve num pendrive.</p>
+    <TransferPanel />
   </section>
 
   <section>

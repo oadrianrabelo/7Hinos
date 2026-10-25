@@ -297,6 +297,17 @@ export function install() {
         }
         case "download_cancel":
           return;
+        case "package_inspect":
+          return { format: 1, createdAt: Math.floor(Date.now() / 1000) - 86400, appVersion: "0.5.0", catalogVersion: 185, songs: 1889, mediaFiles: 812, videos: 2, bytes: 3_400_000_000 };
+        case "package_export":
+        case "package_import":
+          for (let done = 0; done <= 20; done += 2) {
+            changed("package://progress", { done, total: 20 });
+            await new Promise((r) => setTimeout(r, 150));
+          }
+          installed = true;
+          settings = { ...settings, onboarded: true };
+          return { format: 1, createdAt: Math.floor(Date.now() / 1000), appVersion: "0.5.0", catalogVersion: 185, songs: 1889, mediaFiles: 812, videos: 2, bytes: 3_400_000_000 };
         case "media_usage":
           return 734_003_200;
         case "stage_get":

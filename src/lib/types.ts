@@ -190,3 +190,16 @@ export interface Output {
   displayId: string | null;
   name: string;
 }
+
+/** O que um pacote de pendrive contém. */
+export interface PackageManifest {
+  format: number;
+  /** Epoch em segundos. */
+  createdAt: number;
+  appVersion: string;
+  catalogVersion: number | null;
+  songs: number;
+  mediaFiles: number;
+  videos: number;
+  bytes: number;
+}

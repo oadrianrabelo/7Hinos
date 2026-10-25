@@ -10,12 +10,14 @@ use crate::displays::{self, Display, Output};
 use crate::downloads;
 use crate::error::{Error, Result};
 use crate::library::{CatalogStatus, OfflineStatus, Scope};
+use crate::package;
 use crate::settings::{self, Settings, VideoItem};
 use crate::stage::{Scene, StageState, VideoState};
 use crate::state::AppState;
 
 pub const SETTINGS_EVENT: &str = "settings://changed";
 pub const CATALOG_EVENT: &str = "catalog://changed";
+pub const PACKAGE_EVENT: &str = "package://progress";
 pub const CATALOG_PROGRESS_EVENT: &str = "catalog://progress";
 
 const SEARCH_LIMIT: usize = 60;
@@ -356,6 +358,107 @@ pub fn song_played(app: AppHandle, state: State<AppState>, id: u32) -> Result<()
         });
     }
     Ok(())
+}
+
+/// O que um pacote de pendrive contém, para a pessoa confirmar antes.
+#[tauri::command]
+pub fn package_inspect(path: String) -> Result<package::Manifest> {
+    package::inspect(std::path::Path::new(&path))
+}
+
+/// Grava o pacote do pendrive, avisando o progresso por `package://progress`.
+#[tauri::command]
+pub async fn package_export(
+    app: AppHandle,
+    dir: String,
+    include_videos: bool,
+) -> Result<package::Manifest> {
+    let state = app.state::<AppState>();
+    let library = &state.library;
+    let settings = state.settings.get();
+    let catalog = library.catalog_dir().to_path_buf();
+    let media = library.media().root().to_path_buf();
+    let extras = package_extras(library.data_dir());
+    let version = app.package_info().version.to_string();
+    let catalog_version = library.status().version;
+    let emitter = app.clone();
+    let manifest = tauri::async_runtime::spawn_blocking(move || {
+        let sources = package::Sources {
+            catalog: &catalog,
+            media: &media,
+            extras,
+        };
+        package::export(
+            std::path::Path::new(&dir),
+            &sources,
+            &settings,
+            include_videos,
+            &version,
+            catalog_version,
+            |p| {
+                let _ = emitter.emit(PACKAGE_EVENT, p);
+            },
+        )
+    })
+    .await
+    .map_err(|e| Error::other(e.to_string()))?
+    .inspect_err(|e| log::warn!("exportação do pacote falhou: {e}"))?;
+    log::info!("pacote exportado: {manifest:?}");
+    Ok(manifest)
+}
+
+/// Traz um pacote de pendrive: catálogo (se for mais novo), mídia, extras,
+/// vídeos e o conteúdo montado no outro computador.
+#[tauri::command]
+pub async fn package_import(app: AppHandle, path: String) -> Result<package::Manifest> {
+    let state = app.state::<AppState>();
+    let library = &state.library;
+    let media = library.media().root().to_path_buf();
+    let data_dir = library.data_dir().to_path_buf();
+    let local_version = library.status().version;
+    let emitter = app.clone();
+    let imported = tauri::async_runtime::spawn_blocking(move || {
+        package::import(
+            std::path::Path::new(&path),
+            &media,
+            &data_dir,
+            local_version,
+            |p| {
+                let _ = emitter.emit(PACKAGE_EVENT, p);
+            },
+        )
+    })
+    .await
+    .map_err(|e| Error::other(e.to_string()))?
+    .inspect_err(|e| log::warn!("importação do pacote falhou: {e}"))?;
+
+    let lang = state.settings.get().language;
+    if let Some(dir) = imported.catalog {
+        library.import_catalog_dir(dir, lang).await?;
+    }
+    for video in &imported.content.videos {
+        state
+            .media_server
+            .allow_file(std::path::Path::new(&video.path));
+    }
+    let saved = state.settings.update(|s| {
+        package::merge_content(s, imported.content);
+        s.onboarded = true;
+    })?;
+    apply_local_sources(&app);
+    resolve_pending_favorites(&app);
+    let _ = app.emit(SETTINGS_EVENT, &saved);
+    emit_catalog(&app, true);
+    log::info!("pacote importado: {:?}", imported.manifest);
+    Ok(imported.manifest)
+}
+
+/// Arquivos de dados que viajam no pacote além do catálogo e da mídia.
+fn package_extras(data_dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    ["bible.db", "user-songs.json"]
+        .iter()
+        .map(|n| data_dir.join(n))
+        .collect()
 }
 
 /// Quanto de um escopo já está no computador.

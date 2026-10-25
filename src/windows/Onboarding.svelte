@@ -3,32 +3,26 @@
   instalado no computador, tudo funciona sem internet.
 -->
 <script lang="ts">
-  import { CloudDownload, FolderOpen, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, WifiOff } from "@lucide/svelte";
+  import { CloudDownload, FolderOpen, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, Usb, WifiOff } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { formatBytes } from "../lib/format";
   import { catalog } from "../lib/state/catalog.svelte";
+  import { transfer } from "../lib/state/transfer.svelte";
   import { settings } from "../lib/state/settings.svelte";
   import type { Install, UiMode } from "../lib/types";
 
   let step = $state<"mode" | "source">(settings.current.onboarded ? "source" : "mode");
   let installs = $state<Install[] | null>(null);
-  let action = $state<"download" | "import" | null>(null);
+  let action = $state<"download" | "import" | "package" | null>(null);
 
   onMount(async () => {
     installs = await catalog.detectLocal();
-    if (step === "source") begin();
   });
 
   async function choose(mode: UiMode) {
     await settings.save({ mode });
     step = "source";
-    begin();
-  }
-
-  /** Sem LouvorJA no computador, já começa a baixar. */
-  function begin() {
-    if (installs !== null && installs.length === 0 && !action) void download();
   }
 
   async function download() {
@@ -41,14 +35,19 @@
     if (await catalog.importLocal(path)) await settings.refresh();
   }
 
+  /** Pacote salvo por outro 7Hinos (o caminho de quem não tem internet). */
+  async function importPackage() {
+    const path = await transfer.pickFolder("Escolha o pendrive com o pacote do 7Hinos");
+    if (!path) return;
+    action = "package";
+    const ok = await transfer.import(path);
+    if (!ok) catalog.error = transfer.error;
+  }
+
   async function pickFolder() {
     const path = await catalog.pickLocal();
     if (path) await importLocal(path);
   }
-
-  $effect(() => {
-    if (step === "source" && installs !== null) begin();
-  });
 
   const percent = $derived(
     catalog.progress?.total ? Math.min(100, (catalog.progress.done / catalog.progress.total) * 100) : null,
@@ -79,7 +78,7 @@
     {:else if catalog.error}
       <div class="text" in:fade>
         <WifiOff size={36} class="warn" />
-        <h1>{action === "import" ? "Não deu para importar" : "Sem conexão"}</h1>
+        <h1>{action === "download" ? "Sem conexão" : "Não deu para importar"}</h1>
         <p class="muted">{catalog.error}</p>
       </div>
       <div class="actions">
@@ -88,7 +87,10 @@
             <HardDrive size={18} /> Usar o LouvorJA deste computador
           </button>
         {/if}
-        <button class="btn btn-lg" class:btn-primary={!installs?.length} onclick={pickFolder}>
+        <button class="btn btn-lg" class:btn-primary={!installs?.length} onclick={importPackage}>
+          <Usb size={18} /> Trazer de um pendrive (pacote do 7Hinos)…
+        </button>
+        <button class="btn btn-lg" onclick={pickFolder}>
           <FolderOpen size={18} /> Escolher a pasta do LouvorJA…
         </button>
         <button class="btn btn-lg btn-plain" onclick={download}>
@@ -99,6 +101,14 @@
         Sem internet na igreja? Copie a pasta do LouvorJA de outro computador (normalmente
         <code>C:\Arquivos de Programas (x86)\Louvor JA</code>) para um pendrive e escolha-a aqui.
       </p>
+    {:else if transfer.busy === "import"}
+      <div class="text" in:fade>
+        <Usb size={36} class="accent" />
+        <h1>Trazendo do pendrive</h1>
+        <p class="muted">Copiando os hinos e as músicas para este computador. Não precisa de internet.</p>
+        <div class="bar"><div class="fill" style:width="{transfer.percent}%"></div></div>
+        <p class="subtle small">{transfer.percent}%</p>
+      </div>
     {:else if catalog.syncing}
       <div class="text" in:fade>
         {#if action === "import"}
@@ -122,17 +132,26 @@
           </p>
         {/if}
       </div>
-    {:else if installs?.length}
+    {:else if installs !== null}
       <div class="text" in:fade>
         <h1>De onde vêm os hinos?</h1>
-        <p class="muted">Encontramos o LouvorJA instalado neste computador.</p>
+        <p class="muted">
+          {installs.length ? "Encontramos o LouvorJA instalado neste computador." : "Escolha como trazer os hinos para este computador."}
+        </p>
       </div>
       <div class="options" in:fade>
-        <button class="option card recommended" onclick={() => importLocal(installs![0].root)}>
-          <HardDrive size={32} />
-          <span class="title">Usar o LouvorJA deste computador</span>
-          <span class="muted">Funciona sem internet, com as músicas que já estão aqui.</span>
-          <span class="path subtle truncate">{installs[0].root}</span>
+        {#if installs.length}
+          <button class="option card recommended" onclick={() => importLocal(installs![0].root)}>
+            <HardDrive size={32} />
+            <span class="title">Usar o LouvorJA deste computador</span>
+            <span class="muted">Funciona sem internet, com as músicas que já estão aqui.</span>
+            <span class="path subtle truncate">{installs[0].root}</span>
+          </button>
+        {/if}
+        <button class="option card" onclick={importPackage}>
+          <Usb size={32} />
+          <span class="title">Trazer de um pendrive</span>
+          <span class="muted">Um pacote salvo pelo 7Hinos em outro computador.</span>
         </button>
         <button class="option card" onclick={download}>
           <CloudDownload size={32} />
@@ -140,6 +159,9 @@
           <span class="muted">O acervo mais recente. As músicas tocam pela internet ou depois de baixadas.</span>
         </button>
       </div>
+      <button class="btn btn-plain" onclick={pickFolder}>
+        <FolderOpen size={16} /> Tenho o LouvorJA numa pasta ou pendrive
+      </button>
     {:else}
       <div class="text"><LoaderCircle size={32} class="spin accent" /></div>
     {/if}
@@ -198,7 +220,7 @@
 
   .options {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
     gap: 1rem;
     width: 100%;
   }
