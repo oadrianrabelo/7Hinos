@@ -1,7 +1,9 @@
 // Ações de alto nível compartilhadas pelas páginas, para que cada modo de
 // interface decida o que "escolher uma música" significa.
 
+import { decks } from "./state/decks.svelte";
 import { nav } from "./state/nav.svelte";
+import { toasts } from "./state/toasts.svelte";
 import { outputs } from "./state/outputs.svelte";
 import { player } from "./state/player.svelte";
 import { settings } from "./state/settings.svelte";
@@ -36,7 +38,18 @@ export async function playVideo(item: VideoItem, targets: string[] = []) {
 }
 
 /** Abre um item da programação do culto. */
-export function openSetItem(item: SetItem) {
+export async function openSetItem(item: SetItem) {
   if (item.kind === "song") return selectSong({ id: item.id });
+  if (item.kind === "deck") return openDeck(item.id);
   return playVideo(resolveVideo(item, settings.current.videos));
+}
+
+/** Abre uma apresentação na página Apresentações (a primeira página vai já para o telão). */
+export async function openDeck(id: string) {
+  if (!decks.list.length) await decks.load();
+  const deck = decks.list.find((d) => d.id === id);
+  if (!deck) return toasts.error("Essa apresentação não existe mais. Importe de novo em Apresentações.");
+  decks.open(deck);
+  nav.push({ name: "decks" });
+  decks.show(0);
 }

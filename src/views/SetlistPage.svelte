@@ -1,6 +1,6 @@
 <!-- A programação do culto: monte antes, apresente na ordem. -->
 <script lang="ts">
-  import { ArrowDown, ArrowUp, CircleCheck, CloudOff, Film, ListMusic, Music, Play, Plus, Trash2, X } from "@lucide/svelte";
+  import { ArrowDown, ArrowUp, CircleCheck, CloudOff, Film, ListMusic, Music, Play, Plus, Presentation, Trash2, X } from "@lucide/svelte";
   import DownloadButton from "../components/DownloadButton.svelte";
   import { availability } from "../lib/state/availability.svelte";
   import PageHeader from "../components/PageHeader.svelte";
@@ -8,6 +8,7 @@
   import { player } from "../lib/state/player.svelte";
   import { setlist } from "../lib/state/setlist.svelte";
   import { video } from "../lib/state/video.svelte";
+  import { decks } from "../lib/state/decks.svelte";
   import { settings } from "../lib/state/settings.svelte";
   import type { SetItem } from "../lib/types";
   import { itemTag, resolveVideo, WEEKLY_TAGS } from "../lib/videoTags";
@@ -18,7 +19,11 @@
 
   const videos = $derived(settings.current.videos);
   const isCurrent = (item: SetItem) =>
-    item.kind === "song" ? player.song?.id === item.id : video.state?.path === resolveVideo(item, videos).path;
+    item.kind === "song"
+      ? player.song?.id === item.id
+      : item.kind === "deck"
+        ? decks.live && decks.deck?.id === item.id
+        : video.state?.path === resolveVideo(item, videos).path;
 
   /** Lugares semanais que ainda não estão na lista: "Informativo de hoje" etc. */
   const weeklySlots = $derived(
@@ -58,17 +63,17 @@
 
 {#if setlist.items.length}
   <ol class="setlist">
-    {#each setlist.items as item, i (item.kind + (item.kind === "song" ? item.id : `${item.path}|${item.tag ?? ""}`))}
+    {#each setlist.items as item, i (item.kind + (item.kind === "song" || item.kind === "deck" ? item.id : `${item.path}|${item.tag ?? ""}`))}
       {@const tag = item.kind === "video" ? itemTag(item, videos) : null}
       <li class="entry" class:current={isCurrent(item)} class:simple>
         <span class="n">{i + 1}</span>
-        <span class="icon" class:video={item.kind === "video"}>
-          {#if item.kind === "song"}<Music size={18} />{:else}<Film size={18} />{/if}
+        <span class="icon" class:video={item.kind === "video"} class:deck={item.kind === "deck"}>
+          {#if item.kind === "song"}<Music size={18} />{:else if item.kind === "deck"}<Presentation size={18} />{:else}<Film size={18} />{/if}
         </span>
         <span class="info">
           <span class="title truncate">{item.title}</span>
           <span class="kind">
-            {item.kind === "song" ? "Hino" : "Vídeo"}
+            {item.kind === "song" ? "Hino" : item.kind === "deck" ? "Apresentação" : "Vídeo"}
             {#if tag}
               <span class="tag" style:--tint={tag.tint}>{tag.short}{tag.weekly ? " · de hoje" : ""}</span>
             {/if}
@@ -93,7 +98,7 @@
         </span>
         <button class="btn btn-primary" class:btn-lg={simple} onclick={() => openSetItem(item)}>
           <Play size={15} fill="currentColor" />
-          {item.kind === "song" ? "Abrir" : "Exibir"}
+          {item.kind === "video" ? "Exibir" : "Abrir"}
         </button>
       </li>
     {/each}
@@ -196,6 +201,10 @@
     font-weight: 700;
     color: #fff;
     background: var(--tint);
+  }
+
+  .icon.deck {
+    background: linear-gradient(145deg, #ffb340, #ff8a00);
   }
 
   .icon.video {

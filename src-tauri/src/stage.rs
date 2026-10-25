@@ -26,6 +26,17 @@ pub enum Scene {
         #[serde(default)]
         next: Option<Box<Slide>>,
     },
+    /// Uma página de apresentação (PDF, imagem, lição), mostrada inteira.
+    Image {
+        /// Caminho do arquivo no computador.
+        src: String,
+        title: String,
+        page: u32,
+        total: u32,
+        /// A página seguinte, para o monitor de retorno.
+        #[serde(default)]
+        next: Option<String>,
+    },
     /// Tela de espera: logo e texto da igreja (configurados em Ajustes).
     Idle,
     /// Relógio, ou contagem regressiva até `until` (epoch em ms).

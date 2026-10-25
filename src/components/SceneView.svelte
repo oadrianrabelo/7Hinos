@@ -2,7 +2,7 @@
 <script lang="ts">
   import { clockText, countdownText } from "../lib/clock";
   import { ensureFont, fontFamily } from "../lib/fonts";
-  import { userMediaSrc } from "../lib/media";
+  import { fileSrc, userMediaSrc } from "../lib/media";
   import { fitText } from "../lib/slides";
   import type { IdleScreen, Scene, ScreenStyle, SlideStyle } from "../lib/types";
   import SlideView from "./SlideView.svelte";
@@ -58,6 +58,8 @@
   {@render themed("notice", noticeBody)}
 {:else if scene.kind === "slide"}
   <SlideView slide={scene.slide} {style} />
+{:else if scene.kind === "image"}
+  <div class="screen page"><img class="page-img" src={fileSrc(scene.src)} alt="" /></div>
 {:else if scene.kind === "idle"}
   {#snippet idleBody()}
     {#if logo}<img src={logo} alt="" />{/if}
@@ -94,6 +96,15 @@
     gap: 4cqh;
     color: #fff;
     font-family: var(--font-slide);
+  }
+
+  .page-img {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: contain;
+    filter: none;
   }
 
   img {

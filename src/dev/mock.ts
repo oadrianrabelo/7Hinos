@@ -408,6 +408,24 @@ export function install() {
           stage = { ...stage, scene: a.scene, rev: stage.rev + 1 };
           changed("stage://changed", stage);
           return;
+        case "decks_list":
+          return [
+            { id: "a1", title: "Sermão — O Bom Pastor", pages: ["pagina-001.jpg", "pagina-002.jpg", "pagina-003.jpg"], createdAt: 2, source: "pdf" },
+            { id: "b2", title: "Lição 04 — A fé de Abraão", pages: ["pagina-001.jpg", "pagina-002.jpg"], createdAt: 1, source: "lesson" },
+          ];
+        case "decks_dir":
+          return "/mock/apresentacoes";
+        case "lesson_quarter":
+          return {
+            quarter: "2026-04",
+            title: "Gênesis: o livro das origens",
+            cover: null,
+            lessons: [
+              { number: "01", title: "No princípio", src: "" },
+              { number: "02", title: "A queda", src: "" },
+              { number: "04", title: "A fé de Abraão", src: "" },
+            ],
+          };
         case "system_fonts":
           return ["Arial", "Calibri", "Cambria", "Comic Sans MS", "Georgia", "Segoe UI", "Times New Roman", "Trebuchet MS", "Verdana"];
         case "stage_pulpit":

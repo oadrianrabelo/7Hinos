@@ -90,6 +90,11 @@ pub enum SetItem {
         id: u32,
         title: String,
     },
+    /// Uma apresentação (PDF, imagens, lição).
+    Deck {
+        id: String,
+        title: String,
+    },
     Video {
         path: String,
         title: String,

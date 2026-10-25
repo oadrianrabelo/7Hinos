@@ -18,6 +18,9 @@ import type {
   Output,
   OutputRole,
   Pulpit,
+  Deck,
+  Lesson,
+  LessonQuarter,
   PackageManifest,
   Scope,
   Scene,
@@ -83,6 +86,20 @@ export const api = {
   show: (scene: Scene) => invoke<void>("stage_show", { scene }),
   setVideo: (video: VideoState | null) => invoke<void>("stage_video", { video }),
   setPulpit: (pulpit: Pulpit) => invoke<void>("stage_pulpit", { pulpit }),
+  decks: () => invoke<Deck[]>("decks_list"),
+  decksDir: () => invoke<string>("decks_dir"),
+  createDeck: (title: string, source: string) => invoke<Deck>("deck_create", { title, source }),
+  /** Página já desenhada, enviada em bytes (sem JSON). */
+  addDeckPage: (id: string, bytes: Uint8Array, ext: string) =>
+    invoke<Deck>("deck_add_page", bytes, { headers: { "deck-id": id, ext } }),
+  importImages: (title: string, paths: string[]) => invoke<Deck>("deck_import_images", { title, paths }),
+  renameDeck: (id: string, title: string) => invoke<Deck>("deck_rename", { id, title }),
+  deleteDeck: (id: string) => invoke<void>("deck_delete", { id }),
+  readPdf: (path: string) => invoke<ArrayBuffer>("pdf_read", { path }),
+  officeToPdf: (path: string) => invoke<string>("office_to_pdf", { path }),
+  lessonQuarter: (quarter?: string) => invoke<LessonQuarter>("lesson_quarter", { quarter: quarter ?? null }),
+  downloadLesson: (quarter: string, lesson: Lesson) =>
+    invoke<string>("lesson_download", { quarter, number: lesson.number, title: lesson.title, src: lesson.src }),
   /** Famílias de fonte instaladas no computador. */
   systemFonts: () => invoke<string[]>("system_fonts"),
   identifyDisplays: () => invoke<void>("displays_identify"),

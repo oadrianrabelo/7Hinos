@@ -17,4 +17,5 @@ pub struct AppState {
     pub watcher: CatalogWatcher,
     pub downloads: Downloads,
     pub bible: Bible,
+    pub decks: crate::decks::Decks,
 }
