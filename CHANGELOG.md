@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.2.0...v1.3.0) (2026-10-25)
+
+
+### ✨ Novas Funcionalidades
+
+* apresentações (PDF, imagens, PowerPoint) e a lição da Escola Sabatina ([c9a348e](https://github.com/oadrianrabelo/7Hinos/commit/c9a348ef28600b3658ef49535258037fa46b5e88))
+* apresentações e lição, controle pelo celular e mais fontes ([8bef5bb](https://github.com/oadrianrabelo/7Hinos/commit/8bef5bb97fb0e6913910434976d6cd580afa65dc))
+* controle pelo celular na rede local ([107fff8](https://github.com/oadrianrabelo/7Hinos/commit/107fff8a1a58a6fc521a50f77593e645d16954a7))
+* mais fontes — embutidas, do computador e de arquivo ([8c00c82](https://github.com/oadrianrabelo/7Hinos/commit/8c00c820fba3c6f261a2a1fb866ed86d7d9854a6))
+
+
+### 🔧 Manutenção
+
+* Cargo.lock na versão 1.2.0 ([afef903](https://github.com/oadrianrabelo/7Hinos/commit/afef903bfcd677537623cd4408216f7f8f78b787))
+
 ## [1.2.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.1.0...v1.2.0) (2026-10-25)
 
 
