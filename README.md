@@ -21,7 +21,9 @@ experiência.
   novos). O *Completo* tem biblioteca, painel de projeção ao lado e atalhos. A
   escolha é feita na primeira abertura e pode ser trocada em Ajustes.
 - **Busca que perdoa.** Pelo nome, pelo número do hino ou por um pedaço da
-  letra, com ou sem acento.
+  letra, com ou sem acento. No modo completo, digitar o número em qualquer
+  lugar já busca, e `Enter` toca o primeiro resultado: "18", `Enter`, e o
+  hino 18 está no telão.
 - **Slides sincronizados com a música**, como no LouvorJA, nos modos cantado e
   playback; ou só a letra, passada à mão. Fundo do LouvorJA com sombreamento
   suave (sem tarjas pretas), tipografia condensada que se ajusta sozinha ao
@@ -31,7 +33,14 @@ experiência.
   projetor desligar, a projeção sai do caminho e volta sozinha quando a tela
   reaparece.
 - **Monitor de retorno.** Qualquer tela pode virar o retorno de quem canta ou
-  prega: letra grande sem fundo, o próximo slide e as horas.
+  prega: letra grande sem fundo, o próximo slide e as horas. Só ali aparecem
+  o **recado do operador** ("Faltam 5 minutos") e o **cronômetro do
+  pregador**, que fica amarelo nos 5 minutos finais e vermelho quando passa
+  do tempo combinado. A igreja não vê nada disso.
+- **Telas difíceis.** Telão e retorno também abrem em janela, para telas que
+  o sistema não lista direito (alguns adaptadores USB para HDMI): arraste
+  para a tela e dê dois cliques. **Identificar telas** mostra o nome de cada
+  uma nela mesma.
 - **Avisos, relógio e tela de espera.** Avisos da semana salvos para projetar
   com um clique, relógio, contagem regressiva ("O culto começa em 05:00") e
   uma tela de espera com o logo e o nome da igreja.
@@ -44,6 +53,9 @@ experiência.
 - **Vídeos em uma ou mais telas**, sincronizados entre si, com pausa, avanço,
   repetição e volume. Só a primeira tela toca o som. Formatos que não tocam
   (AVI, WMV, MPG…) são avisados ao adicionar, com a dica de converter.
+  Cada vídeo pode ter um tipo (abertura, anúncio, alerta); o **Informativo
+  Mundial das Missões** e o **Provai e Vede** da semana ganham botão próprio,
+  e o vídeo novo substitui o da semana anterior.
 - **Funciona sem internet.** Importa o LouvorJA desktop instalado no
   computador (ou copiado num pendrive): hinos, letras, fundos, músicas e
   Bíblia, sem baixar nada. Com internet, os hinos tocados ficam guardados e
@@ -61,6 +73,8 @@ experiência.
   3 horas; sem internet, tenta de novo sozinho (1, 5, 15, 30 e 60 minutos) e
   confere na hora em que a conexão volta. O app também baixa novas versões
   dele mesmo em segundo plano, pedindo só para reiniciar.
+- **Começar do zero.** **Ajustes → Sobre → Apagar tudo** limpa o que o
+  7Hinos guardou e abre como na primeira vez.
 - **Erros que não derrubam o culto.** Uma parte da tela que falhar mostra um
   aviso só ali (no telão, fica preta); tudo vai para um arquivo de registro, e
   **Ajustes → Sobre** copia um diagnóstico pronto para pedir ajuda.
