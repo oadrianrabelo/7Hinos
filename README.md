@@ -12,6 +12,7 @@ experiência.
 | --- | --- |
 | ![Modo completo, apresentando um hino](docs/screenshots/completo.png) | ![Modo simples, tela inicial](docs/screenshots/simples.png) |
 | ![Modo simples, apresentando](docs/screenshots/simples-apresentando.png) | ![O que aparece no telão](docs/screenshots/telao.png) |
+| ![Avisos, relógio e contagem regressiva](docs/screenshots/avisos.png) | ![Monitor de retorno](docs/screenshots/retorno.png) |
 
 ## O que ele faz
 
@@ -26,13 +27,32 @@ experiência.
   suave (sem tarjas pretas), tipografia condensada que se ajusta sozinha ao
   tamanho da tela e refrão repetido em dourado.
 - **Várias telas.** Projeta em qualquer monitor conectado; com projetor ou TV
-  ligados, a projeção abre sozinha ao começar um hino.
+  ligados, a projeção abre sozinha ao começar um hino. Se o cabo soltar ou o
+  projetor desligar, a projeção sai do caminho e volta sozinha quando a tela
+  reaparece.
+- **Monitor de retorno.** Qualquer tela pode virar o retorno de quem canta ou
+  prega: letra grande sem fundo, o próximo slide e as horas.
+- **Avisos, relógio e tela de espera.** Avisos da semana salvos para projetar
+  com um clique, relógio, contagem regressiva ("O culto começa em 05:00") e
+  uma tela de espera com o logo e o nome da igreja.
+- **Bíblia.** As versões do LouvorJA (em português e espanhol), busca
+  por referência ("jo 3 16", "Salmos 23:1-4") ou por palavra, versículo a
+  versículo no telão. Vem do LouvorJA desktop ou é baixada uma vez.
+- **Músicas da igreja.** Cadastre corinhos e hinos que não estão no acervo
+  (com áudio e fundo, se quiser) ou corrija a letra de um hino; nenhuma
+  atualização apaga o que a igreja fez.
 - **Vídeos em uma ou mais telas**, sincronizados entre si, com pausa, avanço,
-  repetição e volume. Só a primeira tela toca o som.
+  repetição e volume. Só a primeira tela toca o som. Formatos que não tocam
+  (AVI, WMV, MPG…) são avisados ao adicionar, com a dica de converter.
 - **Funciona sem internet.** Importa o LouvorJA desktop instalado no
-  computador (ou copiado num pendrive): hinos, letras, fundos e músicas, sem
-  baixar nada. Com internet, os hinos tocados ficam guardados e álbuns
-  inteiros podem ser baixados com um clique.
+  computador (ou copiado num pendrive): hinos, letras, fundos, músicas e
+  Bíblia, sem baixar nada. Com internet, os hinos tocados ficam guardados e
+  álbuns inteiros (ou o acervo todo) podem ser baixados com um clique; cada
+  hino mostra se já está pronto para tocar sem internet.
+- **Pacote de pendrive.** Em casa, com internet, **Ajustes → Levar para outro
+  computador** grava num pendrive o acervo, as músicas baixadas, a Bíblia, as
+  músicas da igreja, os vídeos, os avisos e o culto montado. Na igreja, o
+  mesmo botão (ou a primeira abertura) importa tudo.
 - **Traz tudo da versão anterior.** Favoritos, vídeos, tema e as músicas já
   baixadas pela versão antiga do 7Hinos são migrados na primeira abertura.
 - **Culto de hoje.** Monte antes a ordem dos hinos e vídeos; na hora, o painel
@@ -54,6 +74,9 @@ experiência.
 | `Espaço` | Pausar / continuar a música |
 | `B` ou `.` | Tela preta (e de volta) |
 | `/` ou `Ctrl/⌘ F` | Buscar |
+
+As mesmas teclas passam os versículos da Bíblia, e `B` também escurece um
+aviso no ar.
 
 `PageUp`, `PageDown`, `B` e `.` são as teclas que os passadores de slide sem fio
 enviam, então eles funcionam sem configuração.
@@ -99,11 +122,15 @@ src-tauri/src/            Rust: dados, disco, rede e janelas
     remote.rs             cliente da API do LouvorJA
     louvorja.rs           importação do LouvorJA desktop (SQLite → catálogo)
   library.rs              fachada: junta disco, API e cache de mídia
+  bible.rs                Bíblia em SQLite (do LouvorJA desktop ou da API)
+  user_songs.rs           músicas da igreja e letras corrigidas
+  package.rs              pacote de pendrive (exportar e importar)
+  downloads.rs            downloads em segundo plano, canceláveis
   legacy.rs               migração da versão anterior (Avalonia)
   media.rs                cache de áudios e imagens (espelha as URLs no disco)
   media_server.rs         entrega arquivos locais à interface (HTTP em 127.0.0.1)
   stage.rs                o palco: o que está sendo projetado agora
-  displays.rs             monitores e janelas de projeção
+  displays.rs             monitores, telão/retorno e reconexão de telas
   settings.rs             preferências (JSON legível, alteradas por partes)
   updates.rs              vigia que mantém o acervo em dia com o LouvorJA
   contract.rs             testes contra o LouvorJA real (diários, na CI)
@@ -113,7 +140,7 @@ src/                      Svelte 5 + TypeScript: só interface
   lib/api.ts              única porta para o backend (comandos e eventos)
   lib/state/*.svelte.ts   estado da interface (player, telas, vídeo, catálogo…)
   lib/slides.ts           sincronia e tamanho do texto (funções puras, testadas)
-  components/             peças visuais (SlideView, SongList, Cover…)
+  components/             peças visuais (SceneView, SlideView, MonitorView…)
   views/                  páginas compartilhadas pelos dois modos
   shell/                  as "cascas" do modo completo e do simples
   windows/                janela de controle, boas-vindas e tela de projeção
@@ -135,6 +162,12 @@ Decisões que valem lembrar:
   existe ou não. Downloads gravam em `.part` e renomeiam no fim.
 - **Instalação atômica do catálogo.** O pacote é extraído ao lado e só troca
   o atual se estiver completo — um download ruim nunca estraga o que funciona.
+- **O retorno desenha o mesmo palco.** Cada cena de slide leva também o
+  slide seguinte; o telão o ignora, o retorno mostra embaixo.
+- **Telas que somem.** Um vigia confere os monitores a cada 2 segundos. Se um
+  monitor com projeção sumir, a janela é fechada (no Windows ela cairia por
+  cima do controle) e reaberta na mesma tela, ou numa tela externa nova,
+  quando ela voltar.
 - **Erros escritos para pessoas.** Mensagens do backend chegam prontas para
   aparecer na tela.
 
