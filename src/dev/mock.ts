@@ -200,6 +200,7 @@ export function install() {
             { kind: "video", path: "/Users/igreja/Videos/Informativo Mundial das Missões.mp4", title: "Informativo Mundial das Missões" },
             { kind: "song", id: 18, title: "Castelo Forte" },
           ],
+    bibleVersion: null,
     keepPlayed: true,
     autoUpdateCatalog: true,
     autoUpdateApp: true,
@@ -297,6 +298,33 @@ export function install() {
         }
         case "download_cancel":
           return;
+        case "bible_versions":
+          return [
+            { id: 1, abbreviation: "ARA", name: "Almeida Revista e Atualizada" },
+            { id: 2, abbreviation: "NVI", name: "Nova Versão Internacional" },
+          ];
+        case "bible_books":
+          return [
+            { number: 1, name: "Gênesis", abbreviation: "Gn", chapters: 50, testament: 1 },
+            { number: 19, name: "Salmos", abbreviation: "Sl", chapters: 150, testament: 1 },
+            { number: 23, name: "Isaías", abbreviation: "Is", chapters: 66, testament: 1 },
+            { number: 40, name: "Mateus", abbreviation: "Mt", chapters: 28, testament: 2 },
+            { number: 43, name: "João", abbreviation: "Jo", chapters: 21, testament: 2 },
+            { number: 45, name: "Romanos", abbreviation: "Rm", chapters: 16, testament: 2 },
+          ];
+        case "bible_chapter":
+          return a.book === 19 && a.chapter === 23
+            ? [
+                "O Senhor é o meu pastor; nada me faltará.",
+                "Ele me faz repousar em pastos verdejantes. Leva-me para junto das águas de descanso;",
+                "refrigera-me a alma. Guia-me pelas veredas da justiça por amor do seu nome.",
+                "Ainda que eu ande pelo vale da sombra da morte, não temerei mal nenhum, porque tu estás comigo; o teu bordão e o teu cajado me consolam.",
+                "Preparas-me uma mesa na presença dos meus adversários, unges-me a cabeça com óleo; o meu cálice transborda.",
+                "Bondade e misericórdia certamente me seguirão todos os dias da minha vida; e habitarei na Casa do Senhor para todo o sempre.",
+              ].map((text, i) => ({ number: i + 1, text }))
+            : Array.from({ length: 12 }, (_, i) => ({ number: i + 1, text: `Texto do versículo ${i + 1}.` }));
+        case "bible_search":
+          return [{ book: 19, chapter: 23, verse: 1, text: "O Senhor é o meu pastor; nada me faltará." }];
         case "package_inspect":
           return { format: 1, createdAt: Math.floor(Date.now() / 1000) - 86400, appVersion: "0.5.0", catalogVersion: 185, songs: 1889, mediaFiles: 812, videos: 2, bytes: 3_400_000_000 };
         case "package_export":

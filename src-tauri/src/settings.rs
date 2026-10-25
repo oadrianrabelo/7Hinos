@@ -87,6 +87,8 @@ pub struct Settings {
     pub favorites: Vec<u32>,
     pub recent: Vec<u32>,
     pub videos: Vec<VideoItem>,
+    /// Versão da Bíblia escolhida por último.
+    pub bible_version: Option<i64>,
     /// A programação do culto, na ordem em que será apresentada.
     pub setlist: Vec<SetItem>,
     /// Guarda no disco as músicas tocadas para funcionar sem internet.
@@ -113,6 +115,7 @@ impl Default for Settings {
             favorites: Vec::new(),
             recent: Vec::new(),
             videos: Vec::new(),
+            bible_version: None,
             setlist: Vec::new(),
             keep_played: true,
             auto_update_catalog: true,

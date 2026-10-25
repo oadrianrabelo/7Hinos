@@ -5,6 +5,7 @@ import { api, errorMessage } from "../api";
 import { mediaSrc, mp3Fallback } from "../media";
 import { slideIndexAt, slideTimes, type PlayMode } from "../slides";
 import type { Scene, Song } from "../types";
+import { live } from "./live.svelte";
 import { outputs } from "./outputs.svelte";
 import { toasts } from "./toasts.svelte";
 
@@ -120,6 +121,7 @@ class Player {
     this.mode = source ? mode : "lyrics";
     this.#times = slideTimes(song.slides, this.mode);
     this.index = 0;
+    live.claim("song");
     this.live = true;
     this.blackout = false;
     this.time = 0;
@@ -146,6 +148,7 @@ class Player {
   }
 
   stop() {
+    if (!this.live) return;
     audio.pause();
     audio.removeAttribute("src");
     audio.load();
@@ -157,6 +160,7 @@ class Player {
     this.time = 0;
     this.index = 0;
     this.#push();
+    live.release("song");
   }
 
   togglePlay() {
@@ -251,3 +255,4 @@ class Player {
 }
 
 export const player = new Player();
+live.register("song", player);

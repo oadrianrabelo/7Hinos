@@ -48,6 +48,14 @@ describe("fitText", () => {
     expect(tall.cqh).toBeLessThan(short.cqh);
     expect(wide.cqw).toBeLessThan(short.cqw);
   });
+  it("fits long verses by area instead of the longest line", () => {
+    const short = fitText("Jesus chorou.", "verse");
+    const long = fitText("Porque Deus amou o mundo de tal maneira ".repeat(6), "verse");
+    expect(short.cqh).toBeLessThanOrEqual(9.5);
+    expect(long.cqh).toBeLessThan(short.cqh);
+    expect(long.cqh).toBeGreaterThan(3);
+  });
+
   it("applies the user scale", () => {
     expect(fitText("Santo", "lyric", 1.5).cqh).toBeCloseTo(fitText("Santo", "lyric").cqh * 1.5, 1);
   });

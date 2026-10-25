@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BookOpen, Clock, Film, Heart, Library, ListMusic, Settings } from "@lucide/svelte";
+  import { BookMarked, BookOpen, Clock, Film, Heart, Library, ListMusic } from "@lucide/svelte";
   import SearchField from "../components/SearchField.svelte";
   import SongList from "../components/SongList.svelte";
   import { api } from "../lib/api";
@@ -27,11 +27,11 @@
   const tiles = [
     { label: "Culto de hoje", icon: ListMusic, route: { name: "setlist" }, tint: "#af52de" },
     { label: "Hinário", icon: BookOpen, route: { name: "hymnal" }, tint: "#5b57e0" },
+    { label: "Bíblia", icon: BookMarked, route: { name: "bible" }, tint: "#a2845e" },
     { label: "Coletâneas e CDs", icon: Library, route: { name: "collections" }, tint: "#34a853" },
     { label: "Favoritos", icon: Heart, route: { name: "favorites" }, tint: "#ff2d55" },
     { label: "Tocados por último", icon: Clock, route: { name: "recent" }, tint: "#ff9500" },
     { label: "Vídeos", icon: Film, route: { name: "videos" }, tint: "#30b0c7" },
-    { label: "Ajustes", icon: Settings, route: { name: "settings" }, tint: "#8e8e93" },
   ] satisfies { label: string; icon: unknown; route: Route; tint: string }[];
 </script>
 

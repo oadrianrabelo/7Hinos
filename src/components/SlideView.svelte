@@ -35,8 +35,9 @@
           ></div>
         {/if}
         <div class="shade" class:plain={!image}></div>
-        <div class="content" class:upper={style.uppercase}>
-          {#if slide.aux}
+        {@const prose = slide.kind === "verse" || slide.kind === "text"}
+        <div class="content" class:upper={style.uppercase && !prose} class:prose>
+          {#if slide.aux && slide.kind !== "verse"}
             <p class="aux">{slide.aux}</p>
           {/if}
           {#if slide.text}
@@ -48,6 +49,9 @@
             >
               {slide.text}
             </p>
+          {/if}
+          {#if slide.aux && slide.kind === "verse"}
+            <p class="reference">{slide.aux}</p>
           {/if}
         </div>
       {/if}
@@ -128,6 +132,22 @@
   /* Refrão repetido em dourado, como o LouvorJA faz. */
   .text.repeat {
     color: #ffe39a;
+  }
+
+  .prose .text {
+    font-weight: 500;
+    line-height: 1.28;
+    letter-spacing: 0;
+    text-wrap: pretty;
+    max-width: 92cqw;
+  }
+
+  .reference {
+    font-size: min(4.4cqh, 4.8cqw);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #ffc94a;
   }
 
   .aux {

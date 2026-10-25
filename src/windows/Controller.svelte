@@ -12,6 +12,7 @@
   import { downloads } from "../lib/state/downloads.svelte";
   import { nav } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
+  import { live } from "../lib/state/live.svelte";
   import { player } from "../lib/state/player.svelte";
   import { settings } from "../lib/state/settings.svelte";
   import { updater } from "../lib/state/updater.svelte";
@@ -61,27 +62,29 @@
       return;
     }
     if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+    // Quem está no telão recebe os atalhos; sem ninguém, o hino do painel.
+    const presenter = live.current ?? (player.song ? player : null);
     switch (e.key) {
       case "ArrowRight":
       case "ArrowDown":
       case "PageDown":
-        if (!player.song) return;
-        player.next();
+        if (!presenter) return;
+        void presenter.next();
         break;
       case "ArrowLeft":
       case "ArrowUp":
       case "PageUp":
-        if (!player.song) return;
-        player.previous();
+        if (!presenter) return;
+        void presenter.previous();
         break;
       case " ":
-        if (!player.live) return;
-        player.togglePlay();
+        if (!presenter?.togglePlay) return;
+        presenter.togglePlay();
         break;
       case "b":
       case "B":
       case ".":
-        player.toggleBlackout();
+        presenter?.toggleBlackout();
         break;
       case "/":
         full?.focusSearch();

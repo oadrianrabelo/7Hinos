@@ -42,7 +42,7 @@ export interface Album {
 }
 
 export interface Slide {
-  kind: "title" | "lyric";
+  kind: "title" | "lyric" | "verse" | "text";
   text: string;
   aux: string | null;
   image: Media | null;
@@ -91,6 +91,7 @@ export interface Settings {
   recent: number[];
   videos: VideoItem[];
   setlist: SetItem[];
+  bibleVersion: number | null;
   keepPlayed: boolean;
   autoUpdateCatalog: boolean;
   autoUpdateApp: boolean;
@@ -202,4 +203,32 @@ export interface PackageManifest {
   mediaFiles: number;
   videos: number;
   bytes: number;
+}
+
+export interface BibleVersion {
+  id: number;
+  abbreviation: string;
+  name: string;
+}
+
+export interface BibleBook {
+  /** 1 (Gênesis) a 66 (Apocalipse). */
+  number: number;
+  name: string;
+  abbreviation: string;
+  chapters: number;
+  /** 1 = Antigo, 2 = Novo Testamento. */
+  testament: number;
+}
+
+export interface Verse {
+  number: number;
+  text: string;
+}
+
+export interface BibleHit {
+  book: number;
+  chapter: number;
+  verse: number;
+  text: string;
 }

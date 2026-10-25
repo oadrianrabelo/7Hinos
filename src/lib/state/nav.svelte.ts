@@ -3,6 +3,7 @@ export type Route =
   | { name: "search"; query: string }
   | { name: "hymnal" }
   | { name: "setlist" }
+  | { name: "bible" }
   | { name: "collections" }
   | { name: "collection"; id: number }
   | { name: "album"; id: number }

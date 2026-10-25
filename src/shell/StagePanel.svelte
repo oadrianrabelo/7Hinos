@@ -21,6 +21,8 @@
   import { nextAfter } from "../lib/setlist";
   import { setlist } from "../lib/state/setlist.svelte";
   import type { PlayMode } from "../lib/slides";
+  import { bible } from "../lib/state/bible.svelte";
+  import { live } from "../lib/state/live.svelte";
   import { nav } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
   import { player } from "../lib/state/player.svelte";
@@ -39,6 +41,10 @@
     list?.querySelector(`[data-index="${i}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   });
 
+  const onBible = $derived(live.source === "bible");
+  const previewSlide = $derived(onBible ? bible.slide : player.slide);
+  const isLive = $derived(onBible ? bible.live : player.live);
+  const isBlack = $derived(onBible ? bible.blackout : player.blackout);
   const nextInSetlist = $derived(
     player.song ? nextAfter(setlist.items, { kind: "song", id: player.song.id, title: "" }) : null,
   );
@@ -48,8 +54,8 @@
 
 <aside class="stage">
   <header data-tauri-drag-region>
-    {#if player.live}
-      <span class="pill live">{player.blackout ? "Tela preta" : "Ao vivo"}</span>
+    {#if isLive}
+      <span class="pill live">{isBlack ? "Tela preta" : onBible ? "Bíblia ao vivo" : "Ao vivo"}</span>
     {:else}
       <span class="pill">Prévia</span>
     {/if}
@@ -63,9 +69,22 @@
     </button>
   </header>
 
-  <div class="preview" class:dim={player.live && player.blackout}>
-    <SlideView slide={player.slide} style={settings.current.slide} />
+  <div class="preview" class:dim={isLive && isBlack}>
+    <SlideView slide={previewSlide} style={settings.current.slide} />
   </div>
+
+  {#if onBible}
+    <div class="bible-live">
+      <h3 class="truncate">{bible.slide?.aux}</h3>
+      <div class="buttons">
+        <button class="btn btn-lg btn-icon" aria-label="Versículo anterior" onclick={() => bible.previous()}><ChevronLeft size={20} /></button>
+        <button class="btn btn-lg btn-primary" onclick={() => bible.next()}>Próximo <ChevronRight size={18} /></button>
+        <button class="btn btn-lg btn-icon" class:on={bible.blackout} aria-label="Tela preta" title="Tela preta (B)" onclick={() => bible.toggleBlackout()}><SunMoon size={18} /></button>
+        <button class="btn btn-lg btn-icon" aria-label="Encerrar" title="Encerrar" onclick={() => bible.stop()}><Square size={16} /></button>
+      </div>
+      <button class="btn btn-plain" onclick={() => nav.reset({ name: "bible" })}>Abrir a Bíblia</button>
+    </div>
+  {/if}
 
   {#if video.state}
     <div class="video-strip">
@@ -78,7 +97,7 @@
     </div>
   {/if}
 
-  {#if player.queued}
+  {#if player.queued && !onBible}
     <div class="queued">
       <span class="grow">
         <span class="section-title">Próximo</span>
@@ -89,7 +108,9 @@
     </div>
   {/if}
 
-  {#if player.song}
+  {#if onBible}
+    <!-- A Bíblia está no telão; o hino do painel volta quando ela parar. -->
+  {:else if player.song}
     {@const song = player.song}
     <div class="song">
       <div class="art"><Cover media={song.cover} radius="var(--radius-s)" /></div>
@@ -256,6 +277,14 @@
 
   .preview.dim {
     opacity: 0.35;
+  }
+
+  .bible-live {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1rem;
   }
 
   .video-strip {

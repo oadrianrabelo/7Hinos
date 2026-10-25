@@ -5,6 +5,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   Album,
+  BibleBook,
+  BibleHit,
+  BibleVersion,
   CatalogStatus,
   Collection,
   Diagnostics,
@@ -19,6 +22,7 @@ import type {
   Settings,
   SettingsPatch,
   Song,
+  Verse,
   SongSummary,
   StageState,
   VideoState,
@@ -49,6 +53,12 @@ export const api = {
   album: (id: number) => invoke<Album>("album", { id }),
   song: (id: number) => invoke<Song>("song", { id }),
   songPlayed: (id: number) => invoke<void>("song_played", { id }),
+  bibleVersions: () => invoke<BibleVersion[]>("bible_versions"),
+  bibleBooks: () => invoke<BibleBook[]>("bible_books"),
+  bibleChapter: (version: number, book: number, chapter: number) =>
+    invoke<Verse[]>("bible_chapter", { version, book, chapter }),
+  bibleSearch: (version: number, query: string) => invoke<BibleHit[]>("bible_search", { version, query }),
+  downloadBible: () => invoke<number>("bible_download"),
   inspectPackage: (path: string) => invoke<PackageManifest>("package_inspect", { path }),
   exportPackage: (dir: string, includeVideos: boolean) =>
     invoke<PackageManifest>("package_export", { dir, includeVideos }),
@@ -79,6 +89,7 @@ export interface Events {
   "download://progress": DownloadProgress;
   "displays://changed": null;
   "package://progress": { done: number; total: number };
+  "bible://progress": { phase: "download" | "install"; done: number; total: number };
 }
 
 export function on<K extends keyof Events>(

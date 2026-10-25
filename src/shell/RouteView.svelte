@@ -1,6 +1,7 @@
 <!-- Mostra a página da rota atual. Compartilhado pelos dois modos. -->
 <script lang="ts">
   import AlbumPage from "../views/AlbumPage.svelte";
+  import BiblePage from "../views/BiblePage.svelte";
   import CollectionPage from "../views/CollectionPage.svelte";
   import CollectionsPage from "../views/CollectionsPage.svelte";
   import DisplaysPage from "../views/DisplaysPage.svelte";
@@ -24,6 +25,8 @@
   <HomePage />
 {:else if route.name === "search"}
   <SearchPage query={route.query} />
+{:else if route.name === "bible"}
+  <BiblePage {simple} />
 {:else if route.name === "setlist"}
   <SetlistPage {simple} />
 {:else if route.name === "hymnal"}

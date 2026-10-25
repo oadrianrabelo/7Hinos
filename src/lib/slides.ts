@@ -28,6 +28,7 @@ export function slideIndexAt(times: (number | null)[], ms: number): number | nul
  * longa, altura pelo número de linhas. Devolve unidades de container (cqw/cqh).
  */
 export function fitText(text: string, kind: Slide["kind"], scale = 1): { cqw: number; cqh: number } {
+  if (kind === "verse" || kind === "text") return fitParagraph(text, scale);
   const lines = text.split("\n").filter((l) => l.trim().length > 0);
   const count = Math.max(1, lines.length);
   const longest = Math.max(8, ...lines.map((l) => l.trim().length));
@@ -35,6 +36,20 @@ export function fitText(text: string, kind: Slide["kind"], scale = 1): { cqw: nu
   const byHeight = Math.min(cap, 78 / (count * 1.12));
   const byWidth = 90 / (longest * 0.5);
   return { cqw: round(byWidth * scale), cqh: round(byHeight * scale) };
+}
+
+/**
+ * Texto corrido (versículos, avisos): quebra sozinho, então o limite é a área.
+ * Numa tela 16:9 cabem ~144cqh de largura útil por ~74cqh de altura; com
+ * letra de tamanho s, cada caractere ocupa ~0,5s × 1,3s.
+ */
+function fitParagraph(text: string, scale: number) {
+  const chars = Math.max(20, text.replace(/\s+/g, " ").trim().length);
+  const lines = Math.max(1, text.split("\n").filter((l) => l.trim()).length);
+  const byArea = Math.sqrt((144 * 74) / (chars * 0.45 * 1.3));
+  const byLines = 74 / (lines * 1.3);
+  const size = Math.min(9.5, byArea, byLines);
+  return { cqw: round(size * 1.78 * scale), cqh: round(size * scale) };
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
