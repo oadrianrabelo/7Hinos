@@ -22,14 +22,14 @@ pub enum Scene {
     Slide {
         slide: Slide,
         title: String,
+        /// O slide seguinte, para o monitor de retorno.
+        #[serde(default)]
+        next: Option<Box<Slide>>,
     },
     /// Tela de espera: logo e texto da igreja (configurados em Ajustes).
     Idle,
     /// Relógio, ou contagem regressiva até `until` (epoch em ms).
-    Clock {
-        until: Option<f64>,
-        label: String,
-    },
+    Clock { until: Option<f64>, label: String },
 }
 
 /// Um vídeo em reprodução. As telas calculam a posição atual a partir de
@@ -99,5 +99,33 @@ impl Stage {
             state.clone()
         };
         let _ = app.emit(STAGE_EVENT, snapshot);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn slide_scene_without_next_still_reads() {
+        let json = r#"{"kind":"slide","title":"Castelo Forte","slide":{"kind":"lyric",
+            "text":"Castelo forte","aux":null,"image":null,"imagePosition":5,"repeat":false,
+            "timeMs":null,"instrumentalTimeMs":null}}"#;
+        let scene: Scene = serde_json::from_str(json).unwrap();
+        assert!(matches!(scene, Scene::Slide { next: None, .. }));
+    }
+
+    #[test]
+    fn idle_and_clock_round_trip() {
+        for scene in [
+            Scene::Idle,
+            Scene::Clock {
+                until: Some(1.0),
+                label: "O culto começa em".into(),
+            },
+        ] {
+            let json = serde_json::to_string(&scene).unwrap();
+            assert_eq!(serde_json::from_str::<Scene>(&json).unwrap(), scene);
+        }
     }
 }

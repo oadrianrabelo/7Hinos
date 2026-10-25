@@ -161,7 +161,8 @@ export interface OfflineStatus {
 
 export type Scene =
   | { kind: "black" }
-  | { kind: "slide"; slide: Slide; title: string }
+  /** `next`: o slide seguinte, para o monitor de retorno. */
+  | { kind: "slide"; slide: Slide; title: string; next?: Slide | null }
   /** Tela de espera (logo e texto da igreja). */
   | { kind: "idle" }
   /** Relógio, ou contagem regressiva até `until` (epoch em ms). */
@@ -209,10 +210,14 @@ export interface Display {
   output: string | null;
 }
 
+/** Telão (o que a igreja vê) ou retorno (slide atual, próximo e horas). */
+export type OutputRole = "audience" | "monitor";
+
 export interface Output {
   label: string;
   displayId: string | null;
   name: string;
+  role: OutputRole;
 }
 
 /** O que um pacote de pendrive contém. */

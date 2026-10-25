@@ -2,7 +2,7 @@
 // `invoke` diretamente: assim os nomes e tipos ficam num lugar só.
 
 import { invoke } from "@tauri-apps/api/core";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   Album,
   BibleBook,
@@ -16,6 +16,7 @@ import type {
   Install,
   OfflineStatus,
   Output,
+  OutputRole,
   PackageManifest,
   Scope,
   Scene,
@@ -82,7 +83,7 @@ export const api = {
 
   displays: () => invoke<Display[]>("displays_list"),
   outputs: () => invoke<Output[]>("outputs_list"),
-  openOutput: (displayId: string | null) => invoke<string>("output_open", { displayId }),
+  openOutput: (displayId: string | null, role: OutputRole = "audience") => invoke<string>("output_open", { displayId, role }),
   closeOutput: (label: string) => invoke<void>("output_close", { label }),
   closeOutputs: () => invoke<void>("outputs_close_all"),
 };
@@ -94,6 +95,10 @@ export interface Events {
   "catalog://progress": { done: number; total: number | null };
   "download://progress": DownloadProgress;
   "displays://changed": null;
+  "displays://lost": null;
+  "displays://restored": null;
+  /** Uma tela não conseguiu tocar o vídeo. */
+  "video://failed": { path: string; title: string };
   "package://progress": { done: number; total: number };
   "bible://progress": { phase: "download" | "install"; done: number; total: number };
 }
@@ -103,6 +108,11 @@ export function on<K extends keyof Events>(
   handler: (payload: Events[K]) => void,
 ): Promise<UnlistenFn> {
   return listen<Events[K]>(event, (e) => handler(e.payload));
+}
+
+/** Avisa as outras janelas (as telas de projeção não têm comandos próprios). */
+export function tell<K extends keyof Events>(event: K, payload: Events[K]): Promise<void> {
+  return emit(event, payload);
 }
 
 /** Mensagem legível de qualquer erro vindo do backend ou do navegador. */

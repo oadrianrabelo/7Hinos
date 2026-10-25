@@ -141,12 +141,21 @@ class BiblePresenter {
 
   /** O slide do versículo atual, para a prévia e o telão. */
   get slide(): Slide | null {
+    return this.index === null ? null : this.#slideFor(this.index, this.rangeEnd);
+  }
+
+  /** O versículo seguinte, para o monitor de retorno. */
+  get nextSlide(): Slide | null {
+    return this.index === null ? null : this.#slideFor((this.rangeEnd ?? this.index) + 1, null);
+  }
+
+  #slideFor(index: number, end: number | null): Slide | null {
     const book = this.bookInfo;
-    if (this.index === null || !book || this.chapter === null) return null;
-    const first = this.verses[this.index];
+    if (!book || this.chapter === null) return null;
+    const first = this.verses[index];
     if (!first) return null;
-    const last = this.rangeEnd !== null ? this.verses[this.rangeEnd] : null;
-    const chosen = last ? this.verses.slice(this.index, (this.rangeEnd ?? this.index) + 1) : [first];
+    const last = end !== null ? this.verses[end] : null;
+    const chosen = last && end !== null ? this.verses.slice(index, end + 1) : [first];
     const text = chosen.length > 1 ? chosen.map((v) => `${v.number} ${v.text}`).join(" ") : first.text;
     const abbreviation = this.versionInfo?.abbreviation;
     return {
@@ -164,7 +173,9 @@ class BiblePresenter {
   #push() {
     const slide = this.slide;
     const scene: Scene =
-      this.live && !this.blackout && slide ? { kind: "slide", slide, title: slide.aux ?? "" } : { kind: "black" };
+      this.live && !this.blackout && slide
+        ? { kind: "slide", slide, title: slide.aux ?? "", next: this.nextSlide }
+        : { kind: "black" };
     void api.show(scene);
   }
 

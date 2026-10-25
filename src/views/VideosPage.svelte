@@ -12,6 +12,7 @@
   import { toasts } from "../lib/state/toasts.svelte";
   import { video } from "../lib/state/video.svelte";
   import type { VideoItem } from "../lib/types";
+  import { formatWarning, VIDEO_EXTENSIONS } from "../lib/videoFormats";
 
   let { simple = false }: { simple?: boolean } = $props();
 
@@ -20,17 +21,25 @@
   const targets = $derived(
     chosen.filter((l) => outputs.outputs.some((o) => o.label === l)).length
       ? chosen.filter((l) => outputs.outputs.some((o) => o.label === l))
-      : outputs.outputs.map((o) => o.label),
+      : outputs.audience.map((o) => o.label),
   );
 
   async function addVideos() {
     const picked = await open({
       multiple: true,
       title: "Escolha os vídeos",
-      filters: [{ name: "Vídeos", extensions: ["mp4", "m4v", "mov", "webm", "mkv", "ogv"] }],
+      filters: [{ name: "Vídeos", extensions: VIDEO_EXTENSIONS }],
     });
     const paths = Array.isArray(picked) ? picked : picked ? [picked] : [];
-    if (paths.length) await api.addVideos(paths).catch((e) => toasts.error(errorMessage(e)));
+    if (!paths.length) return;
+    try {
+      await api.addVideos(paths);
+    } catch (e) {
+      toasts.error(errorMessage(e));
+      return;
+    }
+    const warning = paths.map(formatWarning).find((w) => w !== null);
+    if (warning) toasts.show(warning, "info", undefined, 12_000);
   }
 
   function play(item: VideoItem) {
@@ -63,6 +72,7 @@
         bind:duration={video.duration}
         bind:position={video.position}
         onended={() => video.ended()}
+        onerror={() => video.failed(live.path, live.title)}
       />
     </div>
     <div class="controls">
@@ -120,7 +130,7 @@
   <div class="chips">
     {#each outputs.outputs as o (o.label)}
       <button class="chip" class:on={targets.includes(o.label)} aria-pressed={targets.includes(o.label)} onclick={() => toggleTarget(o.label)}>
-        {o.name}
+        {o.name}{o.role === "monitor" ? " (retorno)" : ""}
       </button>
     {:else}
       <span class="muted">Nenhuma tela aberta — ao tocar, a projeção abre sozinha.</span>

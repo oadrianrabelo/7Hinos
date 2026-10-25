@@ -13,12 +13,15 @@
     duration = $bindable(0),
     position = $bindable(0),
     onended,
+    onerror,
   }: {
     state: VideoState;
     muted?: boolean;
     duration?: number;
     position?: number;
     onended?: () => void;
+    /** O arquivo não abriu ou não pôde ser decodificado. */
+    onerror?: () => void;
   } = $props();
 
   let el: HTMLVideoElement;
@@ -63,6 +66,7 @@
   }}
   ontimeupdate={() => (position = el.currentTime)}
   onended={() => onended?.()}
+  onerror={() => onerror?.()}
 ></video>
 
 <style>

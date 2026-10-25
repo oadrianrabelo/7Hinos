@@ -1,7 +1,9 @@
 // Controle dos vídeos projetados. O estado vai para o palco e cada tela
 // escolhida toca a sua cópia, sincronizada pelo relógio.
 
-import { api } from "../api";
+import { api, on } from "../api";
+import { playbackError } from "../videoFormats";
+import { toasts } from "./toasts.svelte";
 import { expectedPosition } from "../videoSync";
 import type { VideoItem, VideoState } from "../types";
 
@@ -11,8 +13,19 @@ class VideoControl {
   duration = $state(0);
   position = $state(0);
 
+  #lastFailure = { path: "", at: 0 };
+
   async init() {
+    await on("video://failed", ({ path, title }) => this.failed(path, title));
     this.state = (await api.stage()).video;
+  }
+
+  /** Um vídeo não tocou: avisa uma vez, mesmo que várias telas reclamem. */
+  failed(path: string, title: string) {
+    const now = Date.now();
+    if (this.#lastFailure.path === path && now - this.#lastFailure.at < 10_000) return;
+    this.#lastFailure = { path, at: now };
+    toasts.show(playbackError(title, path), "error", undefined, 12_000);
   }
 
   play(item: VideoItem, targets: string[], options: { looping?: boolean; volume?: number } = {}) {

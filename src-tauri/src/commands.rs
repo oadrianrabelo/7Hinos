@@ -7,7 +7,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::bible::{BibleBook, BibleVersion, SearchHit, Verse};
 use crate::catalog::louvorja::{self, Install};
 use crate::catalog::model::{Album, Collection, Song, SongSummary};
-use crate::displays::{self, Display, Output};
+use crate::displays::{self, Display, Output, Role};
 use crate::downloads;
 use crate::error::{Error, Result};
 use crate::library::{CatalogStatus, OfflineStatus, Scope};
@@ -652,8 +652,12 @@ pub fn outputs_list(app: AppHandle) -> Vec<Output> {
 
 // Assíncrono de propósito: criar janela num comando síncrono trava no Windows.
 #[tauri::command]
-pub async fn output_open(app: AppHandle, display_id: Option<String>) -> Result<String> {
-    displays::open(&app, display_id)
+pub async fn output_open(
+    app: AppHandle,
+    display_id: Option<String>,
+    role: Option<Role>,
+) -> Result<String> {
+    displays::open(&app, display_id, role.unwrap_or_default())
 }
 
 #[tauri::command]
@@ -663,5 +667,6 @@ pub fn output_close(app: AppHandle, label: String) -> Result<()> {
 
 #[tauri::command]
 pub fn outputs_close_all(app: AppHandle) {
+    displays::forget_lost(&app);
     displays::close_all(&app);
 }

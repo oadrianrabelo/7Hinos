@@ -1,5 +1,5 @@
 import { api, errorMessage, on } from "../api";
-import type { Display, Output } from "../types";
+import type { Display, Output, OutputRole } from "../types";
 import { toasts } from "./toasts.svelte";
 
 class OutputsState {
@@ -8,6 +8,10 @@ class OutputsState {
 
   async init() {
     await on("displays://changed", () => this.refresh());
+    await on("displays://lost", () =>
+      toasts.error("Uma tela de projeção foi desconectada. Ela volta sozinha quando for religada."),
+    );
+    await on("displays://restored", () => toasts.show("A tela de projeção voltou.", "success"));
     await this.refresh();
   }
 
@@ -20,13 +24,18 @@ class OutputsState {
     return this.displays.filter((d) => !d.hostsController);
   }
 
-  get isProjecting() {
-    return this.outputs.length > 0;
+  /** Telas que a igreja vê (sem os monitores de retorno). */
+  get audience() {
+    return this.outputs.filter((o) => o.role === "audience");
   }
 
-  async open(displayId: string | null) {
+  get isProjecting() {
+    return this.audience.length > 0;
+  }
+
+  async open(displayId: string | null, role: OutputRole = "audience") {
     try {
-      await api.openOutput(displayId);
+      await api.openOutput(displayId, role);
       await this.refresh();
     } catch (e) {
       toasts.error(errorMessage(e));

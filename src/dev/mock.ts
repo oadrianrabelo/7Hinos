@@ -214,8 +214,16 @@ export function install() {
     pendingFavorites: [],
   };
   let installed = params.get("installed") !== "0";
-  let stage: StageState = { scene: { kind: "black" }, video: null };
-  let outputs: Output[] = params.get("outputs") === "1" ? [{ label: "output-1", displayId: "tv", name: "Tela 2" }] : [];
+  // ?scene=slide: as telas já abrem com um hino no ar (para ver telão e retorno).
+  const sample = song(1);
+  let stage: StageState = {
+    scene: params.get("scene") === "slide" ? { kind: "slide", slide: sample.slides[1], title: sample.title, next: sample.slides[2] } : { kind: "black" },
+    video: null,
+  };
+  let outputs: Output[] = [
+    ...(params.get("outputs") === "1" ? [{ label: "output-1", displayId: "tv", name: "Tela 2", role: "audience" as const }] : []),
+    ...(params.get("monitor") === "1" ? [{ label: "output-9", displayId: "stage", name: "Tela 3", role: "monitor" as const }] : []),
+  ];
 
   const changed = (event: string, payload: unknown) => void emit(event, payload);
   let jobs = 0;
@@ -372,15 +380,22 @@ export function install() {
           return [
             { id: "builtin", name: "Tela 1", width: 2880, height: 1800, primary: true, hostsController: true, output: null },
             { id: "tv", name: "Tela 2", width: 1920, height: 1080, primary: false, hostsController: false, output: outputs.find((o) => o.displayId === "tv")?.label ?? null },
+            { id: "stage", name: "Tela 3", width: 1920, height: 1080, primary: false, hostsController: false, output: outputs.find((o) => o.displayId === "stage")?.label ?? null },
           ];
         case "outputs_list":
           return outputs;
         case "output_open":
-          if (!outputs.some((o) => o.displayId === a.displayId)) {
-            outputs = [...outputs, { label: `output-${outputs.length + 1}`, displayId: a.displayId, name: a.displayId ? "Tela 2" : "Janela" }];
+          {
+            const role = a.role ?? "audience";
+            const existing = outputs.find((o) => a.displayId && o.displayId === a.displayId);
+            if (existing) outputs = outputs.map((o) => (o === existing ? { ...o, role } : o));
+            else {
+              const name = a.displayId === "tv" ? "Tela 2" : a.displayId === "stage" ? "Tela 3" : "Janela";
+              outputs = [...outputs, { label: `output-${outputs.length + 1}`, displayId: a.displayId, name, role }];
+            }
+            changed("displays://changed", null);
+            return (existing ?? outputs[outputs.length - 1]).label;
           }
-          changed("displays://changed", null);
-          return outputs[outputs.length - 1].label;
         case "output_close":
           outputs = outputs.filter((o) => o.label !== a.label);
           changed("displays://changed", null);

@@ -261,7 +261,12 @@ class Player {
       ? { kind: "idle" }
       : this.blackout || !slide || !this.song
         ? { kind: "black" }
-        : { kind: "slide", slide: $state.snapshot(slide), title: this.song.title };
+        : {
+            kind: "slide",
+            slide: $state.snapshot(slide),
+            title: this.song.title,
+            next: $state.snapshot(this.nextSlide),
+          };
     void api.show(scene);
   }
 }

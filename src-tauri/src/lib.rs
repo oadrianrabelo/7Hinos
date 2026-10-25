@@ -132,6 +132,7 @@ pub fn run() {
             commands::resolve_pending_favorites(app.handle());
 
             tauri::async_runtime::spawn(updates::run(app.handle().clone()));
+            displays::watch(app.handle().clone());
             Ok(())
         })
         .on_window_event(|window, event| {

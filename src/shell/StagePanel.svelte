@@ -73,7 +73,7 @@
     <button class="btn btn-plain screens" onclick={() => nav.reset({ name: "displays" })} title="Telas de projeção">
       {#if outputs.isProjecting}
         <MonitorPlay size={16} />
-        {outputs.outputs.length === 1 ? outputs.outputs[0].name : `${outputs.outputs.length} telas`}
+        {outputs.audience.length === 1 ? outputs.audience[0].name : `${outputs.audience.length} telas`}
       {:else}
         <Monitor size={16} /> Sem projeção
       {/if}

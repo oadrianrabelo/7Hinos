@@ -31,7 +31,7 @@ export async function playVideo(item: VideoItem, targets: string[] = []) {
   if (!outputs.isProjecting && !(await outputs.ensureOpen())) await outputs.open(null);
   const open = outputs.outputs.map((o) => o.label);
   const chosen = targets.filter((t) => open.includes(t));
-  video.play(item, chosen.length ? chosen : open);
+  video.play(item, chosen.length ? chosen : outputs.audience.map((o) => o.label));
 }
 
 /** Abre um item da programação do culto. */
