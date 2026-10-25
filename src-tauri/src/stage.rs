@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 
 use crate::catalog::model::Slide;
+use crate::sync::LockExt;
 
 pub const STAGE_EVENT: &str = "stage://changed";
 
@@ -57,7 +58,7 @@ pub struct Stage {
 
 impl Stage {
     pub fn get(&self) -> StageState {
-        self.state.lock().expect("palco").clone()
+        self.state.locked().clone()
     }
 
     pub fn show(&self, app: &AppHandle, scene: Scene) {
@@ -82,7 +83,7 @@ impl Stage {
 
     fn change(&self, app: &AppHandle, f: impl FnOnce(&mut StageState)) {
         let snapshot = {
-            let mut state = self.state.lock().expect("palco");
+            let mut state = self.state.locked();
             let before = state.clone();
             f(&mut state);
             if *state == before {

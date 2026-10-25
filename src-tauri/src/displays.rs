@@ -14,6 +14,7 @@ use tauri::{
 
 use crate::error::{Error, Result};
 use crate::state::AppState;
+use crate::sync::LockExt;
 
 pub const DISPLAYS_EVENT: &str = "displays://changed";
 pub const MAIN_WINDOW: &str = "main";
@@ -68,7 +69,7 @@ fn same_monitor(a: &Monitor, b: &Monitor) -> bool {
 
 pub fn list(app: &AppHandle) -> Result<Vec<Display>> {
     let state = app.state::<AppState>();
-    let open = state.outputs.open.lock().expect("telas").clone();
+    let open = state.outputs.open.locked().clone();
     let primary = app.primary_monitor()?;
     let controller = app
         .get_webview_window(MAIN_WINDOW)
@@ -98,7 +99,7 @@ pub fn list(app: &AppHandle) -> Result<Vec<Display>> {
 
 pub fn outputs(app: &AppHandle) -> Vec<Output> {
     let state = app.state::<AppState>();
-    let open = state.outputs.open.lock().expect("telas").clone();
+    let open = state.outputs.open.locked().clone();
     let displays = list(app).unwrap_or_default();
     open.into_iter()
         .map(|(label, display_id)| {
@@ -124,8 +125,7 @@ pub fn open(app: &AppHandle, display_id: Option<String>) -> Result<String> {
         let existing = state
             .outputs
             .open
-            .lock()
-            .expect("telas")
+            .locked()
             .iter()
             .find(|(_, d)| d.as_ref() == Some(id))
             .map(|(label, _)| label.clone());
@@ -145,7 +145,7 @@ pub fn open(app: &AppHandle, display_id: Option<String>) -> Result<String> {
     };
 
     let label = {
-        let mut next = state.outputs.next.lock().expect("telas");
+        let mut next = state.outputs.next.locked();
         *next += 1;
         format!("{OUTPUT_PREFIX}{next}")
     };
@@ -198,8 +198,7 @@ fn track(app: &AppHandle, window: &WebviewWindow, display_id: Option<String>) {
     state
         .outputs
         .open
-        .lock()
-        .expect("telas")
+        .locked()
         .insert(label.clone(), display_id);
     let _ = app.emit(DISPLAYS_EVENT, ());
 
@@ -207,7 +206,7 @@ fn track(app: &AppHandle, window: &WebviewWindow, display_id: Option<String>) {
     window.on_window_event(move |event| {
         if matches!(event, tauri::WindowEvent::Destroyed) {
             let state = app.state::<AppState>();
-            state.outputs.open.lock().expect("telas").remove(&label);
+            state.outputs.open.locked().remove(&label);
             state.stage.forget_output(&app, &label);
             let _ = app.emit(DISPLAYS_EVENT, ());
         }

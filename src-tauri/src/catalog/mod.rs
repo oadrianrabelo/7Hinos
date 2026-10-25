@@ -20,6 +20,7 @@ use search::IndexedSong;
 use store::Store;
 
 pub struct Catalog {
+    pub lang: Lang,
     pub version: Option<u32>,
     categories: Vec<RawCategory>,
     hymnal: Vec<SongSummary>,
@@ -62,6 +63,7 @@ impl Catalog {
             .collect();
 
         Ok(Self {
+            lang,
             version: store.version(),
             categories,
             hymnal,

@@ -19,6 +19,7 @@ use tokio::io::AsyncWriteExt;
 use url::Url;
 
 use crate::error::{Error, Result};
+use crate::sync::RwLockExt;
 
 /// Endereço de onde o LouvorJA serve a mídia do catálogo.
 pub const FILES_URL: &str = "https://files.louvorja.com.br";
@@ -64,7 +65,7 @@ impl MediaCache {
     }
 
     pub fn set_local(&self, folders: LocalFolders) {
-        *self.local.write().expect("pastas locais") = folders;
+        *self.local.writing() = folders;
     }
 
     /// Resolve um campo `url_*` do catálogo. Vazio vira `None`.
@@ -84,7 +85,7 @@ impl MediaCache {
             return Some(path);
         }
         let segments = decoded_segments(url)?;
-        let local = self.local.read().expect("pastas locais");
+        let local = self.local.reading();
         let (roots, rest, extensions): (&[PathBuf], &[String], &[&str]) =
             match segments.first().map(String::as_str) {
                 // musics/<idioma>/<álbum>/<faixa>

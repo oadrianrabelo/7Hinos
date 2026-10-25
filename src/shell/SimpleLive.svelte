@@ -1,6 +1,9 @@
 <script lang="ts">
   import { ChevronLeft, ChevronRight, LoaderCircle, Pause, Play, Square, SunMoon } from "@lucide/svelte";
   import SlideView from "../components/SlideView.svelte";
+  import { playVideo } from "../lib/actions";
+  import { nextAfter } from "../lib/setlist";
+  import { setlist } from "../lib/state/setlist.svelte";
   import { formatTime } from "../lib/format";
   import { nav } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
@@ -13,6 +16,18 @@
   }
 
   const total = $derived(player.song?.slides.length ?? 0);
+  const next = $derived(
+    player.song ? nextAfter(setlist.items, { kind: "song", id: player.song.id, title: "" }) : null,
+  );
+
+  /** Encerra este hino e segue a programação do culto. */
+  function goNext() {
+    if (!next) return;
+    player.stop();
+    nav.back();
+    if (next.kind === "song") nav.push({ name: "song", id: next.id });
+    else void playVideo({ path: next.path, title: next.title });
+  }
 </script>
 
 {#if player.song && player.live}
@@ -60,6 +75,12 @@
       </button>
       <button class="btn btn-lg" onclick={finish}><Square size={18} /> Encerrar</button>
     </div>
+
+    {#if next}
+      <button class="btn btn-lg next" onclick={goNext}>
+        Próximo do culto: <strong>{next.title}</strong> <ChevronRight size={20} />
+      </button>
+    {/if}
   </div>
 {:else}
   <div class="empty">
@@ -123,6 +144,15 @@
 
   .play {
     flex: 1.2 !important;
+  }
+
+  .next {
+    max-width: min(100%, 52rem);
+  }
+
+  .next strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .secondary {

@@ -1,5 +1,5 @@
 import { api, errorMessage, on } from "../api";
-import type { Settings, SlideStyle } from "../types";
+import type { Settings, SettingsPatch, SlideStyle } from "../types";
 import { toasts } from "./toasts.svelte";
 
 class SettingsState {
@@ -20,16 +20,16 @@ class SettingsState {
     return this.value;
   }
 
-  async save(patch: Partial<Settings>) {
+  async save(patch: SettingsPatch) {
     try {
-      this.value = await api.saveSettings({ ...this.current, ...patch });
+      this.value = await api.updateSettings(patch);
     } catch (e) {
       toasts.error(errorMessage(e));
     }
   }
 
   saveSlide(patch: Partial<SlideStyle>) {
-    return this.save({ slide: { ...this.current.slide, ...patch } });
+    return this.save({ slide: patch });
   }
 
   isFavorite(id: number) {

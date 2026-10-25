@@ -9,7 +9,7 @@ use crate::catalog::model::{Album, Collection, Song, SongSummary};
 use crate::displays::{self, Display, Output};
 use crate::error::{Error, Result};
 use crate::library::{CatalogStatus, OfflineStatus};
-use crate::settings::{Settings, VideoItem};
+use crate::settings::{self, Settings, VideoItem};
 use crate::stage::{Scene, StageState, VideoState};
 use crate::state::AppState;
 
@@ -51,6 +51,47 @@ pub fn app_version(app: AppHandle) -> String {
     app.package_info().version.to_string()
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Diagnostics {
+    version: String,
+    os: String,
+    arch: String,
+    catalog: CatalogStatus,
+    local_sources: Vec<String>,
+    outputs: usize,
+    log_dir: Option<String>,
+}
+
+/// Resumo para pedir ajuda: o usuário copia e cola numa mensagem.
+#[tauri::command]
+pub fn diagnostics(app: AppHandle, state: State<AppState>) -> Diagnostics {
+    Diagnostics {
+        version: app.package_info().version.to_string(),
+        os: std::env::consts::OS.to_owned(),
+        arch: std::env::consts::ARCH.to_owned(),
+        catalog: state.library.status(),
+        local_sources: state.settings.get().local_sources,
+        outputs: displays::outputs(&app).len(),
+        log_dir: app
+            .path()
+            .app_log_dir()
+            .ok()
+            .map(|p| p.to_string_lossy().into_owned()),
+    }
+}
+
+/// Mostra a pasta dos arquivos de registro no gerenciador de arquivos.
+#[tauri::command]
+pub fn logs_open(app: AppHandle) -> Result<()> {
+    use tauri_plugin_opener::OpenerExt;
+    let dir = app.path().app_log_dir()?;
+    std::fs::create_dir_all(&dir)?;
+    app.opener()
+        .open_path(dir.to_string_lossy(), None::<&str>)
+        .map_err(|e| Error::other(format!("Não foi possível abrir a pasta: {e}")))
+}
+
 /// Endereço do servidor local de mídia (ver `media_server.rs`).
 #[tauri::command]
 pub fn media_base(state: State<AppState>) -> String {
@@ -63,13 +104,15 @@ pub fn settings_get(state: State<AppState>) -> Settings {
 }
 
 #[tauri::command]
-pub fn settings_set(
+pub fn settings_update(
     app: AppHandle,
     state: State<AppState>,
-    settings: Settings,
+    patch: serde_json::Value,
 ) -> Result<Settings> {
     let previous = state.settings.get();
-    let saved = state.settings.update(|s| *s = settings)?;
+    let saved = state
+        .settings
+        .try_update(|s| settings::apply_patch(s, &patch))?;
     if saved.language != previous.language {
         state.library.load(saved.language)?;
         emit_catalog(&app, false);
@@ -152,23 +195,18 @@ pub async fn catalog_sync(app: AppHandle, force: bool) -> Result<CatalogStatus> 
         .sync(lang, force, move |done, total| {
             let _ = emitter.emit(CATALOG_PROGRESS_EVENT, ByteProgress { done, total });
         })
-        .await?;
+        .await
+        .inspect_err(|e| log::warn!("download do acervo falhou: {e}"))?;
     resolve_pending_favorites(&app);
     emit_catalog(&app, updated);
     Ok(state.library.status())
 }
 
-/// Verificação silenciosa na abertura do app: sem internet, nada acontece.
-pub async fn sync_catalog_quietly(app: AppHandle) {
-    let state = app.state::<AppState>();
-    if !state.library.status().installed {
-        return;
-    }
-    let lang = state.settings.get().language;
-    if let Ok(true) = state.library.sync(lang, false, |_, _| {}).await {
-        resolve_pending_favorites(&app);
-        emit_catalog(&app, true);
-    }
+/// Pede uma verificação imediata do acervo (a interface chama quando a
+/// internet volta).
+#[tauri::command]
+pub fn catalog_check_now(state: State<AppState>) {
+    state.watcher.wake();
 }
 
 /// Instalações do LouvorJA encontradas neste computador (as já cadastradas
@@ -206,7 +244,15 @@ pub async fn louvorja_import(app: AppHandle, path: Option<String>) -> Result<Cat
     })?;
 
     let root = install.root.to_string_lossy().into_owned();
-    let imported = state.library.import_louvorja(install, lang).await?;
+    let imported = state
+        .library
+        .import_louvorja(install, lang)
+        .await
+        .inspect_err(|e| log::warn!("importação do LouvorJA em {root} falhou: {e}"))?;
+    log::info!(
+        "LouvorJA importado de {root}: {:?}",
+        state.library.status().songs
+    );
     let saved = state.settings.update(|s| {
         s.add_local_source(root);
         s.language = imported;
@@ -260,19 +306,26 @@ pub fn resolve_pending_favorites(app: &AppHandle) {
     }
 }
 
-fn emit_catalog(app: &AppHandle, updated: bool) {
+pub(crate) fn emit_catalog(app: &AppHandle, updated: bool) {
     let status = app.state::<AppState>().library.status();
     let _ = app.emit(CATALOG_EVENT, CatalogChanged { status, updated });
 }
 
 #[tauri::command]
-pub fn collections(state: State<AppState>) -> Result<Vec<Collection>> {
-    Ok(state.library.catalog()?.collections(state.library.media()))
+pub async fn collections(state: State<'_, AppState>) -> Result<Vec<Collection>> {
+    state.library.collections().await
 }
 
+/// O hinário atual ou, com `edition = "1996"`, o anterior.
 #[tauri::command]
-pub fn hymnal(state: State<AppState>) -> Result<Vec<SongSummary>> {
-    Ok(state.library.catalog()?.hymnal().to_vec())
+pub async fn hymnal(
+    state: State<'_, AppState>,
+    edition: Option<String>,
+) -> Result<Vec<SongSummary>> {
+    match edition.as_deref() {
+        Some("1996") => state.library.hymnal_1996().await,
+        _ => Ok(state.library.catalog()?.hymnal().to_vec()),
+    }
 }
 
 #[tauri::command]

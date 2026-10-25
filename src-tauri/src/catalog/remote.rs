@@ -5,6 +5,7 @@
 //! - `/json_db/{chave}` entrega uma chave avulsa, usada quando falta algo.
 
 use std::path::Path;
+use std::time::Duration;
 
 use futures_util::StreamExt;
 use tokio::io::AsyncWriteExt;
@@ -66,8 +67,27 @@ impl Remote {
         Ok(())
     }
 
+    /// GET curto com duas novas tentativas: o Wi-Fi da igreja oscila.
     async fn get(&self, url: &str) -> Result<Vec<u8>> {
-        let response = self.client.get(url).send().await?;
+        let mut attempt = 0;
+        loop {
+            match self.try_get(url).await {
+                Err(Error::Network(_)) if attempt < 2 => {
+                    attempt += 1;
+                    tokio::time::sleep(Duration::from_secs(2 * attempt)).await;
+                }
+                result => return result,
+            }
+        }
+    }
+
+    async fn try_get(&self, url: &str) -> Result<Vec<u8>> {
+        let response = self
+            .client
+            .get(url)
+            .timeout(Duration::from_secs(30))
+            .send()
+            .await?;
         if !response.status().is_success() {
             return Err(Error::Http(response.status().as_u16()));
         }

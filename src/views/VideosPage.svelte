@@ -1,9 +1,11 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
-  import { Film, Pause, Play, Plus, Repeat, Square, Trash2, Volume2 } from "@lucide/svelte";
+  import { Film, ListChecks, ListPlus, Pause, Play, Plus, Repeat, Square, Trash2, Volume2 } from "@lucide/svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import VideoLayer from "../components/VideoLayer.svelte";
   import { api, errorMessage } from "../lib/api";
+  import { playVideo } from "../lib/actions";
+  import { setlist } from "../lib/state/setlist.svelte";
   import { formatTime } from "../lib/format";
   import { outputs } from "../lib/state/outputs.svelte";
   import { settings } from "../lib/state/settings.svelte";
@@ -31,12 +33,8 @@
     if (paths.length) await api.addVideos(paths).catch((e) => toasts.error(errorMessage(e)));
   }
 
-  async function play(item: VideoItem) {
-    if (!outputs.isProjecting) {
-      // Projetor conectado abre sozinho; com uma tela só, abre numa janela.
-      if (!(await outputs.ensureOpen())) await outputs.open(null);
-    }
-    video.play(item, targets.length ? targets : outputs.outputs.map((o) => o.label));
+  function play(item: VideoItem) {
+    return playVideo(item, targets);
   }
 
   function toggleTarget(label: string) {
@@ -133,12 +131,22 @@
 {#if settings.current.videos.length}
   <ul class="videos">
     {#each settings.current.videos as item (item.path)}
+      {@const inSetlist = setlist.has({ kind: "video", ...item })}
       <li class="video" class:playing={live?.path === item.path}>
         <span class="thumb"><Film size={20} /></span>
         <span class="info">
           <span class="truncate name">{item.title}</span>
           <span class="truncate path">{item.path}</span>
         </span>
+        <button
+          class="btn btn-plain btn-icon"
+          class:on={inSetlist}
+          aria-label={inSetlist ? "Tirar do culto de hoje" : "Adicionar ao culto de hoje"}
+          title={inSetlist ? "Está no culto de hoje" : "Adicionar ao culto de hoje"}
+          onclick={() => setlist.toggle({ kind: "video", ...item })}
+        >
+          {#if inSetlist}<ListChecks size={17} />{:else}<ListPlus size={17} />{/if}
+        </button>
         <button class="btn btn-primary" class:btn-lg={simple} onclick={() => play(item)}><Play size={15} fill="currentColor" /> Exibir</button>
         <button class="btn btn-plain btn-icon" aria-label="Remover da lista" title="Remover da lista" onclick={() => api.removeVideo(item.path)}>
           <Trash2 size={16} />

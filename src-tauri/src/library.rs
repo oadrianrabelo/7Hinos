@@ -11,13 +11,14 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::catalog::louvorja::{self, Install};
-use crate::catalog::model::{self, Album, Lang, Song};
-use crate::catalog::raw::{RawAlbum, RawMusic};
+use crate::catalog::model::{self, Album, Collection, Lang, Song, SongSummary};
+use crate::catalog::raw::{RawAlbum, RawAlbumRef, RawMusic, RawSongRow};
 use crate::catalog::remote::{Remote, API_URL};
 use crate::catalog::store::Store;
 use crate::catalog::Catalog;
 use crate::error::{Error, Result};
 use crate::media::MediaCache;
+use crate::sync::{LockExt, RwLockExt};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,6 +27,19 @@ pub struct CatalogStatus {
     pub version: Option<u32>,
     pub songs: usize,
     pub albums: usize,
+    /// Última vez (epoch em segundos) que o LouvorJA respondeu.
+    pub last_check: Option<u64>,
+    /// Versão publicada vista na última resposta.
+    pub available: Option<u32>,
+    /// Erro da última tentativa, se ela falhou.
+    pub last_error: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct SyncInfo {
+    last_check: Option<u64>,
+    available: Option<u32>,
+    last_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -48,12 +62,19 @@ pub struct OfflineStatus {
     pub total: usize,
 }
 
+/// Coleções que o LouvorJA publica fora do pacote: (id, chave, nome).
+const EXTRA_COLLECTIONS: [(u32, &str, &str); 2] = [
+    (9001, "children_albums", "Infantis"),
+    (9002, "doxology_albums", "Doxologia"),
+];
+
 pub struct Library {
     store: Store,
     remote: Remote,
     media: MediaCache,
     catalog: RwLock<Option<Arc<Catalog>>>,
     sync_lock: tokio::sync::Mutex<()>,
+    info: std::sync::Mutex<SyncInfo>,
 }
 
 impl Library {
@@ -75,6 +96,7 @@ impl Library {
             media: MediaCache::new(data_dir.join("media"), client),
             catalog: RwLock::new(None),
             sync_lock: tokio::sync::Mutex::new(()),
+            info: Default::default(),
         }
     }
 
@@ -89,32 +111,25 @@ impl Library {
             Err(Error::CatalogMissing) => None,
             Err(e) => return Err(e),
         };
-        *self.catalog.write().expect("catálogo") = loaded;
+        *self.catalog.writing() = loaded;
         Ok(())
     }
 
     pub fn catalog(&self) -> Result<Arc<Catalog>> {
-        self.catalog
-            .read()
-            .expect("catálogo")
-            .clone()
-            .ok_or(Error::CatalogMissing)
+        self.catalog.reading().clone().ok_or(Error::CatalogMissing)
     }
 
     pub fn status(&self) -> CatalogStatus {
-        match self.catalog() {
-            Ok(c) => CatalogStatus {
-                installed: true,
-                version: c.version,
-                songs: c.song_count(),
-                albums: c.album_count(),
-            },
-            Err(_) => CatalogStatus {
-                installed: false,
-                version: None,
-                songs: 0,
-                albums: 0,
-            },
+        let info = self.info.locked().clone();
+        let catalog = self.catalog().ok();
+        CatalogStatus {
+            installed: catalog.is_some(),
+            version: catalog.as_ref().and_then(|c| c.version),
+            songs: catalog.as_ref().map_or(0, |c| c.song_count()),
+            albums: catalog.as_ref().map_or(0, |c| c.album_count()),
+            last_check: info.last_check,
+            available: info.available,
+            last_error: info.last_error,
         }
     }
 
@@ -133,8 +148,28 @@ impl Library {
         force: bool,
         progress: impl FnMut(u64, Option<u64>),
     ) -> Result<bool> {
+        let result = self.sync_inner(lang, force, progress).await;
+        let mut info = self.info.locked();
+        match &result {
+            Ok(_) => info.last_error = None,
+            Err(e) => info.last_error = Some(e.to_string()),
+        }
+        result
+    }
+
+    async fn sync_inner(
+        &self,
+        lang: Lang,
+        force: bool,
+        progress: impl FnMut(u64, Option<u64>),
+    ) -> Result<bool> {
         let _guard = self.sync_lock.lock().await;
         let check = self.check_update().await?;
+        {
+            let mut info = self.info.locked();
+            info.last_check = Some(now_secs());
+            info.available = Some(check.available);
+        }
         if !force && !check.has_update() {
             return Ok(false);
         }
@@ -156,6 +191,9 @@ impl Library {
         installed?;
 
         self.load(lang)?;
+        // Já guarda as chaves avulsas enquanto há internet, para valer offline.
+        let _ = self.collections().await;
+        let _ = self.hymnal_1996().await;
         Ok(true)
     }
 
@@ -173,6 +211,49 @@ impl Library {
         .map_err(|e| Error::other(e.to_string()))??;
         self.load(lang)?;
         Ok(lang)
+    }
+
+    /// Coleções do catálogo mais as que o LouvorJA publica em chaves à parte
+    /// (infantis e doxologia), quando ainda não estão entre elas.
+    pub async fn collections(&self) -> Result<Vec<Collection>> {
+        let catalog = self.catalog()?;
+        let mut list = catalog.collections(&self.media);
+        for (id, suffix, name) in EXTRA_COLLECTIONS {
+            let slug = suffix.trim_end_matches("_albums");
+            if list.iter().any(|c| c.slug == slug || c.name == name) {
+                continue;
+            }
+            let key = format!("{}_{suffix}", catalog.lang.code());
+            let Some(albums) = self.optional_key::<Vec<RawAlbumRef>>(&key).await else {
+                continue;
+            };
+            if !albums.is_empty() {
+                list.push(Collection {
+                    id,
+                    name: name.to_owned(),
+                    slug: slug.to_owned(),
+                    albums: albums
+                        .iter()
+                        .map(|a| model::album_summary(a, &self.media))
+                        .collect(),
+                });
+            }
+        }
+        Ok(list)
+    }
+
+    /// O hinário de 1996 (só existe em português).
+    pub async fn hymnal_1996(&self) -> Result<Vec<SongSummary>> {
+        let catalog = self.catalog()?;
+        let key = format!("{}_hymnal_1996", catalog.lang.code());
+        let rows = self
+            .optional_key::<Vec<RawSongRow>>(&key)
+            .await
+            .unwrap_or_default();
+        Ok(rows
+            .iter()
+            .map(|r| model::song_summary(r, Some(r.track)))
+            .collect())
     }
 
     pub async fn album(&self, id: u32) -> Result<Album> {
@@ -253,6 +334,30 @@ impl Library {
         first_error.map_or(Ok(()), Err)
     }
 
+    /// Chave que pode não existir: lê do disco e só vai à internet quando a
+    /// última conversa com o LouvorJA deu certo, para nunca deixar a tela
+    /// esperando numa igreja sem conexão.
+    async fn optional_key<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
+        if let Some(value) = self
+            .store
+            .read(key)
+            .and_then(|b| serde_json::from_slice(&b).ok())
+        {
+            return Some(value);
+        }
+        let online = {
+            let info = self.info.locked();
+            info.last_check.is_some() && info.last_error.is_none()
+        };
+        if !online {
+            return None;
+        }
+        let bytes = self.remote.key(key).await.ok()?;
+        let value = serde_json::from_slice(&bytes).ok()?;
+        let _ = self.store.write(key, &bytes);
+        Some(value)
+    }
+
     /// Lê uma chave do disco; se faltar, busca na API e guarda para a próxima.
     async fn key<T: DeserializeOwned>(&self, key: &str) -> Result<T> {
         if let Some(bytes) = self.store.read(key) {
@@ -265,6 +370,13 @@ impl Library {
         let _ = self.store.write(key, &bytes);
         Ok(value)
     }
+}
+
+fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -330,6 +442,10 @@ mod tests {
             ("/json_db/config", br#"{"version_number":185}"#.to_vec()),
             ("/db/catalog-bundle", bundle()),
             (
+                "/json_db/pt_children_albums",
+                br#"[{"id_album":690,"name":"M\u00fasicas Infantis"}]"#.to_vec(),
+            ),
+            (
                 "/json_db/music_1",
                 br#"{"id_music":1,"name":"Nosso Sol \u00e9 Jesus","lyric":[{"lyric":"O nosso sol","order":1,"time":"00:00:05"}]}"#.to_vec(),
             ),
@@ -361,6 +477,18 @@ mod tests {
 
         let album = library.album(5).await.unwrap();
         assert_eq!(album.songs[0].number, Some(1));
+
+        // Infantis vem de uma chave à parte; doxologia não existe neste servidor.
+        let names: Vec<String> = library
+            .collections()
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|c| c.name)
+            .collect();
+        assert_eq!(names, ["CDs", "Infantis"]);
+        assert!(dir.path().join("catalog/pt_children_albums.json").is_file());
+        assert!(library.hymnal_1996().await.unwrap().is_empty());
 
         // music_1 não veio no pacote: busca na API e guarda para a próxima.
         let song = library.song(1).await.unwrap();
@@ -415,6 +543,8 @@ mod tests {
             library.sync(Lang::Pt, true, |_, _| {}).await,
             Err(Error::Network(_))
         ));
-        assert!(!library.status().installed);
+        let status = library.status();
+        assert!(!status.installed);
+        assert!(status.last_error.is_some() && status.last_check.is_none());
     }
 }

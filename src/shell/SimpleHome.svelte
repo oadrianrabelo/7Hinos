@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { BookOpen, Clock, Film, Heart, Library, Settings } from "@lucide/svelte";
+  import { BookOpen, Clock, Film, Heart, Library, ListMusic, Settings } from "@lucide/svelte";
   import SearchField from "../components/SearchField.svelte";
   import SongList from "../components/SongList.svelte";
   import { api } from "../lib/api";
   import { selectSong } from "../lib/actions";
   import { nav, type Route } from "../lib/state/nav.svelte";
+  import { setlist } from "../lib/state/setlist.svelte";
   import type { SongSummary } from "../lib/types";
 
   let query = $state("");
@@ -24,6 +25,7 @@
   });
 
   const tiles = [
+    { label: "Culto de hoje", icon: ListMusic, route: { name: "setlist" }, tint: "#af52de" },
     { label: "Hinário", icon: BookOpen, route: { name: "hymnal" }, tint: "#5b57e0" },
     { label: "Coletâneas e CDs", icon: Library, route: { name: "collections" }, tint: "#34a853" },
     { label: "Favoritos", icon: Heart, route: { name: "favorites" }, tint: "#ff2d55" },
@@ -46,9 +48,16 @@
   {:else}
     <div class="tiles">
       {#each tiles as t (t.label)}
-        <button class="tile card" style:--tint={t.tint} onclick={() => nav.push(t.route)}>
+        <button class="tile card" class:wide={t.route.name === "setlist"} style:--tint={t.tint} onclick={() => nav.push(t.route)}>
           <span class="icon"><t.icon size={30} /></span>
-          <span>{t.label}</span>
+          <span class="label">
+            {t.label}
+            {#if t.route.name === "setlist"}
+              <span class="muted small">
+                {setlist.items.length ? `${setlist.items.length} na lista` : "Monte a ordem do culto"}
+              </span>
+            {/if}
+          </span>
         </button>
       {/each}
     </div>
@@ -99,6 +108,10 @@
       box-shadow var(--normal);
   }
 
+  .tile.wide {
+    grid-column: 1 / -1;
+  }
+
   .tile:hover {
     box-shadow: var(--shadow);
     transform: translateY(-2px);
@@ -106,6 +119,16 @@
 
   .tile:active {
     transform: scale(0.98);
+  }
+
+  .label {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .small {
+    font-size: 0.85rem;
+    font-weight: 500;
   }
 
   .icon {

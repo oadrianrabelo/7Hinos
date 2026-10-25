@@ -5,6 +5,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+  import ErrorBoundary from "../components/ErrorBoundary.svelte";
   import SlideView from "../components/SlideView.svelte";
   import VideoLayer from "../components/VideoLayer.svelte";
   import { api, on } from "../lib/api";
@@ -44,11 +45,13 @@
 
 <div class="output" class:idle onmousemove={wake} ondblclick={toggleFullscreen} role="presentation">
   {#if stage && style}
-    {#if showVideo && stage.video}
-      <VideoLayer state={stage.video} muted={stage.video.targets[0] !== label} />
-    {:else}
-      <SlideView slide={stage.scene.kind === "slide" ? stage.scene.slide : null} {style} />
-    {/if}
+    <ErrorBoundary where="projeção {label}" silent>
+      {#if showVideo && stage.video}
+        <VideoLayer state={stage.video} muted={stage.video.targets[0] !== label} />
+      {:else}
+        <SlideView slide={stage.scene.kind === "slide" ? stage.scene.slide : null} {style} />
+      {/if}
+    </ErrorBoundary>
   {/if}
 </div>
 

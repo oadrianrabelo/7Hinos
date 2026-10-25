@@ -191,6 +191,15 @@ export function install() {
       { path: "/Users/igreja/Videos/Abertura Escola Sabatina.mp4", title: "Abertura Escola Sabatina" },
       { path: "/Users/igreja/Videos/Informativo Mundial das Missões.mp4", title: "Informativo Mundial das Missões" },
     ],
+    setlist:
+      params.get("setlist") === "0"
+        ? []
+        : [
+            { kind: "song", id: 101, title: "Meu Lugar no Mundo" },
+            { kind: "song", id: 1, title: "Santo! Santo! Santo!" },
+            { kind: "video", path: "/Users/igreja/Videos/Informativo Mundial das Missões.mp4", title: "Informativo Mundial das Missões" },
+            { kind: "song", id: 18, title: "Castelo Forte" },
+          ],
     keepPlayed: true,
     autoUpdateCatalog: true,
     autoUpdateApp: true,
@@ -203,6 +212,15 @@ export function install() {
   let outputs: Output[] = params.get("outputs") === "1" ? [{ label: "output-1", displayId: "tv", name: "Tela 2" }] : [];
 
   const changed = (event: string, payload: unknown) => void emit(event, payload);
+  const status = () => ({
+    installed,
+    version: installed ? 185 : null,
+    songs: installed ? 2482 : 0,
+    albums: installed ? 318 : 0,
+    lastCheck: installed ? Math.floor(Date.now() / 1000) - 600 : null,
+    available: 185,
+    lastError: params.get("offline") === "1" ? "Não foi possível falar com o servidor." : null,
+  });
 
   mockIPC(
     async (cmd, args) => {
@@ -214,10 +232,14 @@ export function install() {
           return "0.5.0";
         case "settings_get":
           return settings;
-        case "settings_set":
-          settings = a.settings;
+        case "settings_update":
+          settings = { ...settings, ...a.patch, slide: { ...settings.slide, ...(a.patch.slide ?? {}) } };
           changed("settings://changed", settings);
           return settings;
+        case "catalog_check_now":
+          return;
+        case "diagnostics":
+          return { version: "0.5.0", os: "macos", arch: "aarch64", catalog: status(), localSources: settings.localSources, outputs: outputs.length, logDir: "/tmp" };
         case "favorite_toggle":
           settings = {
             ...settings,
@@ -229,25 +251,25 @@ export function install() {
         case "videos_remove":
           return settings;
         case "catalog_status":
-          return { installed, version: installed ? 185 : null, songs: installed ? 2482 : 0, albums: installed ? 318 : 0 };
+          return status();
         case "catalog_sync":
           for (let done = 0; done <= 18_000_000; done += 1_500_000) {
             changed("catalog://progress", { done, total: 18_000_000 });
             await new Promise((r) => setTimeout(r, 120));
           }
           installed = true;
-          return { installed, version: 185, songs: 2482, albums: 318 };
+          return status();
         case "louvorja_detect":
           return params.get("local") === "1" ? [{ root: "C:\\Program Files (x86)\\Louvor JA", database: "" }] : [];
         case "louvorja_import":
           await new Promise((r) => setTimeout(r, 1500));
           installed = true;
           settings = { ...settings, onboarded: true };
-          return { installed, version: 185, songs: 2482, albums: 318 };
+          return status();
         case "collections":
           return collections;
         case "hymnal":
-          return [summary(1, 1), summary(18, 18)];
+          return a.edition === "1996" ? [summary(18, 1)] : [summary(1, 1), summary(18, 18)];
         case "search": {
           const q = normalize(a.query.trim());
           return allSongs.filter((s) => normalize(s.title).includes(q) || String(s.number) === q);

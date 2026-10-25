@@ -17,6 +17,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
+use crate::sync::RwLockExt;
 use percent_encoding::percent_decode_str;
 
 #[derive(Default)]
@@ -61,12 +62,12 @@ impl MediaServer {
             .into_iter()
             .filter_map(|d| d.canonicalize().ok())
             .collect();
-        self.allowed.write().expect("liberados").dirs = dirs;
+        self.allowed.writing().dirs = dirs;
     }
 
     pub fn allow_file(&self, path: &Path) {
         if let Ok(path) = path.canonicalize() {
-            self.allowed.write().expect("liberados").files.insert(path);
+            self.allowed.writing().files.insert(path);
         }
     }
 }
@@ -150,7 +151,7 @@ fn resolve(target: &str, token: &str, allowed: &RwLock<Allowed>) -> Option<PathB
     if !path.is_file() {
         return None;
     }
-    let allowed = allowed.read().ok()?;
+    let allowed = allowed.reading();
     let ok = allowed.files.contains(&path) || allowed.dirs.iter().any(|d| path.starts_with(d));
     ok.then_some(path)
 }

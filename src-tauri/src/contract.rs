@@ -83,13 +83,21 @@ async fn online_catalog_contract() {
     assert!(status.installed && status.songs > 1000 && status.albums > 50);
 
     let catalog = library.catalog().unwrap();
-    let media = library.media();
-    let collections = catalog.collections(media);
+    let collections = library.collections().await.unwrap();
     println!(
         "coleções: {:?}",
         collections.iter().map(|c| &c.name).collect::<Vec<_>>()
     );
     assert!(collections.len() >= 3);
+    for expected in ["Infantis", "Doxologia"] {
+        assert!(
+            collections.iter().any(|c| c.name == expected),
+            "falta a coleção {expected}"
+        );
+    }
+    let hymnal_1996 = library.hymnal_1996().await.unwrap();
+    println!("hinário 1996: {} hinos", hymnal_1996.len());
+    assert!(hymnal_1996.len() > 300);
 
     let hymnal = catalog.hymnal();
     println!("hinário: {} hinos", hymnal.len());

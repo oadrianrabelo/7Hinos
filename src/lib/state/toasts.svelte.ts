@@ -1,3 +1,5 @@
+import { warn } from "@tauri-apps/plugin-log";
+
 export interface Toast {
   id: number;
   message: string;
@@ -16,7 +18,10 @@ class Toasts {
     return id;
   }
 
+  /** Erros mostrados à pessoa também vão para o arquivo de registro. */
   error(message: string) {
+    void warn(`[interface] ${message}`).catch(() => {});
+    if (this.items.some((t) => t.kind === "error" && t.message === message)) return;
     return this.show(message, "error", undefined, 7000);
   }
 

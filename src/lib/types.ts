@@ -70,6 +70,11 @@ export interface SlideStyle {
   transitionMs: number;
 }
 
+/** Um item da programação do culto. */
+export type SetItem =
+  | { kind: "song"; id: number; title: string }
+  | { kind: "video"; path: string; title: string };
+
 export interface VideoItem {
   path: string;
   title: string;
@@ -85,6 +90,7 @@ export interface Settings {
   favorites: number[];
   recent: number[];
   videos: VideoItem[];
+  setlist: SetItem[];
   keepPlayed: boolean;
   autoUpdateCatalog: boolean;
   autoUpdateApp: boolean;
@@ -105,7 +111,26 @@ export interface CatalogStatus {
   version: number | null;
   songs: number;
   albums: number;
+  /** Última vez (epoch em segundos) que o LouvorJA respondeu. */
+  lastCheck: number | null;
+  /** Versão publicada vista na última resposta. */
+  available: number | null;
+  /** Erro da última tentativa, se falhou. */
+  lastError: string | null;
 }
+
+export interface Diagnostics {
+  version: string;
+  os: string;
+  arch: string;
+  catalog: CatalogStatus;
+  localSources: string[];
+  outputs: number;
+  logDir: string | null;
+}
+
+/** Mudança parcial nas preferências (objetos aninhados também parciais). */
+export type SettingsPatch = Partial<Omit<Settings, "slide">> & { slide?: Partial<SlideStyle> };
 
 export interface OfflineStatus {
   cached: number;

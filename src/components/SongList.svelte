@@ -1,9 +1,10 @@
 <!-- Lista de músicas: número, título, onde aparece, duração e favorito. -->
 <script lang="ts">
-  import { Heart, Mic, Play } from "@lucide/svelte";
+  import { Heart, ListChecks, ListPlus, Mic, Play } from "@lucide/svelte";
   import { formatDuration } from "../lib/format";
   import { player } from "../lib/state/player.svelte";
   import { settings } from "../lib/state/settings.svelte";
+  import { setlist } from "../lib/state/setlist.svelte";
   import type { SongSummary } from "../lib/types";
 
   let {
@@ -24,6 +25,8 @@
 <ul class="list" role="list">
   {#each songs as song, i (song.id + "-" + i)}
     {@const current = player.song?.id === song.id}
+    {@const item = { kind: "song" as const, id: song.id, title: song.title }}
+    {@const inSetlist = setlist.has(item)}
     <li>
       <div
         class="item"
@@ -55,6 +58,18 @@
           <span class="badge" title="Tem playback (acompanhamento sem voz)"><Mic size={12} />PB</span>
         {/if}
         <span class="dur">{formatDuration(song.durationMs)}</span>
+        <button
+          class="fav add"
+          class:on={inSetlist}
+          aria-label={inSetlist ? "Tirar do culto de hoje" : "Adicionar ao culto de hoje"}
+          title={inSetlist ? "Está no culto de hoje" : "Adicionar ao culto de hoje"}
+          onclick={(e) => {
+            e.stopPropagation();
+            void setlist.toggle(item);
+          }}
+        >
+          {#if inSetlist}<ListChecks size={16} />{:else}<ListPlus size={16} />{/if}
+        </button>
         <button
           class="fav"
           class:on={settings.isFavorite(song.id)}
@@ -178,5 +193,9 @@
 
   .fav.on {
     color: #ff2d55;
+  }
+
+  .fav.add.on {
+    color: var(--accent);
   }
 </style>

@@ -2,6 +2,7 @@ export type Route =
   | { name: "home" }
   | { name: "search"; query: string }
   | { name: "hymnal" }
+  | { name: "setlist" }
   | { name: "collections" }
   | { name: "collection"; id: number }
   | { name: "album"; id: number }

@@ -8,6 +8,7 @@
   import SimpleHome from "./SimpleHome.svelte";
   import SimpleLive from "./SimpleLive.svelte";
   import SimpleSong from "./SimpleSong.svelte";
+  import ErrorBoundary from "../components/ErrorBoundary.svelte";
   import { nav } from "../lib/state/nav.svelte";
   import { player } from "../lib/state/player.svelte";
 
@@ -43,12 +44,18 @@
 
   <main class="scroll" bind:this={page}>
     <div class="content">
-      {#if route.name === "home"}
-        <SimpleHome />
-      {:else if route.name === "song"}
-        <SimpleSong id={route.id} />
-      {:else if route.name === "live"}
-        <SimpleLive />
+      {#if route.name === "home" || route.name === "song" || route.name === "live"}
+        {#key route}
+          <ErrorBoundary where="modo simples: {route.name}" onhome={() => nav.reset({ name: "home" })}>
+            {#if route.name === "home"}
+              <SimpleHome />
+            {:else if route.name === "song"}
+              <SimpleSong id={route.id} />
+            {:else}
+              <SimpleLive />
+            {/if}
+          </ErrorBoundary>
+        {/key}
       {:else}
         <RouteView simple />
       {/if}

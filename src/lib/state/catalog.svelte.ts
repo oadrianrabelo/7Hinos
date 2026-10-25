@@ -7,6 +7,7 @@ class CatalogState {
   status = $state<CatalogStatus | null>(null);
   collections = $state<Collection[]>([]);
   hymnal = $state<SongSummary[] | null>(null);
+  hymnal1996 = $state<SongSummary[] | null>(null);
   syncing = $state(false);
   progress = $state<{ done: number; total: number | null } | null>(null);
   error = $state<string | null>(null);
@@ -20,6 +21,8 @@ class CatalogState {
     });
     this.status = await api.catalogStatus();
     await this.reload();
+    // A internet voltou: confere na hora se o LouvorJA publicou novidades.
+    window.addEventListener("online", () => void api.checkCatalogNow());
   }
 
   get installed() {
@@ -28,12 +31,14 @@ class CatalogState {
 
   async reload() {
     this.hymnal = null;
+    this.hymnal1996 = null;
     this.collections = this.installed ? await api.collections().catch(() => []) : [];
   }
 
   async loadHymnal() {
-    if (!this.hymnal && this.installed) this.hymnal = await api.hymnal().catch(() => []);
-    return this.hymnal ?? [];
+    if (!this.installed) return;
+    if (!this.hymnal) this.hymnal = await api.hymnal().catch(() => []);
+    if (!this.hymnal1996) this.hymnal1996 = await api.hymnal("1996").catch(() => []);
   }
 
   album(id: number): AlbumSummary | undefined {

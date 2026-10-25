@@ -11,8 +11,11 @@ mod media_server;
 mod settings;
 mod stage;
 mod state;
+mod sync;
+mod updates;
 
 use tauri::Manager;
+use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 
 use library::Library;
 use settings::SettingsStore;
@@ -28,13 +31,41 @@ fn migrate_legacy(app: &tauri::App, settings: &SettingsStore) {
     if let Ok(home) = app.path().home_dir() {
         dirs.push(home.join(".config"));
     }
-    let legacy = legacy::locate(&dirs)
-        .and_then(|db| legacy::read(&db, current.language).ok())
-        .unwrap_or_default();
+    let legacy = match legacy::locate(&dirs) {
+        Some(db) => match legacy::read(&db, current.language) {
+            Ok(legacy) => {
+                log::info!(
+                    "versão anterior migrada: {} favoritos, {} vídeos, {} pastas",
+                    legacy.favorites.len(),
+                    legacy.videos.len(),
+                    legacy.folders.len()
+                );
+                legacy
+            }
+            Err(e) => {
+                log::warn!(
+                    "não foi possível ler a versão anterior ({}): {e}",
+                    db.display()
+                );
+                Default::default()
+            }
+        },
+        None => Default::default(),
+    };
     let _ = settings.update(|s| legacy::apply(s, legacy));
 }
 
+/// Pânicos vão para o arquivo de registro antes do comportamento padrão.
+fn log_panics() {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        log::error!("pânico: {info}");
+        default(info);
+    }));
+}
+
 pub fn run() {
+    log_panics();
     let mut builder = tauri::Builder::default();
 
     #[cfg(desktop)]
@@ -49,6 +80,20 @@ pub fn run() {
     }
 
     builder
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .targets([
+                    Target::new(TargetKind::LogDir {
+                        file_name: Some("7hinos".into()),
+                    }),
+                    Target::new(TargetKind::Stdout),
+                ])
+                .level(log::LevelFilter::Info)
+                .max_file_size(2_000_000)
+                .rotation_strategy(RotationStrategy::KeepOne)
+                .build(),
+        )
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -61,7 +106,7 @@ pub fn run() {
             let library = Library::new(data_dir.clone());
             let current = settings.get();
             if let Err(e) = library.load(current.language) {
-                eprintln!("catálogo ilegível, será baixado de novo: {e}");
+                log::warn!("catálogo ilegível, será baixado de novo: {e}");
             }
 
             let media_server = media_server::MediaServer::start()?;
@@ -75,16 +120,12 @@ pub fn run() {
                 stage: Default::default(),
                 outputs: Default::default(),
                 media_server,
+                watcher: Default::default(),
             });
             commands::apply_local_sources(app.handle());
             commands::resolve_pending_favorites(app.handle());
 
-            if current.auto_update_catalog {
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    commands::sync_catalog_quietly(handle).await;
-                });
-            }
+            tauri::async_runtime::spawn(updates::run(app.handle().clone()));
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -98,14 +139,17 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::app_version,
+            commands::diagnostics,
+            commands::logs_open,
             commands::media_base,
             commands::settings_get,
-            commands::settings_set,
+            commands::settings_update,
             commands::favorite_toggle,
             commands::videos_add,
             commands::videos_remove,
             commands::catalog_status,
             commands::catalog_sync,
+            commands::catalog_check_now,
             commands::louvorja_detect,
             commands::louvorja_import,
             commands::collections,

@@ -406,23 +406,24 @@ pub fn read(install: &Install, fallback_lang: Lang) -> Result<LocalCatalog> {
         })
         .collect();
 
-    let hymnal_albums: Vec<i64> = kinds
-        .iter()
-        .filter(|k| k.1 == "HASD")
-        .map(|k| k.0)
-        .collect();
-    let hymnal: Vec<Value> = hymnal_albums
-        .iter()
-        .flat_map(|album| tracks[album].iter())
-        .map(|&(song, track)| {
-            json!({
-                "id_music": song,
-                "name": songs[&song].name,
-                "track": track,
-                "has_instrumental_music": i32::from(!songs[&song].instrumental.is_empty()),
+    let hymnal_of = |kind: &str| -> Vec<Value> {
+        let mut seen = HashSet::new();
+        kinds
+            .iter()
+            .filter(|k| k.1 == kind && seen.insert(k.0))
+            .flat_map(|k| tracks[&k.0].iter())
+            .map(|&(song, track)| {
+                json!({
+                    "id_music": song,
+                    "name": songs[&song].name,
+                    "track": track,
+                    "has_instrumental_music": i32::from(!songs[&song].instrumental.is_empty()),
+                })
             })
-        })
-        .collect();
+            .collect()
+    };
+    let hymnal = hymnal_of("HASD");
+    let hymnal_1996 = hymnal_of("HASD_1996");
 
     for (&album, list) in &tracks {
         let (name, image) = &albums[&album];
@@ -486,6 +487,9 @@ pub fn read(install: &Install, fallback_lang: Lang) -> Result<LocalCatalog> {
     entries.push((format!("{code}_categories"), Value::Array(categories)));
     entries.push((format!("{code}_musics"), Value::Array(musics)));
     entries.push((format!("{code}_hymnal"), Value::Array(hymnal)));
+    if !hymnal_1996.is_empty() {
+        entries.push((format!("{code}_hymnal_1996"), Value::Array(hymnal_1996)));
+    }
 
     let entries = entries
         .into_iter()

@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { BookOpen, Clock, Film, Heart, House, Library, MonitorPlay, Settings } from "@lucide/svelte";
+  import { BookOpen, Clock, Film, Heart, House, Library, ListMusic, MonitorPlay, Settings } from "@lucide/svelte";
   import SearchField from "../components/SearchField.svelte";
   import { nav, type Route } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
+  import { setlist } from "../lib/state/setlist.svelte";
 
   let query = $state("");
   let search: SearchField;
@@ -13,6 +14,7 @@
 
   const items = [
     { route: { name: "home" }, label: "Início", icon: House },
+    { route: { name: "setlist" }, label: "Culto de hoje", icon: ListMusic },
     { route: { name: "hymnal" }, label: "Hinário", icon: BookOpen },
     { route: { name: "collections" }, label: "Coletâneas", icon: Library },
     { route: { name: "favorites" }, label: "Favoritos", icon: Heart },
@@ -47,6 +49,9 @@
         <button class="item" class:active={section === item.route.name} onclick={() => nav.reset(item.route)}>
           <item.icon size={17} />
           {item.label}
+          {#if item.route.name === "setlist" && setlist.items.length}
+            <span class="count">{setlist.items.length}</span>
+          {/if}
         </button>
       </li>
     {/each}
@@ -151,6 +156,18 @@
 
   .spacer {
     flex: 1;
+  }
+
+  .count {
+    margin-left: auto;
+    min-width: 1.3rem;
+    padding: 0 0.35rem;
+    border-radius: 1rem;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: center;
   }
 
   .dot {

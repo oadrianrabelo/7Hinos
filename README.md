@@ -35,8 +35,15 @@ experiência.
   inteiros podem ser baixados com um clique.
 - **Traz tudo da versão anterior.** Favoritos, vídeos, tema e as músicas já
   baixadas pela versão antiga do 7Hinos são migrados na primeira abertura.
-- **Atualiza sozinho.** O acervo é conferido a cada abertura e o app baixa
-  novas versões em segundo plano, pedindo só para reiniciar.
+- **Culto de hoje.** Monte antes a ordem dos hinos e vídeos; na hora, o painel
+  (ou o modo simples) mostra sempre o próximo item.
+- **Sempre em dia com o LouvorJA.** O acervo é conferido ao abrir e a cada
+  3 horas; sem internet, tenta de novo sozinho (1, 5, 15, 30 e 60 minutos) e
+  confere na hora em que a conexão volta. O app também baixa novas versões
+  dele mesmo em segundo plano, pedindo só para reiniciar.
+- **Erros que não derrubam o culto.** Uma parte da tela que falhar mostra um
+  aviso só ali (no telão, fica preta); tudo vai para um arquivo de registro, e
+  **Ajustes → Sobre** copia um diagnóstico pronto para pedir ajuda.
 
 ### Atalhos (modo completo)
 
@@ -97,7 +104,9 @@ src-tauri/src/            Rust: dados, disco, rede e janelas
   media_server.rs         entrega arquivos locais à interface (HTTP em 127.0.0.1)
   stage.rs                o palco: o que está sendo projetado agora
   displays.rs             monitores e janelas de projeção
-  settings.rs             preferências (JSON legível)
+  settings.rs             preferências (JSON legível, alteradas por partes)
+  updates.rs              vigia que mantém o acervo em dia com o LouvorJA
+  contract.rs             testes contra o LouvorJA real (diários, na CI)
   commands.rs             a fronteira com a interface (comandos finos)
 
 src/                      Svelte 5 + TypeScript: só interface
@@ -165,6 +174,16 @@ organizadas por álbum podem ser adicionadas em **Ajustes → Sem internet**.
 São as rotas documentadas em
 [louvorja/api-workers](https://github.com/louvorja/api-workers). A atualização
 compara a versão local com a publicada e baixa o pacote só quando há novidade.
+
+## Acompanhando o LouvorJA
+
+O workflow **Contrato LouvorJA** roda todo dia contra o LouvorJA de verdade:
+baixa o acervo online e o banco do programa desktop, confere coleções,
+hinários, letras, tempos dos slides, áudios e capas, e compara o banco
+desktop com o acervo online. Se o LouvorJA mudar algo que o 7Hinos não
+entende, o workflow falha e abre uma issue — antes que alguém perceba no culto.
+
+Para rodar na sua máquina: `cd src-tauri && cargo test contract -- --ignored --nocapture`.
 
 ## Instaladores de teste
 

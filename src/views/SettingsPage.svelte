@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Trash2, X } from "@lucide/svelte";
+  import { ClipboardCopy, FileText, FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Trash2, X } from "@lucide/svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import SlideView from "../components/SlideView.svelte";
   import { api } from "../lib/api";
-  import { formatBytes } from "../lib/format";
+  import { errorMessage } from "../lib/api";
+  import { formatBytes, formatWhen } from "../lib/format";
   import { catalog } from "../lib/state/catalog.svelte";
   import { settings } from "../lib/state/settings.svelte";
   import { toasts } from "../lib/state/toasts.svelte";
@@ -72,6 +73,30 @@
 
   function removeFolder(path: string) {
     return settings.save({ localSources: s.localSources.filter((p) => p !== path) });
+  }
+
+  async function copyDiagnostics() {
+    try {
+      const d = await api.diagnostics();
+      const text = [
+        `7Hinos ${d.version} (${d.os} ${d.arch})`,
+        `Acervo: ${d.catalog.installed ? `versão ${d.catalog.version}, ${d.catalog.songs} músicas` : "não instalado"}`,
+        `Publicado no LouvorJA: ${d.catalog.available ?? "desconhecido"}`,
+        `Última verificação: ${d.catalog.lastCheck ? formatWhen(d.catalog.lastCheck) : "nunca"}`,
+        `Último erro: ${d.catalog.lastError ?? "nenhum"}`,
+        `Pastas locais: ${d.localSources.length ? d.localSources.join("; ") : "nenhuma"}`,
+        `Telas de projeção abertas: ${d.outputs}`,
+        `Registros: ${d.logDir ?? "?"}`,
+      ].join("\n");
+      await navigator.clipboard.writeText(text);
+      toasts.show("Diagnóstico copiado. Cole numa mensagem para pedir ajuda.", "success");
+    } catch (e) {
+      toasts.error(errorMessage(e));
+    }
+  }
+
+  async function openLogs() {
+    await api.openLogs().catch((e) => toasts.error(errorMessage(e)));
   }
 
   async function clearMedia() {
@@ -173,7 +198,11 @@
           Acervo do LouvorJA
           <span class="muted block">
             {catalog.status?.songs.toLocaleString("pt-BR")} músicas · versão {catalog.status?.version ?? "—"}
+            {#if catalog.status?.lastCheck}· conferido {formatWhen(catalog.status.lastCheck)}{/if}
           </span>
+          {#if catalog.status?.lastError}
+            <span class="warn block">Sem contato com o LouvorJA agora — tentando de novo sozinho.</span>
+          {/if}
         </span>
         <button class="btn" onclick={checkCatalog} disabled={checking}>
           {#if checking}<LoaderCircle size={15} class="spin" /> Verificando…{:else}<RefreshCw size={15} /> Procurar novidades{/if}
@@ -243,6 +272,14 @@
       <div class="row">
         <span class="grow">Atualizar o aplicativo automaticamente</span>
         <input type="checkbox" class="switch" checked={s.autoUpdateApp} onchange={(e) => settings.save({ autoUpdateApp: e.currentTarget.checked })} />
+      </div>
+      <div class="row">
+        <span class="grow">
+          Problemas?
+          <span class="muted block">Copie o diagnóstico ou abra os registros para enviar a quem ajuda você.</span>
+        </span>
+        <button class="btn" onclick={copyDiagnostics}><ClipboardCopy size={15} /> Copiar diagnóstico</button>
+        <button class="btn" onclick={openLogs}><FileText size={15} /> Registros</button>
       </div>
       <div class="row">
         <span class="grow muted small">Hinos, áudios e imagens: acervo público do LouvorJA (louvorja.com.br).</span>
@@ -319,5 +356,10 @@
 
   .small {
     font-size: 0.85rem;
+  }
+
+  .warn {
+    font-size: 0.85rem;
+    color: var(--warning);
   }
 </style>

@@ -7,12 +7,14 @@ import type {
   Album,
   CatalogStatus,
   Collection,
+  Diagnostics,
   Display,
   Install,
   OfflineStatus,
   Output,
   Scene,
   Settings,
+  SettingsPatch,
   Song,
   SongSummary,
   StageState,
@@ -21,19 +23,24 @@ import type {
 
 export const api = {
   appVersion: () => invoke<string>("app_version"),
+  diagnostics: () => invoke<Diagnostics>("diagnostics"),
+  openLogs: () => invoke<void>("logs_open"),
 
   settings: () => invoke<Settings>("settings_get"),
-  saveSettings: (settings: Settings) => invoke<Settings>("settings_set", { settings }),
+  /** Só os campos enviados mudam; o backend mescla com o que já está salvo. */
+  updateSettings: (patch: SettingsPatch) => invoke<Settings>("settings_update", { patch }),
   toggleFavorite: (id: number) => invoke<Settings>("favorite_toggle", { id }),
   addVideos: (paths: string[]) => invoke<Settings>("videos_add", { paths }),
   removeVideo: (path: string) => invoke<Settings>("videos_remove", { path }),
 
   catalogStatus: () => invoke<CatalogStatus>("catalog_status"),
   syncCatalog: (force = false) => invoke<CatalogStatus>("catalog_sync", { force }),
+  checkCatalogNow: () => invoke<void>("catalog_check_now"),
   detectLouvorja: () => invoke<Install[]>("louvorja_detect"),
   importLouvorja: (path: string | null = null) => invoke<CatalogStatus>("louvorja_import", { path }),
   collections: () => invoke<Collection[]>("collections"),
-  hymnal: () => invoke<SongSummary[]>("hymnal"),
+  hymnal: (edition: "current" | "1996" = "current") =>
+    invoke<SongSummary[]>("hymnal", { edition: edition === "1996" ? "1996" : null }),
   search: (query: string) => invoke<SongSummary[]>("search", { query }),
   songs: (ids: number[]) => invoke<SongSummary[]>("songs", { ids }),
   album: (id: number) => invoke<Album>("album", { id }),

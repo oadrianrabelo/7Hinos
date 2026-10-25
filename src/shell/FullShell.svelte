@@ -3,6 +3,7 @@
   import RouteView from "./RouteView.svelte";
   import Sidebar from "./Sidebar.svelte";
   import StagePanel from "./StagePanel.svelte";
+  import ErrorBoundary from "../components/ErrorBoundary.svelte";
   import { nav } from "../lib/state/nav.svelte";
 
   let sidebar: Sidebar;
@@ -32,7 +33,7 @@
       <RouteView />
     </div>
   </main>
-  <StagePanel />
+  <ErrorBoundary where="painel ao vivo"><StagePanel /></ErrorBoundary>
 </div>
 
 <style>

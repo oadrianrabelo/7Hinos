@@ -16,7 +16,10 @@
   } from "@lucide/svelte";
   import Cover from "../components/Cover.svelte";
   import SlideView from "../components/SlideView.svelte";
+  import { openSetItem } from "../lib/actions";
   import { formatTime } from "../lib/format";
+  import { nextAfter } from "../lib/setlist";
+  import { setlist } from "../lib/state/setlist.svelte";
   import type { PlayMode } from "../lib/slides";
   import { nav } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
@@ -36,6 +39,9 @@
     list?.querySelector(`[data-index="${i}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   });
 
+  const nextInSetlist = $derived(
+    player.song ? nextAfter(setlist.items, { kind: "song", id: player.song.id, title: "" }) : null,
+  );
   const progress = $derived(player.duration ? (player.time / player.duration) * 100 : 0);
   const modes: [PlayMode, string][] = [["voice", "Cantado"], ["playback", "Playback"], ["lyrics", "Só letra"]];
 </script>
@@ -190,6 +196,18 @@
     <div class="empty grow">
       <Presentation size={40} strokeWidth={1.4} />
       <p>Escolha um hino na biblioteca.<br />Ele aparece aqui para você projetar.</p>
+    </div>
+  {/if}
+
+  {#if nextInSetlist && !player.queued}
+    <div class="next-up">
+      <span class="grow">
+        <span class="section-title">Próximo do culto</span>
+        <span class="truncate block">{nextInSetlist.title}</span>
+      </span>
+      <button class="btn" onclick={() => nextInSetlist && openSetItem(nextInSetlist)}>
+        {nextInSetlist.kind === "song" ? "Abrir" : "Exibir"}
+      </button>
     </div>
   {/if}
 
@@ -412,6 +430,14 @@
     color: var(--text-3);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  .next-up {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem 0.6rem 1rem;
+    border-top: 1px solid var(--border);
   }
 
   .hint {

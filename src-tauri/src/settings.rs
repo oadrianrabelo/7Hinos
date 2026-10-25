@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::catalog::model::Lang;
 use crate::error::Result;
+use crate::sync::LockExt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -56,6 +57,14 @@ pub struct VideoItem {
     pub title: String,
 }
 
+/// Um item da programação do culto.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum SetItem {
+    Song { id: u32, title: String },
+    Video { path: String, title: String },
+}
+
 /// Favorito da versão antiga, esperando o catálogo para virar um id.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -78,6 +87,8 @@ pub struct Settings {
     pub favorites: Vec<u32>,
     pub recent: Vec<u32>,
     pub videos: Vec<VideoItem>,
+    /// A programação do culto, na ordem em que será apresentada.
+    pub setlist: Vec<SetItem>,
     /// Guarda no disco as músicas tocadas para funcionar sem internet.
     pub keep_played: bool,
     pub auto_update_catalog: bool,
@@ -102,6 +113,7 @@ impl Default for Settings {
             favorites: Vec::new(),
             recent: Vec::new(),
             videos: Vec::new(),
+            setlist: Vec::new(),
             keep_played: true,
             auto_update_catalog: true,
             auto_update_app: true,
@@ -113,6 +125,29 @@ impl Default for Settings {
 }
 
 pub const RECENT_LIMIT: usize = 30;
+
+/// Aplica uma mudança parcial vinda da interface (`{ "slide": { "uppercase": false } }`).
+/// Objetos são mesclados campo a campo; listas e valores simples são trocados.
+/// Mudar só o que foi pedido evita desfazer algo que outra janela acabou de salvar.
+pub fn apply_patch(settings: &mut Settings, patch: &serde_json::Value) -> Result<()> {
+    fn merge(target: &mut serde_json::Value, patch: &serde_json::Value) {
+        match (target, patch) {
+            (serde_json::Value::Object(target), serde_json::Value::Object(patch)) => {
+                for (key, value) in patch {
+                    merge(
+                        target.entry(key.clone()).or_insert(serde_json::Value::Null),
+                        value,
+                    );
+                }
+            }
+            (target, patch) => *target = patch.clone(),
+        }
+    }
+    let mut value = serde_json::to_value(&*settings)?;
+    merge(&mut value, patch);
+    *settings = serde_json::from_value(value)?;
+    Ok(())
+}
 
 impl Settings {
     pub fn add_local_source(&mut self, path: String) {
@@ -157,13 +192,20 @@ impl SettingsStore {
     }
 
     pub fn get(&self) -> Settings {
-        self.current.lock().expect("preferências").clone()
+        self.current.locked().clone()
     }
 
     pub fn update(&self, change: impl FnOnce(&mut Settings)) -> Result<Settings> {
-        let mut current = self.current.lock().expect("preferências");
+        self.try_update(|s| {
+            change(s);
+            Ok(())
+        })
+    }
+
+    pub fn try_update(&self, change: impl FnOnce(&mut Settings) -> Result<()>) -> Result<Settings> {
+        let mut current = self.current.locked();
         let mut next = current.clone();
-        change(&mut next);
+        change(&mut next)?;
         let next = next.sanitized();
         if let Some(dir) = self.path.parent() {
             std::fs::create_dir_all(dir)?;
@@ -189,6 +231,37 @@ mod tests {
         s.push_recent(35);
         assert_eq!(s.recent.len(), RECENT_LIMIT);
         assert_eq!(&s.recent[..3], &[35, 39, 38]);
+    }
+
+    #[test]
+    fn applies_partial_changes_without_touching_the_rest() {
+        let mut s = Settings {
+            favorites: vec![1, 2],
+            ..Settings::default()
+        };
+        apply_patch(
+            &mut s,
+            &serde_json::json!({ "slide": { "uppercase": false }, "mode": "full" }),
+        )
+        .unwrap();
+        assert!(!s.slide.uppercase);
+        assert!(s.slide.show_images, "o resto do slide fica");
+        assert_eq!(s.mode, UiMode::Full);
+        assert_eq!(s.favorites, [1, 2]);
+        assert!(apply_patch(&mut s, &serde_json::json!({ "mode": "estranho" })).is_err());
+        apply_patch(
+            &mut s,
+            &serde_json::json!({ "setlist": [{ "kind": "song", "id": 7, "title": "Hino" }, { "kind": "video", "path": "/v.mp4", "title": "V" }] }),
+        )
+        .unwrap();
+        assert_eq!(
+            s.setlist[0],
+            SetItem::Song {
+                id: 7,
+                title: "Hino".into()
+            }
+        );
+        assert_eq!(s.mode, UiMode::Full);
     }
 
     #[test]
