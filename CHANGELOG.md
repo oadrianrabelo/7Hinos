@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.0.0...v1.1.0) (2026-10-25)
+
+
+### ✨ Novas Funcionalidades
+
+* **instalador:** Windows pequeno e em português, com versão sem internet ([8f8cec5](https://github.com/oadrianrabelo/7Hinos/commit/8f8cec514c3b95f17128883252d3d6879c1a925d))
+* **instalador:** Windows pequeno e em português; nota da 1.0.0 limpa ([2fa1c25](https://github.com/oadrianrabelo/7Hinos/commit/2fa1c2533f0e82ad6085f13225134a72eac87a3a))
+
+
+### 🔧 Manutenção
+
+* **release:** nota da 1.0.0 sem repetições e fim do release-as ([4864a31](https://github.com/oadrianrabelo/7Hinos/commit/4864a313d5a54eaed346e14d505636323489d626))
+
 ## [1.0.0](https://github.com/oadrianrabelo/7Hinos/compare/v0.4.0...v1.0.0) (2026-10-25)
 
 
