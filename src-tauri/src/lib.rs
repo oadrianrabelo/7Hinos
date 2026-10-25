@@ -1,5 +1,7 @@
 mod catalog;
 mod commands;
+#[cfg(test)]
+mod contract;
 mod displays;
 mod error;
 mod legacy;

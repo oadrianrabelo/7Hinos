@@ -1,0 +1,59 @@
+# Confere todo dia se o 7Hinos continua entendendo o LouvorJA: o acervo
+# online (API pública) e o banco do programa desktop (usado na importação
+# sem internet). Se o LouvorJA mudar algo, este workflow falha e abre uma issue.
+name: Contrato LouvorJA
+
+on:
+  schedule:
+    - cron: "17 9 * * *"
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  contract:
+    if: github.event_name != 'push' || contains(github.event.head_commit.message, '[contrato]')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependências do sistema (WebKitGTK)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      # O build do Tauri exige a pasta do frontend; para os testes basta existir.
+      - run: mkdir -p dist && echo '<!doctype html>' > dist/index.html
+      - name: Testes contra o LouvorJA real
+        working-directory: src-tauri
+        env:
+          CONTRACT_OUT: ${{ github.workspace }}/amostras
+        run: cargo test contract -- --ignored --nocapture --test-threads=1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: amostras-louvorja
+          path: amostras
+          if-no-files-found: ignore
+      - name: Abrir issue se o contrato quebrou
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'O formato do LouvorJA mudou (teste de contrato falhou)';
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: 'open',
+            });
+            if (open.some((i) => i.title === title)) return;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: `O teste diário contra a API do LouvorJA falhou.\n\nExecução: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nO app continua funcionando com o acervo já baixado, mas novas atualizações podem não ser instaladas até o 7Hinos ser ajustado.`,
+            });
