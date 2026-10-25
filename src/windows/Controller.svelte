@@ -25,6 +25,9 @@
     await Promise.all([settings.init(), catalog.init(), outputs.init(), video.init(), downloads.init()]);
     await stage.init();
     ready = true;
+    // O perfil de telas padrão abre sozinho, se nenhuma tela estiver aberta.
+    const preferred = settings.current.screenProfiles.find((p) => p.id === settings.current.defaultProfile);
+    if (preferred && settings.current.onboarded && !outputs.outputs.length) void outputs.applyProfile(preferred);
     if (settings.current.autoUpdateApp) setTimeout(() => updater.checkInBackground(), 5000);
   });
 

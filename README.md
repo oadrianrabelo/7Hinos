@@ -37,11 +37,17 @@ experiência.
   o **recado do operador** ("Faltam 5 minutos") e o **cronômetro do
   pregador**, em vermelho com "Faltam" e "Passou" quando estoura o tempo
   combinado. A igreja não vê nada disso. Dá para esconder a próxima letra,
-  as horas ou o título e mudar o tamanho da letra, em **Telas**.
+  as horas ou o título, mostrar o fundo do telão e mudar o tamanho da letra,
+  em **Telas**.
 - **Telas difíceis.** Telão e retorno também abrem em janela, para telas que
   o sistema não lista direito (alguns adaptadores USB para HDMI): arraste
   para a tela e dê dois cliques. **Identificar telas** mostra o nome de cada
   uma nela mesma.
+- **Perfis de telas.** Salve combinações ("Culto normal": telão + retorno;
+  "Só retorno") e troque com um clique; o perfil com estrela abre sozinho
+  quando o app começa. Cada tela confere sozinha se está em dia com o
+  controle e se corrige; se alguma travar, **Reabrir telas** fecha e abre
+  todas nos mesmos lugares, sem parar o vídeo.
 - **Avisos, relógio e tela de espera.** Avisos da semana salvos para projetar
   com um clique, relógio, contagem regressiva ("O culto começa em 05:00") e
   uma tela de espera com o logo e o nome da igreja — com letra, cores e fundo

@@ -4,7 +4,8 @@
 -->
 <script lang="ts">
   import { clockText, countdownText } from "../lib/clock";
-  import { fitText } from "../lib/slides";
+  import { mediaSrc } from "../lib/media";
+  import { backgroundPosition, fitText } from "../lib/slides";
   import { timerDisplay } from "../lib/timer";
   import type { MonitorOptions, StageState } from "../lib/types";
 
@@ -20,6 +21,13 @@
   const message = $derived(stage.pulpit?.message ?? null);
   const timer = $derived(stage.pulpit?.timer ? timerDisplay(stage.pulpit.timer, now) : null);
   const current = $derived(scene.kind === "slide" ? scene.slide : null);
+  // O mesmo fundo do telão, bem escurecido: a letra continua sendo o principal.
+  const image = $derived(options.showBackground && current ? mediaSrc(current.image) : null);
+  const backdrop = $derived(
+    image && current
+      ? `linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), url("${image}") ${backgroundPosition(current.imagePosition)} / cover`
+      : null,
+  );
   const next = $derived(scene.kind === "slide" && options.showNext ? (scene.next ?? null) : null);
   // Sem fundo e sem sombra, cabe um pouco mais de letra que no telão.
   const size = $derived(current ? fitText(current.text, current.kind, 1.3 * options.textScale) : null);
@@ -39,7 +47,7 @@
   });
 </script>
 
-<div class="monitor">
+<div class="monitor" class:with-bg={!!backdrop} style:background={backdrop}>
   <header>
     <span class="title truncate">
       {#if scene.kind !== "slide"}{status}{:else if options.showTitle}{scene.title}{/if}
@@ -252,6 +260,14 @@
     letter-spacing: 0.05em;
     color: #000;
     background: #8fd18f;
+  }
+
+  .with-bg footer {
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .with-bg .text {
+    text-shadow: 0 0.4vh 2vh rgba(0, 0, 0, 0.6);
   }
 
   .empty .tag {

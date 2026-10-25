@@ -97,6 +97,32 @@ pub enum SetItem {
     },
 }
 
+/// Uma combinação de telas salva com nome ("Culto normal", "Só retorno").
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScreenProfile {
+    pub id: u32,
+    pub name: String,
+    pub outputs: Vec<ProfileOutput>,
+}
+
+/// Uma tela do perfil. Além do identificador do monitor, guarda nome e
+/// tamanho para reconhecê-lo se o sistema mudar o identificador.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileOutput {
+    /// `None` = em uma janela.
+    pub display_id: Option<String>,
+    #[serde(default)]
+    pub display_name: String,
+    #[serde(default)]
+    pub width: u32,
+    #[serde(default)]
+    pub height: u32,
+    #[serde(default)]
+    pub role: crate::displays::Role,
+}
+
 /// O que o monitor de retorno mostra além da letra.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -106,6 +132,8 @@ pub struct MonitorOptions {
     pub show_clock: bool,
     /// Nome do hino ou referência bíblica no alto.
     pub show_title: bool,
+    /// A mesma imagem de fundo do telão, escurecida para a letra aparecer.
+    pub show_background: bool,
     pub text_scale: f32,
 }
 
@@ -115,6 +143,7 @@ impl Default for MonitorOptions {
             show_next: true,
             show_clock: true,
             show_title: true,
+            show_background: false,
             text_scale: 1.0,
         }
     }
@@ -200,6 +229,9 @@ pub struct Settings {
     pub idle: IdleScreen,
     pub monitor: MonitorOptions,
     pub screen_style: ScreenStyle,
+    pub screen_profiles: Vec<ScreenProfile>,
+    /// Perfil aberto sozinho quando o app inicia.
+    pub default_profile: Option<u32>,
     pub notices: Vec<Notice>,
     /// Versão da Bíblia escolhida por último.
     pub bible_version: Option<i64>,
@@ -232,6 +264,8 @@ impl Default for Settings {
             idle: IdleScreen::default(),
             monitor: MonitorOptions::default(),
             screen_style: ScreenStyle::default(),
+            screen_profiles: Vec::new(),
+            default_profile: None,
             notices: Vec::new(),
             bible_version: None,
             setlist: Vec::new(),

@@ -83,7 +83,25 @@ export interface MonitorOptions {
   showNext: boolean;
   showClock: boolean;
   showTitle: boolean;
+  /** A mesma imagem de fundo do telão, escurecida. */
+  showBackground: boolean;
   textScale: number;
+}
+
+/** Uma tela de um perfil; nome e tamanho ajudam a reconhecê-la depois. */
+export interface ProfileOutput {
+  displayId: string | null;
+  displayName: string;
+  width: number;
+  height: number;
+  role: OutputRole;
+}
+
+/** Combinação de telas salva com nome. */
+export interface ScreenProfile {
+  id: number;
+  name: string;
+  outputs: ProfileOutput[];
 }
 
 export type ScreenFont = "condensed" | "sans" | "serif";
@@ -119,6 +137,8 @@ export interface Settings {
   idle: IdleScreen;
   monitor: MonitorOptions;
   screenStyle: ScreenStyle;
+  screenProfiles: ScreenProfile[];
+  defaultProfile: number | null;
   notices: Notice[];
   bibleVersion: number | null;
   keepPlayed: boolean;
@@ -242,6 +262,8 @@ export interface StageState {
   scene: Scene;
   video: VideoState | null;
   pulpit: Pulpit;
+  /** Sobe a cada mudança; uma tela que vê outro número pede o estado de novo. */
+  rev: number;
 }
 
 export interface Display {

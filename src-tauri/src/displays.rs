@@ -264,23 +264,92 @@ fn refocus_controller(app: &AppHandle) {
 /// quando ela (ou outra tela externa nova) aparece.
 pub fn watch(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
-        let mut known: Option<BTreeSet<String>> = None;
+        let mut known: Option<BTreeMap<String, (u32, u32)>> = None;
         loop {
             tokio::time::sleep(WATCH_EVERY).await;
             let Ok(monitors) = app.available_monitors() else {
                 continue;
             };
-            let now: BTreeSet<String> = monitors.iter().map(monitor_id).collect();
+            let now: BTreeMap<String, (u32, u32)> = monitors
+                .iter()
+                .map(|m| (monitor_id(m), (m.size().width, m.size().height)))
+                .collect();
             // Sem nenhum monitor é quase certo um soluço do sistema (suspensão,
             // troca de placa de vídeo): melhor não mexer em nada.
             if now.is_empty() || known.as_ref() == Some(&now) {
                 continue;
             }
             if let Some(before) = known.replace(now.clone()) {
-                on_monitors_changed(&app, &before, &now);
+                let ids =
+                    |m: &BTreeMap<String, (u32, u32)>| m.keys().cloned().collect::<BTreeSet<_>>();
+                let (was, is) = (ids(&before), ids(&now));
+                if was != is {
+                    on_monitors_changed(&app, &was, &is);
+                }
+                // A mesma tela com outra resolução: a projeção volta a cobri-la.
+                for (id, size) in &now {
+                    if before.get(id).is_some_and(|old| old != size) {
+                        refit(&app, id);
+                    }
+                }
             }
         }
     });
+}
+
+/// Recoloca em tela cheia, do tamanho atual do monitor, as projeções nele.
+fn refit(app: &AppHandle, display_id: &str) {
+    let Ok(monitors) = app.available_monitors() else {
+        return;
+    };
+    let Some(monitor) = monitors.iter().find(|m| monitor_id(m) == display_id) else {
+        return;
+    };
+    let labels: Vec<String> = app
+        .state::<AppState>()
+        .outputs
+        .open
+        .locked()
+        .iter()
+        .filter(|(_, p)| p.display_id.as_deref() == Some(display_id))
+        .map(|(l, _)| l.clone())
+        .collect();
+    for label in labels {
+        if let Some(window) = app.get_webview_window(&label) {
+            log::info!("tela {display_id} mudou de resolução; reajustando {label}");
+            let _ = window.set_fullscreen(false);
+            let _ = window.set_position(*monitor.position());
+            let _ = window.set_size(*monitor.size());
+            let _ = window.set_fullscreen(true);
+        }
+    }
+}
+
+/// Fecha e abre de novo todas as projeções, nas mesmas telas e papéis.
+/// É o "desligar e ligar" de um clique, para quando algo travar.
+pub fn reopen_all(app: &AppHandle) -> Result<()> {
+    let state = app.state::<AppState>();
+    let placements: Vec<(String, Placement)> = std::mem::take(&mut *state.outputs.open.locked())
+        .into_iter()
+        .collect();
+    // Abre as novas antes de fechar as antigas: o vídeo passa para elas sem
+    // ficar um instante sem tela (o que o faria parar).
+    let mut first_error = None;
+    for (old, placement) in &placements {
+        match open(app, placement.display_id.clone(), placement.role) {
+            Ok(new) => state.stage.rename_output(app, old, &new),
+            Err(e) => {
+                first_error.get_or_insert(e);
+            }
+        }
+    }
+    for (label, _) in &placements {
+        if let Some(window) = app.get_webview_window(label) {
+            let _ = window.destroy();
+        }
+    }
+    let _ = app.emit(DISPLAYS_EVENT, ());
+    first_error.map_or(Ok(()), Err)
 }
 
 fn on_monitors_changed(app: &AppHandle, before: &BTreeSet<String>, now: &BTreeSet<String>) {

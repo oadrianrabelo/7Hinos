@@ -92,6 +92,8 @@ export const api = {
   openOutput: (displayId: string | null, role: OutputRole = "audience") => invoke<string>("output_open", { displayId, role }),
   closeOutput: (label: string) => invoke<void>("output_close", { label }),
   closeOutputs: () => invoke<void>("outputs_close_all"),
+  /** Fecha e abre de novo todas as telas, nos mesmos lugares e papéis. */
+  reopenOutputs: () => invoke<void>("outputs_reopen"),
 };
 
 export interface Events {

@@ -5,6 +5,7 @@
     ChevronRight,
     Heart,
     ListEnd,
+    RotateCw,
     LoaderCircle,
     Pencil,
     Monitor,
@@ -80,6 +81,11 @@
         <Monitor size={16} /> Sem projeção
       {/if}
     </button>
+    {#if outputs.outputs.length}
+      <button class="btn btn-plain btn-icon" onclick={() => outputs.reopen()} title="Reabrir telas (se alguma travar)" aria-label="Reabrir telas">
+        <RotateCw size={15} />
+      </button>
+    {/if}
   </header>
 
   <div class="preview" class:dim={!onScreen && isLive && isBlack}>

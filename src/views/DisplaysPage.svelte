@@ -1,13 +1,14 @@
 <script lang="ts">
-  import { AppWindow, Monitor, MonitorOff, MonitorPlay, MonitorSpeaker, RefreshCw, ScanEye } from "@lucide/svelte";
+  import { AppWindow, Monitor, MonitorOff, MonitorPlay, MonitorSpeaker, RefreshCw, RotateCw, ScanEye } from "@lucide/svelte";
+  import PageHeader from "../components/PageHeader.svelte";
+  import ProfilesPanel from "../components/ProfilesPanel.svelte";
   import { api } from "../lib/api";
+  import { outputs } from "../lib/state/outputs.svelte";
   import { settings } from "../lib/state/settings.svelte";
   import type { MonitorOptions } from "../lib/types";
 
   const mon = $derived(settings.current.monitor);
   const setMon = (patch: Partial<MonitorOptions>) => settings.save({ monitor: patch });
-  import PageHeader from "../components/PageHeader.svelte";
-  import { outputs } from "../lib/state/outputs.svelte";
 
   $effect(() => {
     void outputs.refresh();
@@ -21,10 +22,15 @@
   {#snippet actions()}
     {#if outputs.outputs.length}
       <button class="btn" onclick={() => api.identifyDisplays()} title="Cada tela aberta mostra o próprio nome"><ScanEye size={15} /> Identificar telas</button>
+      <button class="btn" onclick={() => outputs.reopen()} title="Fecha e abre de novo todas as telas, nos mesmos lugares. Use se alguma travar.">
+        <RotateCw size={15} /> Reabrir telas
+      </button>
     {/if}
     <button class="btn" onclick={() => outputs.refresh()}><RefreshCw size={15} /> Atualizar</button>
   {/snippet}
 </PageHeader>
+
+<ProfilesPanel />
 
 <div class="displays">
   {#each outputs.displays as d (d.id)}
@@ -72,6 +78,13 @@
         <span class="muted block">Embaixo, em letra menor. Desligue se o pessoal achar confuso.</span>
       </span>
       <input type="checkbox" class="switch" checked={mon.showNext} onchange={(e) => setMon({ showNext: e.currentTarget.checked })} />
+    </label>
+    <label class="row">
+      <span class="grow">
+        Mostrar a imagem de fundo
+        <span class="muted block">A mesma do telão, escurecida para a letra continuar fácil de ler.</span>
+      </span>
+      <input type="checkbox" class="switch" checked={mon.showBackground} onchange={(e) => setMon({ showBackground: e.currentTarget.checked })} />
     </label>
     <label class="row">
       <span class="grow">Mostrar as horas</span>
