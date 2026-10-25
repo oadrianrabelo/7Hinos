@@ -9,8 +9,8 @@
   let sidebar: Sidebar;
   let page: HTMLElement;
 
-  export function focusSearch() {
-    sidebar?.focusSearch();
+  export function focusSearch(initial?: string) {
+    sidebar?.focusSearch(initial);
   }
 
   // Cada página nova começa do topo.

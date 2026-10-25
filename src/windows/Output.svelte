@@ -18,6 +18,8 @@
   let stage = $state<StageState | null>(null);
   let prefs = $state<Settings | null>(null);
   let role = $state<OutputRole>("audience");
+  let identify = $state<string | null>(null);
+  let identifyTimer: ReturnType<typeof setTimeout>;
   let idle = $state(false);
   let idleTimer: ReturnType<typeof setTimeout>;
 
@@ -29,6 +31,12 @@
       // O papel (telão ou retorno) pode mudar com a tela aberta.
       const readRole = async () => (role = (await api.outputs()).find((o) => o.label === label)?.role ?? "audience");
       await on("displays://changed", () => void readRole());
+      await on("displays://identify", async () => {
+        const me = (await api.outputs()).find((o) => o.label === label);
+        identify = me ? `${me.name} · ${me.role === "monitor" ? "Retorno" : "Telão"}` : label;
+        clearTimeout(identifyTimer);
+        identifyTimer = setTimeout(() => (identify = null), 4000);
+      });
       [stage, prefs] = await Promise.all([api.stage(), api.settings(), readRole()]);
     })();
     wake();
@@ -61,6 +69,7 @@
       {/if}
     </ErrorBoundary>
   {/if}
+  {#if identify}<div class="identify">{identify}</div>{/if}
 </div>
 
 <style>
@@ -72,5 +81,16 @@
 
   .idle {
     cursor: none;
+  }
+
+  .identify {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(91, 87, 224, 0.92);
+    color: #fff;
+    font: 700 12vh/1 var(--font-ui, system-ui);
+    text-align: center;
   }
 </style>

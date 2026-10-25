@@ -5,6 +5,7 @@
 <script lang="ts">
   import { clockText, countdownText } from "../lib/clock";
   import { fitText } from "../lib/slides";
+  import { timerDisplay } from "../lib/timer";
   import type { StageState } from "../lib/types";
 
   let { stage }: { stage: StageState } = $props();
@@ -16,6 +17,8 @@
   });
 
   const scene = $derived(stage.scene);
+  const message = $derived(stage.pulpit?.message ?? null);
+  const timer = $derived(stage.pulpit?.timer ? timerDisplay(stage.pulpit.timer, now) : null);
   const current = $derived(scene.kind === "slide" ? scene.slide : null);
   const next = $derived(scene.kind === "slide" ? (scene.next ?? null) : null);
   // Sem fundo e sem sombra, cabe um pouco mais de letra que no telão.
@@ -41,8 +44,15 @@
     <span class="title truncate">
       {#if scene.kind === "slide"}{scene.title}{:else}{status}{/if}
     </span>
+    {#if timer}
+      <span class="timer" class:warn={timer.warn} class:over={timer.over} title="Cronômetro">{timer.text}</span>
+    {/if}
     <span class="clock">{clockText(new Date(now))}</span>
   </header>
+
+  {#if message}
+    {#key message}<p class="message">{message}</p>{/key}
+  {/if}
 
   <main>
     {#if current && size}
@@ -68,7 +78,7 @@
     position: fixed;
     inset: 0;
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto auto 1fr auto;
     background: #000;
     color: #fff;
     font-family: var(--font-slide);
@@ -100,6 +110,46 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: #ffd36b;
+  }
+
+  .timer {
+    padding: 0.3vh 1.2vw;
+    border-radius: 1vh;
+    font-size: 6vh;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #8fd18f;
+    background: rgba(143, 209, 143, 0.12);
+  }
+
+  .timer.warn {
+    color: #ffd36b;
+    background: rgba(255, 211, 107, 0.14);
+  }
+
+  .timer.over {
+    color: #fff;
+    background: #d93025;
+  }
+
+  /* Recado do operador: chama atenção ao chegar, depois fica parado. */
+  .message {
+    margin: 0;
+    padding: 1.8vh 2.5vw;
+    font-family: var(--font-ui, system-ui);
+    font-size: 6.5vh;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    color: #000;
+    background: #ffd36b;
+    animation: arrive 0.6s ease-out 3;
+  }
+
+  @keyframes arrive {
+    50% {
+      background: #fff;
+    }
   }
 
   main {

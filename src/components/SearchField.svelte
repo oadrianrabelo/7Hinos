@@ -19,9 +19,9 @@
 
   let input: HTMLInputElement;
 
-  export function focus() {
+  export function focus(select = true) {
     input?.focus();
-    input?.select();
+    if (select) input?.select();
   }
 
   $effect(() => {

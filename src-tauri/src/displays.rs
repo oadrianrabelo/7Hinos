@@ -29,6 +29,8 @@ pub const DISPLAYS_EVENT: &str = "displays://changed";
 pub const DISPLAY_LOST_EVENT: &str = "displays://lost";
 /// A tela voltou e a projeção foi reaberta nela.
 pub const DISPLAY_RESTORED_EVENT: &str = "displays://restored";
+/// "Identificar telas": cada projeção mostra o próprio nome.
+pub const IDENTIFY_EVENT: &str = "displays://identify";
 const WATCH_EVERY: Duration = Duration::from_secs(2);
 pub const MAIN_WINDOW: &str = "main";
 const OUTPUT_PREFIX: &str = "output-";

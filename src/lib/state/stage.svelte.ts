@@ -6,7 +6,7 @@ import type { StageState } from "../types";
 import { video } from "./video.svelte";
 
 class StageMirror {
-  current = $state<StageState>({ scene: { kind: "black" }, video: null });
+  current = $state<StageState>({ scene: { kind: "black" }, video: null, pulpit: { message: null, timer: null } });
 
   async init() {
     await on("stage://changed", (s) => {

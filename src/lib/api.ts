@@ -17,6 +17,7 @@ import type {
   OfflineStatus,
   Output,
   OutputRole,
+  Pulpit,
   PackageManifest,
   Scope,
   Scene,
@@ -80,6 +81,10 @@ export const api = {
   stage: () => invoke<StageState>("stage_get"),
   show: (scene: Scene) => invoke<void>("stage_show", { scene }),
   setVideo: (video: VideoState | null) => invoke<void>("stage_video", { video }),
+  setPulpit: (pulpit: Pulpit) => invoke<void>("stage_pulpit", { pulpit }),
+  identifyDisplays: () => invoke<void>("displays_identify"),
+  /** Apaga acervo, mídias, Bíblia, músicas e preferências, e reinicia. */
+  resetAll: () => invoke<void>("reset_all"),
 
   displays: () => invoke<Display[]>("displays_list"),
   outputs: () => invoke<Output[]>("outputs_list"),
@@ -97,6 +102,7 @@ export interface Events {
   "displays://changed": null;
   "displays://lost": null;
   "displays://restored": null;
+  "displays://identify": null;
   /** Uma tela não conseguiu tocar o vídeo. */
   "video://failed": { path: string; title: string };
   "package://progress": { done: number; total: number };

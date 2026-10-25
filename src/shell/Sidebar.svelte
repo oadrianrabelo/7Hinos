@@ -1,6 +1,8 @@
 <script lang="ts">
   import { BookMarked, BookOpen, Clock, Film, Heart, House, Library, ListMusic, Megaphone, MonitorPlay, Music4, Settings } from "@lucide/svelte";
   import SearchField from "../components/SearchField.svelte";
+  import { playSong } from "../lib/actions";
+  import { api } from "../lib/api";
   import { nav, type Route } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
   import { setlist } from "../lib/state/setlist.svelte";
@@ -8,8 +10,19 @@
   let query = $state("");
   let search: SearchField;
 
-  export function focusSearch() {
-    search?.focus();
+  /** Foca a busca; com `initial`, já começa a digitar (ex.: o número do hino). */
+  export function focusSearch(initial?: string) {
+    if (initial === undefined) return search?.focus();
+    query = initial;
+    onSearch(initial);
+    search?.focus(false);
+  }
+
+  /** Enter na busca: toca o primeiro resultado. */
+  async function onSubmit(value: string) {
+    if (!value.trim()) return;
+    const [first] = await api.search(value);
+    if (first) await playSong(first);
   }
 
   const items = [
@@ -44,7 +57,7 @@
     <img src="/icon.png" alt="" width="26" height="26" />
     <span>7Hinos</span>
   </div>
-  <div class="search"><SearchField bind:this={search} bind:value={query} placeholder="Buscar hinos" oninput={onSearch} /></div>
+  <div class="search"><SearchField bind:this={search} bind:value={query} placeholder="Buscar hinos" oninput={onSearch} onsubmit={onSubmit} /></div>
 
   <ul>
     {#each items as item (item.label)}

@@ -1,10 +1,24 @@
 <script lang="ts">
   import { ClipboardCopy, FileText, FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Trash2, X } from "@lucide/svelte";
+  import { ask } from "@tauri-apps/plugin-dialog";
   import DownloadButton from "../components/DownloadButton.svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import TransferPanel from "../components/TransferPanel.svelte";
   import SlideView from "../components/SlideView.svelte";
   import { api } from "../lib/api";
+
+  async function resetAll() {
+    const ok = await ask(
+      "Apaga os hinos baixados ou importados, as músicas guardadas, a Bíblia, as músicas da igreja, os avisos, o culto montado e todos os ajustes. O 7Hinos reinicia como se fosse a primeira vez.\n\nSe quiser guardar algo, gere antes um pacote em “Levar para outro computador”.",
+      { title: "Apagar tudo e começar de novo?", kind: "warning", okLabel: "Apagar tudo", cancelLabel: "Cancelar" },
+    );
+    if (!ok) return;
+    try {
+      await api.resetAll();
+    } catch (e) {
+      toasts.error(errorMessage(e));
+    }
+  }
   import { errorMessage } from "../lib/api";
   import { formatBytes, formatWhen } from "../lib/format";
   import { catalog } from "../lib/state/catalog.svelte";
@@ -297,6 +311,13 @@
         <button class="btn" onclick={openLogs}><FileText size={15} /> Registros</button>
       </div>
       <div class="row">
+        <span class="grow">
+          Começar do zero
+          <span class="muted block">Apaga tudo o que o 7Hinos guardou neste computador e abre como na primeira vez.</span>
+        </span>
+        <button class="btn danger" onclick={resetAll}><Trash2 size={15} /> Apagar tudo</button>
+      </div>
+      <div class="row">
         <span class="grow muted small">Hinos, áudios e imagens: acervo público do LouvorJA (louvorja.com.br).</span>
       </div>
     </div>
@@ -304,6 +325,10 @@
 </div>
 
 <style>
+  .danger {
+    color: var(--danger, #d93025);
+  }
+
   .settings {
     display: flex;
     flex-direction: column;

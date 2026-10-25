@@ -38,7 +38,7 @@
 
 <div class="home">
   <h1>O que vamos cantar?</h1>
-  <SearchField bind:value={query} large autofocus placeholder="Digite o nome, o número ou um pedaço da letra" />
+  <SearchField bind:value={query} large autofocus placeholder="Digite o nome, o número ou um pedaço da letra" onsubmit={() => results[0] && selectSong(results[0])} />
 
   {#if query.trim()}
     {#if results.length}

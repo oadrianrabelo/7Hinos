@@ -1,8 +1,9 @@
-<!-- Avisos, relógio, contagem regressiva e a tela de espera. -->
+<!-- Avisos, relógio, contagem regressiva, púlpito e a tela de espera. -->
 <script lang="ts">
   import { Clock, ImagePlus, Megaphone, MonitorOff, Pencil, Plus, Presentation, Timer, Trash2, X } from "@lucide/svelte";
   import { ask, open } from "@tauri-apps/plugin-dialog";
   import PageHeader from "../components/PageHeader.svelte";
+  import PulpitPanel from "../components/PulpitPanel.svelte";
   import SceneView from "../components/SceneView.svelte";
   import { api, errorMessage } from "../lib/api";
   import { nextTimeOfDay } from "../lib/clock";
@@ -72,7 +73,7 @@
   }
 </script>
 
-<PageHeader title="Avisos e relógio" subtitle="O que aparece no telão entre um hino e outro">
+<PageHeader title="Avisos e relógio" subtitle="O que aparece no telão entre um hino e outro, e recados para o púlpito">
   {#snippet actions()}
     {#if live.source === "text" || live.source === "clock"}
       <button class="btn" onclick={() => screen.rest()}><X size={15} /> Tirar do telão</button>
@@ -113,6 +114,8 @@
       <button class="btn btn-primary" type="submit" disabled={!at}>Começar</button>
     </form>
   </section>
+
+  <PulpitPanel />
 
   <section class="card panel">
     <header class="line">

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { AppWindow, Monitor, MonitorOff, MonitorPlay, MonitorSpeaker, RefreshCw } from "@lucide/svelte";
+  import { AppWindow, Monitor, MonitorOff, MonitorPlay, MonitorSpeaker, RefreshCw, ScanEye } from "@lucide/svelte";
+  import { api } from "../lib/api";
   import PageHeader from "../components/PageHeader.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
 
@@ -13,6 +14,9 @@
 
 <PageHeader title="Telas" subtitle="Escolha onde a letra aparece para a igreja e, se quiser, um retorno para quem está à frente">
   {#snippet actions()}
+    {#if outputs.outputs.length}
+      <button class="btn" onclick={() => api.identifyDisplays()} title="Cada tela aberta mostra o próprio nome"><ScanEye size={15} /> Identificar telas</button>
+    {/if}
     <button class="btn" onclick={() => outputs.refresh()}><RefreshCw size={15} /> Atualizar</button>
   {/snippet}
 </PageHeader>
@@ -54,15 +58,21 @@
 <section class="windowed">
   <div class="row-head">
     <div>
-      <h2>Janela de projeção</h2>
-      <p class="muted">Para conferir os slides ou arrastar para uma tela manualmente.</p>
+      <h2>Em uma janela</h2>
+      <p class="muted">
+        Para conferir os slides, ou para uma tela que não aparece acima (alguns adaptadores USB para HDMI): abra a janela,
+        arraste para a tela e dê dois cliques para ocupar a tela inteira.
+      </p>
     </div>
-    <button class="btn" onclick={() => outputs.open(null)}><AppWindow size={16} /> Abrir em uma janela</button>
+    <div class="window-buttons">
+      <button class="btn" onclick={() => outputs.open(null)}><AppWindow size={16} /> Telão em janela</button>
+      <button class="btn" onclick={() => outputs.open(null, "monitor")}><MonitorSpeaker size={16} /> Retorno em janela</button>
+    </div>
   </div>
   {#each windowed as o (o.label)}
     <div class="row group">
-      <AppWindow size={18} />
-      <span class="grow">Janela de projeção</span>
+      {#if o.role === "monitor"}<MonitorSpeaker size={18} />{:else}<AppWindow size={18} />{/if}
+      <span class="grow">{o.role === "monitor" ? "Retorno em janela" : "Telão em janela"}</span>
       <button class="btn btn-plain" onclick={() => outputs.close(o.label)}>Fechar</button>
     </div>
   {/each}
@@ -127,6 +137,13 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  .window-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex: none;
   }
 
   .row-head {

@@ -23,7 +23,10 @@
 </script>
 
 {#if results.length}
-  <p class="section-title count">{results.length === 60 ? "Mais de 60" : results.length} resultados para “{query}”</p>
+  <p class="section-title count">
+    {results.length === 60 ? "Mais de 60 resultados" : results.length === 1 ? "1 resultado" : `${results.length} resultados`} para “{query}”
+    <span class="tip">· Enter toca o primeiro · dois cliques tocam qualquer um</span>
+  </p>
   <SongList songs={results} onselect={selectSong} onplay={playSong} />
 {:else if searched && query.trim()}
   <div class="empty">
@@ -36,5 +39,11 @@
 <style>
   .count {
     margin: 0 0 0.5rem 0.75rem;
+  }
+
+  .tip {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
   }
 </style>

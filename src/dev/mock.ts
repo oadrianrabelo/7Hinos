@@ -219,6 +219,10 @@ export function install() {
   let stage: StageState = {
     scene: params.get("scene") === "slide" ? { kind: "slide", slide: sample.slides[1], title: sample.title, next: sample.slides[2] } : { kind: "black" },
     video: null,
+    pulpit:
+      params.get("pulpit") === "1"
+        ? { message: "Faltam 5 minutos", timer: { elapsedMs: 26 * 60_000, startedAt: Date.now(), limitMs: 30 * 60_000 } }
+        : { message: null, timer: null },
   };
   let outputs: Output[] = [
     ...(params.get("outputs") === "1" ? [{ label: "output-1", displayId: "tv", name: "Tela 2", role: "audience" as const }] : []),
@@ -371,6 +375,16 @@ export function install() {
         case "stage_show":
           stage = { ...stage, scene: a.scene };
           changed("stage://changed", stage);
+          return;
+        case "stage_pulpit":
+          stage = { ...stage, pulpit: a.pulpit };
+          changed("stage://changed", stage);
+          return;
+        case "displays_identify":
+          changed("displays://identify", null);
+          return;
+        case "reset_all":
+          location.search = "?onboarded=0&installed=0";
           return;
         case "stage_video":
           stage = { ...stage, video: a.video };

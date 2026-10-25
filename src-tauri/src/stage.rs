@@ -51,11 +51,35 @@ pub struct VideoState {
     pub targets: Vec<String>,
 }
 
+/// Só para quem está à frente: aparece nos monitores de retorno, nunca no
+/// telão.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Pulpit {
+    /// Recado do operador ("5 minutos", "Pode encerrar").
+    pub message: Option<String>,
+    pub timer: Option<Timer>,
+}
+
+/// Cronômetro do pregador. Como no vídeo, cada tela calcula o tempo atual:
+/// `elapsedMs + (agora - startedAt)` enquanto corre.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Timer {
+    pub elapsed_ms: f64,
+    /// Instante (epoch em ms) em que voltou a correr; `None` = pausado.
+    pub started_at: Option<f64>,
+    /// Tempo combinado; passou dele, o retorno fica vermelho.
+    pub limit_ms: Option<f64>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StageState {
     pub scene: Scene,
     pub video: Option<VideoState>,
+    #[serde(default)]
+    pub pulpit: Pulpit,
 }
 
 #[derive(Default)]
@@ -70,6 +94,10 @@ impl Stage {
 
     pub fn show(&self, app: &AppHandle, scene: Scene) {
         self.change(app, |s| s.scene = scene);
+    }
+
+    pub fn set_pulpit(&self, app: &AppHandle, pulpit: Pulpit) {
+        self.change(app, |s| s.pulpit = pulpit);
     }
 
     pub fn set_video(&self, app: &AppHandle, video: Option<VideoState>) {

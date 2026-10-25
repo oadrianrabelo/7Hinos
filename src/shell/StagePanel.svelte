@@ -28,6 +28,7 @@
   import { nav } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
   import { player } from "../lib/state/player.svelte";
+  import { pulpit } from "../lib/state/pulpit.svelte";
   import { screen } from "../lib/state/screen.svelte";
   import { stage } from "../lib/state/stage.svelte";
   import { settings } from "../lib/state/settings.svelte";
@@ -121,6 +122,14 @@
         {#if video.state.playing}<Pause size={16} />{:else}<Play size={16} />{/if}
       </button>
       <button class="btn btn-plain btn-icon" aria-label="Parar o vídeo" onclick={() => video.stop()}><Square size={14} /></button>
+    </div>
+  {/if}
+
+  {#if pulpit.current.message}
+    <div class="video-strip">
+      <span class="pill">Púlpito</span>
+      <span class="truncate grow">“{pulpit.current.message}”</span>
+      <button class="btn btn-plain" onclick={() => pulpit.clearMessage()}>Tirar</button>
     </div>
   {/if}
 

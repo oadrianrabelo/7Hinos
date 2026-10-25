@@ -13,7 +13,7 @@ use crate::error::{Error, Result};
 use crate::library::{CatalogStatus, OfflineStatus, Scope};
 use crate::package;
 use crate::settings::{self, Settings, VideoItem};
-use crate::stage::{Scene, StageState, VideoState};
+use crate::stage::{Pulpit, Scene, StageState, VideoState};
 use crate::state::AppState;
 use crate::user_songs::UserSong;
 
@@ -638,6 +638,27 @@ pub fn stage_show(app: AppHandle, state: State<AppState>, scene: Scene) {
 #[tauri::command]
 pub fn stage_video(app: AppHandle, state: State<AppState>, video: Option<VideoState>) {
     state.stage.set_video(&app, video);
+}
+
+#[tauri::command]
+pub fn stage_pulpit(app: AppHandle, state: State<AppState>, pulpit: Pulpit) {
+    state.stage.set_pulpit(&app, pulpit);
+}
+
+/// Cada tela aberta mostra o próprio nome por alguns segundos.
+#[tauri::command]
+pub fn displays_identify(app: AppHandle) {
+    let _ = app.emit(displays::IDENTIFY_EVENT, ());
+}
+
+/// Marca os dados para apagar e reinicia; a limpeza acontece na abertura.
+#[tauri::command]
+pub fn reset_all(app: AppHandle) -> Result<()> {
+    let config_dir = app.path().app_config_dir()?;
+    crate::reset::request(&config_dir)?;
+    displays::forget_lost(&app);
+    displays::close_all(&app);
+    app.restart();
 }
 
 #[tauri::command]

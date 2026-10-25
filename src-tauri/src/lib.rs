@@ -11,6 +11,7 @@ mod library;
 mod media;
 mod media_server;
 mod package;
+mod reset;
 mod settings;
 mod stage;
 mod state;
@@ -104,6 +105,7 @@ pub fn run() {
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             let config_dir = app.path().app_config_dir()?;
+            reset::apply_pending(&config_dir, &[&config_dir, &data_dir]);
 
             let settings = SettingsStore::load(config_dir.join("settings.json"));
             migrate_legacy(app, &settings);
@@ -194,6 +196,9 @@ pub fn run() {
             commands::output_open,
             commands::output_close,
             commands::outputs_close_all,
+            commands::stage_pulpit,
+            commands::displays_identify,
+            commands::reset_all,
         ])
         .run(tauri::generate_context!())
         .expect("erro ao iniciar o 7Hinos");

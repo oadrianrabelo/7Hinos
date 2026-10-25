@@ -90,7 +90,9 @@
         full?.focusSearch();
         break;
       default:
-        return;
+        // Digitar um número em qualquer lugar já busca o hino; Enter toca.
+        if (!/^[0-9]$/.test(e.key) || !full) return;
+        full.focusSearch(e.key);
     }
     e.preventDefault();
   }

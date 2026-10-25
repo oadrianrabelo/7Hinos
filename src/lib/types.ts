@@ -195,9 +195,24 @@ export interface VideoState {
   targets: string[];
 }
 
+/** Cronômetro do pregador: tempo atual = elapsedMs + (agora - startedAt). */
+export interface Timer {
+  elapsedMs: number;
+  /** null = pausado. */
+  startedAt: number | null;
+  limitMs: number | null;
+}
+
+/** Só para quem está à frente: aparece no retorno, nunca no telão. */
+export interface Pulpit {
+  message: string | null;
+  timer: Timer | null;
+}
+
 export interface StageState {
   scene: Scene;
   video: VideoState | null;
+  pulpit: Pulpit;
 }
 
 export interface Display {
