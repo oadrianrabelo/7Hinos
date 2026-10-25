@@ -194,6 +194,9 @@ export function install() {
     keepPlayed: true,
     autoUpdateCatalog: true,
     autoUpdateApp: true,
+    localSources: params.get("local") === "1" ? ["C:\\Program Files (x86)\\Louvor JA"] : [],
+    legacyMigrated: true,
+    pendingFavorites: [],
   };
   let installed = params.get("installed") !== "0";
   let stage: StageState = { scene: { kind: "black" }, video: null };
@@ -205,6 +208,8 @@ export function install() {
     async (cmd, args) => {
       const a = (args ?? {}) as Record<string, any>;
       switch (cmd) {
+        case "media_base":
+          return "";
         case "app_version":
           return "0.5.0";
         case "settings_get":
@@ -231,6 +236,13 @@ export function install() {
             await new Promise((r) => setTimeout(r, 120));
           }
           installed = true;
+          return { installed, version: 185, songs: 2482, albums: 318 };
+        case "louvorja_detect":
+          return params.get("local") === "1" ? [{ root: "C:\\Program Files (x86)\\Louvor JA", database: "" }] : [];
+        case "louvorja_import":
+          await new Promise((r) => setTimeout(r, 1500));
+          installed = true;
+          settings = { ...settings, onboarded: true };
           return { installed, version: 185, songs: 2482, albums: 318 };
         case "collections":
           return collections;

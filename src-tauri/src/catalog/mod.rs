@@ -1,6 +1,7 @@
 //! O catálogo de hinos: as listas que ficam na memória (coleções, hinário e o
 //! índice de busca). Álbuns e músicas completos são lidos do disco sob demanda.
 
+pub mod louvorja;
 pub mod model;
 pub mod raw;
 pub mod remote;
@@ -100,6 +101,26 @@ impl Catalog {
             .filter_map(|id| self.by_id.get(id))
             .map(|&i| self.index[i].summary.clone())
             .collect()
+    }
+
+    /// Procura uma música pelo título (sem acento/caixa), preferindo a que
+    /// aparece no álbum indicado. Usado para migrar favoritos antigos.
+    pub fn find_title(&self, title: &str, album: &str) -> Option<u32> {
+        let title = search::normalize(title);
+        let album = search::normalize(album);
+        let mut matches = self
+            .index
+            .iter()
+            .filter(|song| search::normalize(&song.summary.title) == title);
+        let first = matches.next()?;
+        if album.is_empty() {
+            return Some(first.summary.id);
+        }
+        std::iter::once(first)
+            .chain(matches)
+            .find(|song| search::normalize(&song.summary.subtitle).contains(&album))
+            .or(Some(first))
+            .map(|song| song.summary.id)
     }
 
     pub fn song_count(&self) -> usize {

@@ -2,8 +2,10 @@ mod catalog;
 mod commands;
 mod displays;
 mod error;
+mod legacy;
 mod library;
 mod media;
+mod media_server;
 mod settings;
 mod stage;
 mod state;
@@ -13,6 +15,22 @@ use tauri::Manager;
 use library::Library;
 use settings::SettingsStore;
 use state::AppState;
+
+/// Traz favoritos, vídeos, tema e pastas da versão anterior, uma única vez.
+fn migrate_legacy(app: &tauri::App, settings: &SettingsStore) {
+    let current = settings.get();
+    if current.legacy_migrated {
+        return;
+    }
+    let mut dirs: Vec<std::path::PathBuf> = app.path().config_dir().into_iter().collect();
+    if let Ok(home) = app.path().home_dir() {
+        dirs.push(home.join(".config"));
+    }
+    let legacy = legacy::locate(&dirs)
+        .and_then(|db| legacy::read(&db, current.language).ok())
+        .unwrap_or_default();
+    let _ = settings.update(|s| legacy::apply(s, legacy));
+}
 
 pub fn run() {
     let mut builder = tauri::Builder::default();
@@ -37,16 +55,16 @@ pub fn run() {
             let config_dir = app.path().app_config_dir()?;
 
             let settings = SettingsStore::load(config_dir.join("settings.json"));
+            migrate_legacy(app, &settings);
             let library = Library::new(data_dir.clone());
             let current = settings.get();
             if let Err(e) = library.load(current.language) {
                 eprintln!("catálogo ilegível, será baixado de novo: {e}");
             }
 
-            let scope = app.asset_protocol_scope();
-            let _ = scope.allow_directory(data_dir.join("media"), true);
+            let media_server = media_server::MediaServer::start()?;
             for video in &current.videos {
-                let _ = scope.allow_file(&video.path);
+                media_server.allow_file(std::path::Path::new(&video.path));
             }
 
             app.manage(AppState {
@@ -54,7 +72,10 @@ pub fn run() {
                 library,
                 stage: Default::default(),
                 outputs: Default::default(),
+                media_server,
             });
+            commands::apply_local_sources(app.handle());
+            commands::resolve_pending_favorites(app.handle());
 
             if current.auto_update_catalog {
                 let handle = app.handle().clone();
@@ -75,6 +96,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::app_version,
+            commands::media_base,
             commands::settings_get,
             commands::settings_set,
             commands::favorite_toggle,
@@ -82,6 +104,8 @@ pub fn run() {
             commands::videos_remove,
             commands::catalog_status,
             commands::catalog_sync,
+            commands::louvorja_detect,
+            commands::louvorja_import,
             commands::collections,
             commands::hymnal,
             commands::search,

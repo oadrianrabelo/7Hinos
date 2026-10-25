@@ -4,9 +4,10 @@
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 
+use crate::catalog::louvorja::{self, Install};
 use crate::catalog::model::{Album, Collection, Song, SongSummary};
 use crate::displays::{self, Display, Output};
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::library::{CatalogStatus, OfflineStatus};
 use crate::settings::{Settings, VideoItem};
 use crate::stage::{Scene, StageState, VideoState};
@@ -50,6 +51,12 @@ pub fn app_version(app: AppHandle) -> String {
     app.package_info().version.to_string()
 }
 
+/// Endereço do servidor local de mídia (ver `media_server.rs`).
+#[tauri::command]
+pub fn media_base(state: State<AppState>) -> String {
+    state.media_server.base_url().to_owned()
+}
+
 #[tauri::command]
 pub fn settings_get(state: State<AppState>) -> Settings {
     state.settings.get()
@@ -66,6 +73,9 @@ pub fn settings_set(
     if saved.language != previous.language {
         state.library.load(saved.language)?;
         emit_catalog(&app, false);
+    }
+    if saved.local_sources != previous.local_sources {
+        apply_local_sources(&app);
     }
     let _ = app.emit(SETTINGS_EVENT, &saved);
     Ok(saved)
@@ -86,13 +96,12 @@ pub fn favorite_toggle(app: AppHandle, state: State<AppState>, id: u32) -> Resul
 
 #[tauri::command]
 pub fn videos_add(app: AppHandle, state: State<AppState>, paths: Vec<String>) -> Result<Settings> {
-    let scope = app.asset_protocol_scope();
     let saved = state.settings.update(|s| {
         for path in paths {
             if s.videos.iter().any(|v| v.path == path) {
                 continue;
             }
-            let _ = scope.allow_file(&path);
+            state.media_server.allow_file(std::path::Path::new(&path));
             s.videos.push(VideoItem {
                 title: file_title(&path),
                 path,
@@ -144,6 +153,7 @@ pub async fn catalog_sync(app: AppHandle, force: bool) -> Result<CatalogStatus> 
             let _ = emitter.emit(CATALOG_PROGRESS_EVENT, ByteProgress { done, total });
         })
         .await?;
+    resolve_pending_favorites(&app);
     emit_catalog(&app, updated);
     Ok(state.library.status())
 }
@@ -156,7 +166,97 @@ pub async fn sync_catalog_quietly(app: AppHandle) {
     }
     let lang = state.settings.get().language;
     if let Ok(true) = state.library.sync(lang, false, |_, _| {}).await {
+        resolve_pending_favorites(&app);
         emit_catalog(&app, true);
+    }
+}
+
+/// Instalações do LouvorJA encontradas neste computador (as já cadastradas
+/// em Ajustes, inclusive as vindas da versão antiga, primeiro).
+#[tauri::command]
+pub fn louvorja_detect(state: State<AppState>) -> Vec<Install> {
+    let settings = state.settings.get();
+    let mut found: Vec<Install> = settings
+        .local_sources
+        .iter()
+        .filter_map(|p| Install::find(std::path::Path::new(p), settings.language))
+        .collect();
+    for install in louvorja::detect(settings.language) {
+        if !found.contains(&install) {
+            found.push(install);
+        }
+    }
+    found
+}
+
+/// Importa o LouvorJA desktop da pasta indicada (ou o primeiro encontrado).
+#[tauri::command]
+pub async fn louvorja_import(app: AppHandle, path: Option<String>) -> Result<CatalogStatus> {
+    let state = app.state::<AppState>();
+    let lang = state.settings.get().language;
+    let install = match path {
+        Some(path) => Install::find(std::path::Path::new(&path), lang),
+        None => louvorja::detect(lang).into_iter().next(),
+    }
+    .ok_or_else(|| {
+        Error::other(
+            "Não encontrei o LouvorJA nessa pasta. Escolha a pasta onde ele está instalado \
+             (a que tem a pasta “config” dentro).",
+        )
+    })?;
+
+    let root = install.root.to_string_lossy().into_owned();
+    let imported = state.library.import_louvorja(install, lang).await?;
+    let saved = state.settings.update(|s| {
+        s.add_local_source(root);
+        s.language = imported;
+        s.onboarded = true;
+    })?;
+    apply_local_sources(&app);
+    resolve_pending_favorites(&app);
+    let _ = app.emit(SETTINGS_EVENT, &saved);
+    emit_catalog(&app, true);
+    Ok(state.library.status())
+}
+
+/// Liga as pastas locais ao cache de mídia e ao servidor que as entrega à interface.
+pub fn apply_local_sources(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let settings = state.settings.get();
+    let folders = louvorja::local_folders(&settings.local_sources, settings.language);
+    let media = state.library.media();
+    let _ = std::fs::create_dir_all(media.root());
+    let dirs = std::iter::once(media.root().to_path_buf())
+        .chain(folders.music.iter().cloned())
+        .chain(folders.images.iter().cloned())
+        .chain(folders.covers.iter().cloned());
+    state.media_server.set_dirs(dirs);
+    media.set_local(folders);
+}
+
+/// Favoritos da versão antiga viram ids assim que há catálogo.
+pub fn resolve_pending_favorites(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let pending = state.settings.get().pending_favorites;
+    if pending.is_empty() {
+        return;
+    }
+    let Ok(catalog) = state.library.catalog() else {
+        return;
+    };
+    let ids: Vec<u32> = pending
+        .iter()
+        .filter_map(|f| catalog.find_title(&f.title, &f.album))
+        .collect();
+    if let Ok(saved) = state.settings.update(|s| {
+        for id in ids {
+            if !s.favorites.contains(&id) {
+                s.favorites.push(id);
+            }
+        }
+        s.pending_favorites.clear();
+    }) {
+        let _ = app.emit(SETTINGS_EVENT, &saved);
     }
 }
 

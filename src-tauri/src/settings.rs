@@ -56,6 +56,14 @@ pub struct VideoItem {
     pub title: String,
 }
 
+/// Favorito da versão antiga, esperando o catálogo para virar um id.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LegacyFavorite {
+    pub title: String,
+    pub album: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Settings {
@@ -74,6 +82,12 @@ pub struct Settings {
     pub keep_played: bool,
     pub auto_update_catalog: bool,
     pub auto_update_app: bool,
+    /// Pastas com mídia no computador: instalações do LouvorJA desktop ou
+    /// pastas de músicas organizadas por álbum.
+    pub local_sources: Vec<String>,
+    /// A versão antiga (Avalonia) já foi migrada.
+    pub legacy_migrated: bool,
+    pub pending_favorites: Vec<LegacyFavorite>,
 }
 
 impl Default for Settings {
@@ -91,6 +105,9 @@ impl Default for Settings {
             keep_played: true,
             auto_update_catalog: true,
             auto_update_app: true,
+            local_sources: Vec::new(),
+            legacy_migrated: false,
+            pending_favorites: Vec::new(),
         }
     }
 }
@@ -98,6 +115,12 @@ impl Default for Settings {
 pub const RECENT_LIMIT: usize = 30;
 
 impl Settings {
+    pub fn add_local_source(&mut self, path: String) {
+        if !self.local_sources.contains(&path) {
+            self.local_sources.push(path);
+        }
+    }
+
     pub fn push_recent(&mut self, id: u32) {
         self.recent.retain(|&r| r != id);
         self.recent.insert(0, id);

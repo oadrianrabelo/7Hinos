@@ -10,6 +10,11 @@ class SettingsState {
     await on("settings://changed", (s) => (this.value = s));
   }
 
+  /** Relê do backend (depois de ações que mudam preferências lá). */
+  async refresh() {
+    this.value = await api.settings();
+  }
+
   get current(): Settings {
     if (!this.value) throw new Error("preferências ainda não carregadas");
     return this.value;

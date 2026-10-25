@@ -4,8 +4,13 @@
 //! `https://files.louvorja.com.br/musics/pt/Album/Faixa.mp3` vira
 //! `<dados>/media/musics/pt/Album/Faixa.mp3`. Assim não é preciso índice: o
 //! arquivo existe ou não existe.
+//!
+//! Antes de baixar, o cache também procura nas pastas locais que já têm a
+//! mídia do LouvorJA (a instalação do LouvorJA desktop, os downloads da versão
+//! antiga do 7Hinos). É isso que faz o app funcionar numa igreja sem internet.
 
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, RwLock};
 
 use futures_util::StreamExt;
 use percent_encoding::percent_decode_str;
@@ -26,46 +31,85 @@ pub struct Media {
     pub path: Option<String>,
 }
 
+/// Pastas do computador organizadas como as do LouvorJA: áudios em
+/// `<pasta>/<álbum>/<faixa>`, fundos e capas direto na pasta.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct LocalFolders {
+    pub music: Vec<PathBuf>,
+    pub images: Vec<PathBuf>,
+    pub covers: Vec<PathBuf>,
+}
+
+const AUDIO_EXTENSIONS: [&str; 5] = ["mp3", "opus", "ogg", "m4a", "wav"];
+const IMAGE_EXTENSIONS: [&str; 6] = ["jpg", "jpeg", "png", "bmp", "webp", "gif"];
+
 #[derive(Clone)]
 pub struct MediaCache {
     root: PathBuf,
     client: reqwest::Client,
+    local: Arc<RwLock<LocalFolders>>,
 }
 
 impl MediaCache {
     pub fn new(root: PathBuf, client: reqwest::Client) -> Self {
-        Self { root, client }
+        Self {
+            root,
+            client,
+            local: Default::default(),
+        }
+    }
+
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
+    pub fn set_local(&self, folders: LocalFolders) {
+        *self.local.write().expect("pastas locais") = folders;
     }
 
     /// Resolve um campo `url_*` do catálogo. Vazio vira `None`.
     pub fn resolve(&self, raw: &str) -> Option<Media> {
         let url = absolute_url(raw)?;
-        let path = self
-            .local_path(&url)
-            .filter(|p| p.is_file())
-            .map(|p| p.to_string_lossy().into_owned());
+        let path = self.find(&url).map(|p| p.to_string_lossy().into_owned());
         Some(Media { url, path })
     }
 
     pub fn is_cached(&self, url: &str) -> bool {
-        self.local_path(url).is_some_and(|p| p.is_file())
+        self.find(url).is_some()
+    }
+
+    /// O arquivo no disco para esta URL: baixado pelo 7Hinos ou numa pasta local.
+    pub fn find(&self, url: &str) -> Option<PathBuf> {
+        if let Some(path) = self.local_path(url).filter(|p| p.is_file()) {
+            return Some(path);
+        }
+        let segments = decoded_segments(url)?;
+        let local = self.local.read().expect("pastas locais");
+        let (roots, rest, extensions): (&[PathBuf], &[String], &[&str]) =
+            match segments.first().map(String::as_str) {
+                // musics/<idioma>/<álbum>/<faixa>
+                Some("musics") if segments.len() > 2 => {
+                    (&local.music, &segments[2..], &AUDIO_EXTENSIONS)
+                }
+                Some("images") => (&local.images, &segments[1..], &IMAGE_EXTENSIONS),
+                Some("covers") => (&local.covers, &segments[1..], &IMAGE_EXTENSIONS),
+                _ => return None,
+            };
+        roots.iter().find_map(|root| {
+            find_variant(
+                &rest.iter().fold(root.clone(), |p, s| p.join(s)),
+                extensions,
+            )
+        })
     }
 
     pub fn local_path(&self, url: &str) -> Option<PathBuf> {
-        let url = Url::parse(url).ok()?;
+        let segments = decoded_segments(url)?;
         let mut path = self.root.clone();
-        for segment in url.path_segments()? {
-            let segment = percent_decode_str(segment).decode_utf8().ok()?;
-            if segment.is_empty()
-                || segment == "."
-                || segment == ".."
-                || segment.contains(['/', '\\'])
-            {
-                return None;
-            }
-            path.push(sanitize(&segment));
+        for segment in &segments {
+            path.push(sanitize(segment));
         }
-        (path != self.root).then_some(path)
+        (!segments.is_empty()).then_some(path)
     }
 
     /// Baixa o arquivo se ainda não estiver no disco. Escreve num `.part` e só
@@ -74,8 +118,8 @@ impl MediaCache {
         let target = self
             .local_path(url)
             .ok_or_else(|| Error::other(format!("Endereço de mídia inválido: {url}")))?;
-        if target.is_file() {
-            return Ok(target);
+        if let Some(existing) = self.find(url) {
+            return Ok(existing);
         }
         if let Some(dir) = target.parent() {
             tokio::fs::create_dir_all(dir).await?;
@@ -107,6 +151,33 @@ impl MediaCache {
         }
         Ok(())
     }
+}
+
+/// Segmentos do caminho da URL, decodificados e sem nada que saia da pasta.
+fn decoded_segments(url: &str) -> Option<Vec<String>> {
+    let url = Url::parse(url).ok()?;
+    url.path_segments()?
+        .map(|segment| {
+            let segment = percent_decode_str(segment).decode_utf8().ok()?;
+            let valid = !segment.is_empty()
+                && segment != "."
+                && segment != ".."
+                && !segment.contains(['/', '\\']);
+            valid.then(|| segment.into_owned())
+        })
+        .collect()
+}
+
+/// O próprio arquivo ou o mesmo nome com outra extensão: o LouvorJA desktop
+/// guarda MP3 e BMP onde o acervo online às vezes tem Opus e JPG.
+fn find_variant(path: &Path, extensions: &[&str]) -> Option<PathBuf> {
+    if path.is_file() {
+        return Some(path.to_path_buf());
+    }
+    extensions
+        .iter()
+        .map(|ext| path.with_extension(ext))
+        .find(|candidate| candidate.is_file())
 }
 
 /// Normaliza os formatos de endereço que já existiram no catálogo
@@ -202,6 +273,36 @@ mod tests {
                 "/data/media/musics/pt/Hinário/01 - Santo_.opus"
             ))
         );
+    }
+
+    #[test]
+    fn finds_media_in_local_louvorja_folders() {
+        let dir = tempfile::tempdir().unwrap();
+        let musicas = dir.path().join("musicas");
+        let imagens = dir.path().join("imagens");
+        std::fs::create_dir_all(musicas.join("1992 - Brilha Jesus")).unwrap();
+        std::fs::create_dir_all(&imagens).unwrap();
+        std::fs::write(musicas.join("1992 - Brilha Jesus/Brilha Jesus.mp3"), b"x").unwrap();
+        std::fs::write(imagens.join("ceu.bmp"), b"x").unwrap();
+
+        let cache = MediaCache::new(dir.path().join("media"), reqwest::Client::new());
+        let opus = absolute_url("/musics/pt/1992 - Brilha Jesus/Brilha Jesus.opus").unwrap();
+        let jpg = absolute_url("/images/ceu.jpg").unwrap();
+        assert!(!cache.is_cached(&opus));
+
+        cache.set_local(LocalFolders {
+            music: vec![musicas.clone()],
+            images: vec![imagens.clone()],
+            covers: vec![],
+        });
+        assert_eq!(
+            cache.find(&opus),
+            Some(musicas.join("1992 - Brilha Jesus/Brilha Jesus.mp3"))
+        );
+        assert_eq!(cache.find(&jpg), Some(imagens.join("ceu.bmp")));
+        assert!(cache
+            .find(&absolute_url("/covers/ceu.jpg").unwrap())
+            .is_none());
     }
 
     #[test]

@@ -29,8 +29,12 @@ experiência.
   ligados, a projeção abre sozinha ao começar um hino.
 - **Vídeos em uma ou mais telas**, sincronizados entre si, com pausa, avanço,
   repetição e volume. Só a primeira tela toca o som.
-- **Funciona sem internet.** Os hinos tocados ficam guardados; álbuns inteiros
-  podem ser baixados com um clique.
+- **Funciona sem internet.** Importa o LouvorJA desktop instalado no
+  computador (ou copiado num pendrive): hinos, letras, fundos e músicas, sem
+  baixar nada. Com internet, os hinos tocados ficam guardados e álbuns
+  inteiros podem ser baixados com um clique.
+- **Traz tudo da versão anterior.** Favoritos, vídeos, tema e as músicas já
+  baixadas pela versão antiga do 7Hinos são migrados na primeira abertura.
 - **Atualiza sozinho.** O acervo é conferido a cada abertura e o app baixa
   novas versões em segundo plano, pedindo só para reiniciar.
 
@@ -86,8 +90,11 @@ src-tauri/src/            Rust: dados, disco, rede e janelas
     search.rs             busca sem acento, por número e por trecho da letra
     store.rs              catálogo em disco + instalação atômica do pacote ZIP
     remote.rs             cliente da API do LouvorJA
+    louvorja.rs           importação do LouvorJA desktop (SQLite → catálogo)
   library.rs              fachada: junta disco, API e cache de mídia
+  legacy.rs               migração da versão anterior (Avalonia)
   media.rs                cache de áudios e imagens (espelha as URLs no disco)
+  media_server.rs         entrega arquivos locais à interface (HTTP em 127.0.0.1)
   stage.rs                o palco: o que está sendo projetado agora
   displays.rs             monitores e janelas de projeção
   settings.rs             preferências (JSON legível)
@@ -111,12 +118,40 @@ Decisões que valem lembrar:
 - **O áudio toca na janela de controle**, que decide o slide pelo tempo da
   música e o envia ao palco. Vídeos tocam em cada tela escolhida, alinhados
   pelo relógio (`posição + tempo decorrido`), corrigindo só desvios visíveis.
+- **Arquivos locais por HTTP.** O WebView do Linux não toca áudio e vídeo pelo
+  protocolo próprio do Tauri; um servidor mínimo em `127.0.0.1`, com token
+  aleatório e lista de pastas liberadas, entrega os arquivos igual em todo
+  sistema (com `Range`, para avançar a música).
 - **Mídia sem índice.** Cada URL tem um caminho fixo no disco; um arquivo
   existe ou não. Downloads gravam em `.part` e renomeiam no fim.
 - **Instalação atômica do catálogo.** O pacote é extraído ao lado e só troca
   o atual se estiver completo — um download ruim nunca estraga o que funciona.
 - **Erros escritos para pessoas.** Mensagens do backend chegam prontas para
   aparecer na tela.
+
+### Sem internet: o LouvorJA desktop
+
+O LouvorJA para Windows guarda tudo numa pasta (normalmente
+`C:\Program Files (x86)\Louvor JA`):
+
+```
+config/pt_database.db        (database.db nas versões antigas)
+config/musicas/<álbum>/      áudios
+config/imagens/              fundos dos slides
+config/capas/                capas dos álbuns
+```
+
+`catalog/louvorja.rs` lê o banco (o mesmo esquema que a API deles gera para o
+programa) e o converte para o formato do acervo online, apontando para os
+endereços que o acervo online usaria. As três pastas viram fontes locais do
+cache de mídia (`media.rs`), que procura o arquivo nelas antes de ir à
+internet — aceitando MP3 no lugar de Opus e BMP no lugar de JPG. Por isso
+tudo funciona offline, e se um dia o acervo online for baixado por cima, os
+arquivos locais continuam sendo usados.
+
+A importação aparece na primeira abertura (se o LouvorJA for encontrado ou se
+não houver internet) e em **Ajustes → Hinos**. Pastas extras com músicas
+organizadas por álbum podem ser adicionadas em **Ajustes → Sem internet**.
 
 ### De onde vêm os hinos
 
@@ -130,6 +165,17 @@ Decisões que valem lembrar:
 São as rotas documentadas em
 [louvorja/api-workers](https://github.com/louvorja/api-workers). A atualização
 compara a versão local com a publicada e baixa o pacote só quando há novidade.
+
+## Instaladores de teste
+
+O workflow **Instaladores** gera uma pré-release com os instaladores das três
+plataformas a partir de qualquer branch: rode-o em *Actions → Instaladores →
+Run workflow* ou inclua `[instaladores]` na mensagem do commit.
+
+- **Windows**: o instalador já traz o WebView2 embutido, para funcionar em
+  computadores sem internet.
+- **macOS**: app universal (Intel e Apple Silicon), sem assinatura da Apple.
+  Na primeira vez: botão direito → *Abrir*.
 
 ## Publicando versões
 

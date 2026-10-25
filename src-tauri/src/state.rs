@@ -1,5 +1,6 @@
 use crate::displays::Outputs;
 use crate::library::Library;
+use crate::media_server::MediaServer;
 use crate::settings::SettingsStore;
 use crate::stage::Stage;
 
@@ -9,4 +10,5 @@ pub struct AppState {
     pub library: Library,
     pub stage: Stage,
     pub outputs: Outputs,
+    pub media_server: MediaServer,
 }

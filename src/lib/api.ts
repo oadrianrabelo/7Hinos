@@ -8,6 +8,7 @@ import type {
   CatalogStatus,
   Collection,
   Display,
+  Install,
   OfflineStatus,
   Output,
   Scene,
@@ -29,6 +30,8 @@ export const api = {
 
   catalogStatus: () => invoke<CatalogStatus>("catalog_status"),
   syncCatalog: (force = false) => invoke<CatalogStatus>("catalog_sync", { force }),
+  detectLouvorja: () => invoke<Install[]>("louvorja_detect"),
+  importLouvorja: (path: string | null = null) => invoke<CatalogStatus>("louvorja_import", { path }),
   collections: () => invoke<Collection[]>("collections"),
   hymnal: () => invoke<SongSummary[]>("hymnal"),
   search: (query: string) => invoke<SongSummary[]>("search", { query }),

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Trash2 } from "@lucide/svelte";
+  import { FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Trash2, X } from "@lucide/svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import SlideView from "../components/SlideView.svelte";
   import { api } from "../lib/api";
@@ -47,6 +47,31 @@
     checking = false;
     if (!ok) toasts.error(catalog.error ?? "Não foi possível verificar.");
     else if (catalog.status?.version === before) toasts.show("Os hinos já estão na versão mais recente.", "success");
+  }
+
+  let importing = $state(false);
+  async function importLocal() {
+    const installs = await catalog.detectLocal();
+    const path = installs[0]?.root ?? (await catalog.pickLocal());
+    if (!path) return;
+    importing = true;
+    const ok = await catalog.importLocal(path);
+    importing = false;
+    if (ok) {
+      await settings.refresh();
+      toasts.show("Hinos importados do LouvorJA. Tudo funciona sem internet.", "success");
+    } else {
+      toasts.error(catalog.error ?? "Não foi possível importar.");
+    }
+  }
+
+  async function addFolder() {
+    const path = await catalog.pickLocal();
+    if (path && !s.localSources.includes(path)) await settings.save({ localSources: [...s.localSources, path] });
+  }
+
+  function removeFolder(path: string) {
+    return settings.save({ localSources: s.localSources.filter((p) => p !== path) });
   }
 
   async function clearMedia() {
@@ -155,6 +180,15 @@
         </button>
       </div>
       <div class="row">
+        <span class="grow">
+          Importar do LouvorJA instalado
+          <span class="muted block">Para usar sem internet, com as músicas do LouvorJA deste computador ou de um pendrive.</span>
+        </span>
+        <button class="btn" onclick={importLocal} disabled={importing}>
+          {#if importing}<LoaderCircle size={15} class="spin" /> Importando…{:else}<HardDrive size={15} /> Importar{/if}
+        </button>
+      </div>
+      <div class="row">
         <span class="grow">Atualizar os hinos automaticamente</span>
         <input type="checkbox" class="switch" checked={s.autoUpdateCatalog} onchange={(e) => settings.save({ autoUpdateCatalog: e.currentTarget.checked })} />
       </div>
@@ -164,6 +198,20 @@
   <section>
     <h2>Sem internet</h2>
     <div class="group">
+      <div class="row">
+        <span class="grow">
+          Pastas com músicas neste computador
+          <span class="muted block">O 7Hinos procura aqui antes de usar a internet (instalação do LouvorJA ou pastas por álbum).</span>
+        </span>
+        <button class="btn" onclick={addFolder}><FolderPlus size={15} /> Adicionar</button>
+      </div>
+      {#each s.localSources as path (path)}
+        <div class="row">
+          <FolderOpen size={16} />
+          <span class="grow truncate small">{path}</span>
+          <button class="btn btn-plain btn-icon" aria-label="Remover pasta" title="Remover" onclick={() => removeFolder(path)}><X size={15} /></button>
+        </div>
+      {/each}
       <div class="row">
         <span class="grow">
           Guardar os hinos tocados

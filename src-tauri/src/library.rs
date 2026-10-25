@@ -10,6 +10,7 @@ use futures_util::{stream, StreamExt};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+use crate::catalog::louvorja::{self, Install};
 use crate::catalog::model::{self, Album, Lang, Song};
 use crate::catalog::raw::{RawAlbum, RawMusic};
 use crate::catalog::remote::{Remote, API_URL};
@@ -156,6 +157,22 @@ impl Library {
 
         self.load(lang)?;
         Ok(true)
+    }
+
+    /// Importa o catálogo do LouvorJA desktop instalado. Devolve o idioma do
+    /// banco importado, que passa a ser o idioma dos hinos.
+    pub async fn import_louvorja(&self, install: Install, lang: Lang) -> Result<Lang> {
+        let _guard = self.sync_lock.lock().await;
+        let store = Store::new(self.store.dir().to_path_buf());
+        let lang = tokio::task::spawn_blocking(move || -> Result<Lang> {
+            let catalog = louvorja::read(&install, lang)?;
+            store.install_entries(&catalog.entries, catalog.version)?;
+            Ok(catalog.lang)
+        })
+        .await
+        .map_err(|e| Error::other(e.to_string()))??;
+        self.load(lang)?;
+        Ok(lang)
     }
 
     pub async fn album(&self, id: u32) -> Result<Album> {
@@ -350,6 +367,44 @@ mod tests {
         assert_eq!(song.slides.len(), 2);
         assert_eq!(song.slides[1].time_ms, Some(5_000));
         assert!(dir.path().join("catalog/music_1.json").is_file());
+    }
+
+    #[tokio::test]
+    async fn imports_a_local_louvorja_install_and_plays_offline() {
+        let dir = tempfile::tempdir().unwrap();
+        let install = crate::catalog::louvorja::tests::fake_install(dir.path());
+        let library = Library::with_api(dir.path().join("data"), "http://127.0.0.1:9");
+        library.media().set_local(install.folders());
+
+        assert_eq!(
+            library.import_louvorja(install, Lang::Es).await.unwrap(),
+            Lang::Pt
+        );
+        let status = library.status();
+        assert_eq!(
+            (status.installed, status.version, status.songs),
+            (true, Some(185), 2)
+        );
+
+        let song = library.song(10).await.unwrap();
+        assert!(song
+            .audio
+            .as_ref()
+            .unwrap()
+            .path
+            .as_ref()
+            .unwrap()
+            .ends_with("Brilha Jesus.mp3"));
+        assert!(song.slides[1]
+            .image
+            .as_ref()
+            .unwrap()
+            .path
+            .as_ref()
+            .unwrap()
+            .ends_with("ceu.bmp"));
+        let offline = library.album_offline(1).await.unwrap();
+        assert_eq!(offline.cached, offline.total);
     }
 
     #[tokio::test]

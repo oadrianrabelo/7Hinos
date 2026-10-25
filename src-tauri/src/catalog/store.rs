@@ -45,9 +45,50 @@ impl Store {
             .ok()
     }
 
-    /// Instala um pacote ZIP do catálogo. Extrai numa pasta ao lado e só troca
-    /// quando tudo deu certo: um pacote ruim nunca estraga o catálogo atual.
+    /// Instala um pacote ZIP do catálogo.
     pub fn install_bundle(&self, zip_path: &Path, version: u32) -> Result<usize> {
+        let mut archive = zip::ZipArchive::new(fs::File::open(zip_path)?)?;
+        self.replace(version, |staged| {
+            let mut count = 0;
+            for i in 0..archive.len() {
+                let mut entry = archive.by_index(i)?;
+                if !entry.is_file() {
+                    continue;
+                }
+                // Os pacotes já tiveram as chaves na raiz e dentro de `json_db/`.
+                let Some(key) = Path::new(entry.name())
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .and_then(|n| n.strip_suffix(".json"))
+                    .map(str::to_owned)
+                else {
+                    continue;
+                };
+                if staged.path(&key).is_none() {
+                    continue;
+                }
+                let mut bytes = Vec::with_capacity(entry.size() as usize);
+                entry.read_to_end(&mut bytes)?;
+                staged.write(&key, &bytes)?;
+                count += 1;
+            }
+            Ok(count)
+        })
+    }
+
+    /// Instala chaves já prontas (por exemplo, convertidas do LouvorJA desktop).
+    pub fn install_entries(&self, entries: &[(String, Vec<u8>)], version: u32) -> Result<usize> {
+        self.replace(version, |staged| {
+            for (key, bytes) in entries {
+                staged.write(key, bytes)?;
+            }
+            Ok(entries.len())
+        })
+    }
+
+    /// Monta o catálogo novo numa pasta ao lado e só troca quando ele está
+    /// completo: um pacote ruim nunca estraga o catálogo atual.
+    fn replace(&self, version: u32, fill: impl FnOnce(&Store) -> Result<usize>) -> Result<usize> {
         let staging = self.dir.with_extension("new");
         if staging.exists() {
             fs::remove_dir_all(&staging)?;
@@ -55,30 +96,13 @@ impl Store {
         fs::create_dir_all(&staging)?;
         let staged = Store::new(staging.clone());
 
-        let mut archive = zip::ZipArchive::new(fs::File::open(zip_path)?)?;
-        let mut count = 0;
-        for i in 0..archive.len() {
-            let mut entry = archive.by_index(i)?;
-            if !entry.is_file() {
-                continue;
+        let count = match fill(&staged) {
+            Ok(count) => count,
+            Err(e) => {
+                let _ = fs::remove_dir_all(&staging);
+                return Err(e);
             }
-            // Os pacotes já tiveram as chaves na raiz e dentro de `json_db/`.
-            let Some(key) = Path::new(entry.name())
-                .file_name()
-                .and_then(|n| n.to_str())
-                .and_then(|n| n.strip_suffix(".json"))
-                .map(str::to_owned)
-            else {
-                continue;
-            };
-            if staged.path(&key).is_none() {
-                continue;
-            }
-            let mut bytes = Vec::with_capacity(entry.size() as usize);
-            entry.read_to_end(&mut bytes)?;
-            staged.write(&key, &bytes)?;
-            count += 1;
-        }
+        };
 
         let complete = ["pt", "es"].iter().any(|lang| {
             staged

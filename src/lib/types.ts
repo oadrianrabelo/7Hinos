@@ -88,6 +88,16 @@ export interface Settings {
   keepPlayed: boolean;
   autoUpdateCatalog: boolean;
   autoUpdateApp: boolean;
+  /** Instalações do LouvorJA e pastas de músicas no computador. */
+  localSources: string[];
+  legacyMigrated: boolean;
+  pendingFavorites: { title: string; album: string }[];
+}
+
+/** Uma instalação do LouvorJA desktop encontrada no disco. */
+export interface Install {
+  root: string;
+  database: string;
 }
 
 export interface CatalogStatus {

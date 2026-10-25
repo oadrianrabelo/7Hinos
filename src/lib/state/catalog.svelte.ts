@@ -1,5 +1,6 @@
 import { api, errorMessage, on } from "../api";
-import type { AlbumSummary, CatalogStatus, Collection, SongSummary } from "../types";
+import { open } from "@tauri-apps/plugin-dialog";
+import type { AlbumSummary, CatalogStatus, Collection, Install, SongSummary } from "../types";
 import { toasts } from "./toasts.svelte";
 
 class CatalogState {
@@ -39,6 +40,35 @@ class CatalogState {
     for (const c of this.collections) {
       const found = c.albums.find((a) => a.id === id);
       if (found) return found;
+    }
+  }
+
+  /** Instalações do LouvorJA encontradas neste computador. */
+  async detectLocal(): Promise<Install[]> {
+    return api.detectLouvorja().catch(() => []);
+  }
+
+  /** Pede a pasta do LouvorJA (instalação, pendrive, pasta copiada). */
+  async pickLocal(): Promise<string | null> {
+    const picked = await open({ directory: true, title: "Escolha a pasta do LouvorJA (a que tem a pasta config)" });
+    return typeof picked === "string" ? picked : null;
+  }
+
+  /** Importa o LouvorJA desktop, sem internet. Devolve `true` se deu certo. */
+  async importLocal(path: string | null = null): Promise<boolean> {
+    if (this.syncing) return false;
+    this.syncing = true;
+    this.error = null;
+    this.progress = null;
+    try {
+      this.status = await api.importLouvorja(path);
+      await this.reload();
+      return true;
+    } catch (e) {
+      this.error = errorMessage(e);
+      return false;
+    } finally {
+      this.syncing = false;
     }
   }
 

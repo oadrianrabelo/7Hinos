@@ -27,14 +27,10 @@
       "csp": {
         "default-src": "'self'",
         "connect-src": "ipc: http://ipc.localhost",
-        "img-src": "'self' asset: http://asset.localhost https://files.louvorja.com.br data: blob:",
-        "media-src": "'self' asset: http://asset.localhost https://files.louvorja.com.br",
+        "img-src": "'self' http://127.0.0.1:* https://files.louvorja.com.br data: blob:",
+        "media-src": "'self' http://127.0.0.1:* https://files.louvorja.com.br blob:",
         "style-src": "'self' 'unsafe-inline'",
         "font-src": "'self' data:"
-      },
-      "assetProtocol": {
-        "enable": true,
-        "scope": []
       }
     }
   },
@@ -53,7 +49,13 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "webviewInstallMode": { "type": "downloadBootstrapper" }
+      "webviewInstallMode": {
+        "type": "offlineInstaller"
+      }
+    },
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "10.15"
     }
   },
   "plugins": {
@@ -62,7 +64,9 @@
         "https://github.com/oadrianrabelo/7Hinos/releases/latest/download/latest.json"
       ],
       "pubkey": "COLE_AQUI_A_CHAVE_PUBLICA_GERADA_COM_tauri_signer_generate",
-      "windows": { "installMode": "passive" }
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

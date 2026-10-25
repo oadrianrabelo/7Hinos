@@ -1,26 +1,53 @@
-<!-- Primeira abertura: escolher o modo e baixar os hinos. Dois passos, só. -->
+<!--
+  Primeira abertura: escolher o modo e de onde vêm os hinos. Com o LouvorJA
+  instalado no computador, tudo funciona sem internet.
+-->
 <script lang="ts">
-  import { CloudDownload, LayoutGrid, LoaderCircle, MousePointerClick, WifiOff } from "@lucide/svelte";
+  import { CloudDownload, FolderOpen, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, WifiOff } from "@lucide/svelte";
+  import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { formatBytes } from "../lib/format";
   import { catalog } from "../lib/state/catalog.svelte";
   import { settings } from "../lib/state/settings.svelte";
-  import type { UiMode } from "../lib/types";
+  import type { Install, UiMode } from "../lib/types";
 
-  let step = $state<"mode" | "download">(settings.current.onboarded ? "download" : "mode");
+  let step = $state<"mode" | "source">(settings.current.onboarded ? "source" : "mode");
+  let installs = $state<Install[] | null>(null);
+  let action = $state<"download" | "import" | null>(null);
+
+  onMount(async () => {
+    installs = await catalog.detectLocal();
+    if (step === "source") begin();
+  });
 
   async function choose(mode: UiMode) {
     await settings.save({ mode });
-    step = "download";
-    void download();
+    step = "source";
+    begin();
+  }
+
+  /** Sem LouvorJA no computador, já começa a baixar. */
+  function begin() {
+    if (installs !== null && installs.length === 0 && !action) void download();
   }
 
   async function download() {
+    action = "download";
     if (await catalog.sync(true)) await settings.save({ onboarded: true });
   }
 
+  async function importLocal(path: string | null) {
+    action = "import";
+    if (await catalog.importLocal(path)) await settings.refresh();
+  }
+
+  async function pickFolder() {
+    const path = await catalog.pickLocal();
+    if (path) await importLocal(path);
+  }
+
   $effect(() => {
-    if (step === "download" && !catalog.syncing && !catalog.error && !catalog.installed) void download();
+    if (step === "source" && installs !== null) begin();
   });
 
   const percent = $derived(
@@ -36,26 +63,49 @@
         <h1>Bem-vindo ao 7Hinos</h1>
         <p class="muted">Como você prefere usar?</p>
       </div>
-      <div class="modes" in:fade>
-        <button class="mode card" onclick={() => choose("simple")}>
+      <div class="options" in:fade>
+        <button class="option card" onclick={() => choose("simple")}>
           <MousePointerClick size={32} />
           <span class="title">Simples</span>
           <span class="muted">Botões grandes e só o essencial. Ideal para quem tem pouca prática com computador.</span>
         </button>
-        <button class="mode card" onclick={() => choose("full")}>
+        <button class="option card" onclick={() => choose("full")}>
           <LayoutGrid size={32} />
           <span class="title">Completo</span>
           <span class="muted">Biblioteca, painel de projeção ao lado e atalhos de teclado.</span>
         </button>
       </div>
       <p class="subtle small">Dá para trocar depois em Ajustes.</p>
-    {:else}
+    {:else if catalog.error}
       <div class="text" in:fade>
-        {#if catalog.error}
-          <WifiOff size={36} class="warn" />
-          <h1>Sem conexão</h1>
-          <p class="muted">{catalog.error}</p>
-          <button class="btn btn-primary btn-lg" onclick={download}>Tentar de novo</button>
+        <WifiOff size={36} class="warn" />
+        <h1>{action === "import" ? "Não deu para importar" : "Sem conexão"}</h1>
+        <p class="muted">{catalog.error}</p>
+      </div>
+      <div class="actions">
+        {#if installs?.length && action !== "import"}
+          <button class="btn btn-primary btn-lg" onclick={() => importLocal(installs![0].root)}>
+            <HardDrive size={18} /> Usar o LouvorJA deste computador
+          </button>
+        {/if}
+        <button class="btn btn-lg" class:btn-primary={!installs?.length} onclick={pickFolder}>
+          <FolderOpen size={18} /> Escolher a pasta do LouvorJA…
+        </button>
+        <button class="btn btn-lg btn-plain" onclick={download}>
+          <CloudDownload size={18} /> Tentar baixar de novo
+        </button>
+      </div>
+      <p class="subtle small hint">
+        Sem internet na igreja? Copie a pasta do LouvorJA de outro computador (normalmente
+        <code>C:\Arquivos de Programas (x86)\Louvor JA</code>) para um pendrive e escolha-a aqui.
+      </p>
+    {:else if catalog.syncing}
+      <div class="text" in:fade>
+        {#if action === "import"}
+          <HardDrive size={36} class="accent" />
+          <h1>Importando do LouvorJA</h1>
+          <p class="muted">Lendo os hinos e as músicas do computador. Não precisa de internet.</p>
+          <div class="bar indeterminate"><div class="fill" style:width="30%"></div></div>
         {:else}
           <CloudDownload size={36} class="accent" />
           <h1>Baixando os hinos</h1>
@@ -72,6 +122,26 @@
           </p>
         {/if}
       </div>
+    {:else if installs?.length}
+      <div class="text" in:fade>
+        <h1>De onde vêm os hinos?</h1>
+        <p class="muted">Encontramos o LouvorJA instalado neste computador.</p>
+      </div>
+      <div class="options" in:fade>
+        <button class="option card recommended" onclick={() => importLocal(installs![0].root)}>
+          <HardDrive size={32} />
+          <span class="title">Usar o LouvorJA deste computador</span>
+          <span class="muted">Funciona sem internet, com as músicas que já estão aqui.</span>
+          <span class="path subtle truncate">{installs[0].root}</span>
+        </button>
+        <button class="option card" onclick={download}>
+          <CloudDownload size={32} />
+          <span class="title">Baixar da internet</span>
+          <span class="muted">O acervo mais recente. As músicas tocam pela internet ou depois de baixadas.</span>
+        </button>
+      </div>
+    {:else}
+      <div class="text"><LoaderCircle size={32} class="spin accent" /></div>
     {/if}
   </div>
 </div>
@@ -82,6 +152,7 @@
     place-items: center;
     height: 100%;
     padding: 2rem;
+    overflow-y: auto;
     background:
       radial-gradient(ellipse at 30% 0%, var(--accent-soft), transparent 60%),
       var(--surface-2);
@@ -92,7 +163,7 @@
     flex-direction: column;
     align-items: center;
     gap: 1.5rem;
-    width: min(44rem, 100%);
+    width: min(46rem, 100%);
     text-align: center;
   }
 
@@ -106,7 +177,7 @@
     flex-direction: column;
     align-items: center;
     gap: 0.6rem;
-    max-width: 30rem;
+    max-width: 32rem;
   }
 
   .text :global(.accent) {
@@ -125,18 +196,19 @@
     font-size: 1.1rem;
   }
 
-  .modes {
+  .options {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
     width: 100%;
   }
 
-  .mode {
+  .option {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+    min-width: 0;
     padding: 1.5rem;
     text-align: left;
     cursor: pointer;
@@ -146,22 +218,35 @@
       box-shadow var(--normal);
   }
 
-  .mode :global(svg) {
+  .option :global(svg) {
     color: var(--accent);
   }
 
-  .mode:hover {
+  .option:hover,
+  .option.recommended {
     border-color: var(--accent);
     box-shadow: 0 0 0 4px var(--accent-soft);
   }
 
-  .mode:active {
+  .option:active {
     transform: scale(0.98);
   }
 
   .title {
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     font-weight: 700;
+  }
+
+  .path {
+    max-width: 100%;
+    font-size: 0.8rem;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
   }
 
   .small {
@@ -169,6 +254,19 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+  }
+
+  .hint {
+    display: block;
+    max-width: 32rem;
+    line-height: 1.5;
+  }
+
+  code {
+    font-size: 0.85em;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    background: var(--surface-3);
   }
 
   .bar {
