@@ -16,6 +16,7 @@ mod stage;
 mod state;
 mod sync;
 mod updates;
+mod user_songs;
 
 use tauri::Manager;
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
@@ -167,6 +168,11 @@ pub fn run() {
             commands::package_inspect,
             commands::package_export,
             commands::package_import,
+            commands::user_songs_list,
+            commands::user_song_get,
+            commands::user_song_save,
+            commands::user_song_delete,
+            commands::user_media_add,
             commands::bible_versions,
             commands::bible_books,
             commands::bible_chapter,

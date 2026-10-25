@@ -25,6 +25,7 @@ use crate::settings::{SetItem, Settings, VideoItem};
 pub const FOLDER: &str = "7Hinos-pacote";
 const MANIFEST: &str = "pacote.json";
 const FORMAT: u32 = 1;
+const USER_SONGS: &str = "user-songs.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -55,7 +56,7 @@ pub struct Content {
 pub struct Sources<'a> {
     pub catalog: &'a Path,
     pub media: &'a Path,
-    /// Arquivos avulsos de dados (ex.: `bible.db`, `user-songs.json`).
+    /// Arquivos ou pastas de dados (ex.: `bible.db`, `user-songs.json`, `user-media`).
     pub extras: Vec<PathBuf>,
 }
 
@@ -106,9 +107,15 @@ pub fn export(
     let media_start = plan.len();
     plan.extend(files_under(sources.media, &root.join("midia")));
     let media_files = plan.len() - media_start;
-    for extra in sources.extras.iter().filter(|p| p.is_file()) {
-        if let Some(name) = extra.file_name() {
-            plan.push((extra.clone(), root.join("extras").join(name)));
+    for extra in &sources.extras {
+        let Some(name) = extra.file_name() else {
+            continue;
+        };
+        let target = root.join("extras").join(name);
+        if extra.is_dir() {
+            plan.extend(files_under(extra, &target));
+        } else if extra.is_file() {
+            plan.push((extra.clone(), target));
         }
     }
 
@@ -170,6 +177,8 @@ pub struct Imported {
     /// Pasta `acervo/` do pacote, se o catálogo dele deve substituir o atual.
     pub catalog: Option<PathBuf>,
     pub content: Content,
+    /// `user-songs.json` do pacote, para juntar (não substituir) com o local.
+    pub user_songs: Option<PathBuf>,
 }
 
 /// Copia mídia, extras e vídeos para as pastas do app e devolve o resto
@@ -186,7 +195,12 @@ pub fn import(
 
     let mut plan: Vec<(PathBuf, PathBuf)> = Vec::new();
     plan.extend(files_under(&root.join("midia"), media));
-    plan.extend(files_under(&root.join("extras"), data_dir));
+    let user_songs = root.join("extras").join(USER_SONGS);
+    plan.extend(
+        files_under(&root.join("extras"), data_dir)
+            .into_iter()
+            .filter(|(from, _)| *from != user_songs),
+    );
     let videos_dir = data_dir.join("videos");
     plan.extend(files_under(&root.join("videos"), &videos_dir));
 
@@ -220,6 +234,7 @@ pub fn import(
         catalog: (newer && catalog_dir.is_dir()).then_some(catalog_dir),
         manifest,
         content,
+        user_songs: user_songs.is_file().then_some(user_songs),
     })
 }
 

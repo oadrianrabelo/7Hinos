@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Heart, LoaderCircle, Mic, Music, Type } from "@lucide/svelte";
+  import { Heart, LoaderCircle, Mic, Music, Pencil, Type } from "@lucide/svelte";
   import Cover from "../components/Cover.svelte";
   import { api } from "../lib/api";
   import type { PlayMode } from "../lib/slides";
@@ -38,6 +38,12 @@
       <button class="btn btn-lg fav" class:on={settings.isFavorite(song.id)} onclick={() => song && settings.toggleFavorite(song.id)}>
         <Heart size={20} fill={settings.isFavorite(song.id) ? "currentColor" : "none"} />
         {settings.isFavorite(song.id) ? "Nos favoritos" : "Adicionar aos favoritos"}
+      </button>
+      <button
+        class="btn btn-plain"
+        onclick={() => song && nav.push(song.id >= 900_000_000 ? { name: "editor", id: song.id } : { name: "editor", basedOn: song.id })}
+      >
+        <Pencil size={16} /> Corrigir a letra
       </button>
     </div>
 

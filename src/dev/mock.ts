@@ -167,6 +167,7 @@ function song(id: number): Song {
     instrumental: id % 2 === 0 ? media(silentAudio()) : null,
     durationMs: 90_000,
     slides,
+    custom: false,
   };
 }
 
@@ -298,6 +299,19 @@ export function install() {
         }
         case "download_cancel":
           return;
+        case "user_songs_list":
+          return [
+            { id: 900000000, title: "Corinho da Família", author: "Ministério jovem", slides: [{ text: "Somos família", aux: null }], basedOn: null, audio: null, background: null, updatedAt: 0 },
+            { id: 900000001, title: "Castelo Forte", author: "", slides: [{ text: "Letra corrigida", aux: null }], basedOn: 18, audio: null, background: null, updatedAt: 0 },
+          ];
+        case "user_song_get":
+          return null;
+        case "user_song_save":
+          return { ...a.song, id: a.song.id || 900000002 };
+        case "user_song_delete":
+          return;
+        case "user_media_add":
+          return "arquivo.mp3";
         case "bible_versions":
           return [
             { id: 1, abbreviation: "ARA", name: "Almeida Revista e Atualizada" },

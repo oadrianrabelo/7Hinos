@@ -9,6 +9,7 @@
     "core:window:allow-is-fullscreen",
     "core:window:allow-start-dragging",
     "dialog:allow-open",
+    "dialog:allow-ask",
     "process:allow-restart",
     "updater:default",
     "log:default"

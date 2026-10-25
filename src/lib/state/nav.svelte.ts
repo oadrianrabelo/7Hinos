@@ -4,6 +4,9 @@ export type Route =
   | { name: "hymnal" }
   | { name: "setlist" }
   | { name: "bible" }
+  | { name: "mysongs" }
+  /** Editor: `id` de uma música própria ou `basedOn` para corrigir um hino. */
+  | { name: "editor"; id?: number; basedOn?: number }
   | { name: "collections" }
   | { name: "collection"; id: number }
   | { name: "album"; id: number }

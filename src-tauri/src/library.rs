@@ -81,6 +81,7 @@ const EXTRA_COLLECTIONS: [(u32, &str, &str); 2] = [
 
 pub struct Library {
     data_dir: PathBuf,
+    user: crate::user_songs::UserSongs,
     store: Store,
     remote: Remote,
     media: MediaCache,
@@ -103,6 +104,7 @@ impl Library {
             .build()
             .expect("cliente HTTP");
         Self {
+            user: crate::user_songs::UserSongs::load(&data_dir),
             data_dir: data_dir.clone(),
             store: Store::new(data_dir.join("catalog")),
             remote: Remote::new(client.clone(), api),
@@ -115,6 +117,10 @@ impl Library {
 
     pub fn media(&self) -> &MediaCache {
         &self.media
+    }
+
+    pub fn user(&self) -> &crate::user_songs::UserSongs {
+        &self.user
     }
 
     pub fn data_dir(&self) -> &std::path::Path {
@@ -186,7 +192,7 @@ impl Library {
 
     /// (Re)carrega as listas do idioma. Sem catálogo baixado, fica vazio.
     pub fn load(&self, lang: Lang) -> Result<()> {
-        let loaded = match Catalog::load(&self.store, lang) {
+        let loaded = match Catalog::load(&self.store, lang, self.user.summaries()) {
             Ok(catalog) => Some(Arc::new(catalog)),
             Err(Error::CatalogMissing) => None,
             Err(e) => return Err(e),
@@ -341,7 +347,19 @@ impl Library {
         Ok(model::album(&raw, &self.media))
     }
 
+    /// A música para apresentar: a versão da igreja, se houver, senão a do acervo.
     pub async fn song(&self, id: u32) -> Result<Song> {
+        if let Some(user) = self.user.find(id) {
+            let original = match user.based_on {
+                Some(original) => self.catalog_song(original).await.ok(),
+                None => None,
+            };
+            return Ok(self.user.to_song(&user, original));
+        }
+        self.catalog_song(id).await
+    }
+
+    async fn catalog_song(&self, id: u32) -> Result<Song> {
         let raw: RawMusic = self.key(&format!("music_{id}")).await?;
         Ok(model::song(&raw, &self.media))
     }
@@ -350,15 +368,15 @@ impl Library {
     pub async fn song_media(&self, id: u32) -> Result<BTreeSet<String>> {
         let song = self.song(id).await?;
         let mut urls = BTreeSet::new();
+        let images = song.slides.iter().filter_map(|s| s.image.as_ref());
         for media in [&song.cover, &song.audio, &song.instrumental]
             .into_iter()
             .flatten()
+            .chain(images)
         {
-            urls.insert(media.url.clone());
-        }
-        for slide in &song.slides {
-            if let Some(image) = &slide.image {
-                urls.insert(image.url.clone());
+            // Arquivos da própria igreja já estão no computador.
+            if media.url.starts_with("http") {
+                urls.insert(media.url.clone());
             }
         }
         Ok(urls)
@@ -426,10 +444,17 @@ impl Library {
     pub async fn available_offline(&self, ids: &[u32]) -> Vec<u32> {
         let mut available = Vec::new();
         for &id in ids {
-            let Ok(raw) = self.local_key::<RawMusic>(&format!("music_{id}")) else {
-                continue;
+            let song = if self.user.find(id).is_some() {
+                match self.song(id).await {
+                    Ok(song) => song,
+                    Err(_) => continue,
+                }
+            } else {
+                let Ok(raw) = self.local_key::<RawMusic>(&format!("music_{id}")) else {
+                    continue;
+                };
+                model::song(&raw, &self.media)
             };
-            let song = model::song(&raw, &self.media);
             if song.audio.as_ref().is_none_or(|a| a.path.is_some()) {
                 available.push(id);
             }

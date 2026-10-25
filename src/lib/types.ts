@@ -61,6 +61,8 @@ export interface Song {
   instrumental: Media | null;
   durationMs: number | null;
   slides: Slide[];
+  /** Música própria ou letra corrigida pela igreja. */
+  custom: boolean;
 }
 
 export interface SlideStyle {
@@ -231,4 +233,22 @@ export interface BibleHit {
   chapter: number;
   verse: number;
   text: string;
+}
+
+export interface UserSlide {
+  text: string;
+  aux: string | null;
+}
+
+/** Música da igreja ou letra corrigida de um hino (`basedOn`). */
+export interface UserSong {
+  id: number;
+  title: string;
+  author: string;
+  slides: UserSlide[];
+  basedOn: number | null;
+  /** Nomes de arquivo guardados dentro do app. */
+  audio: string | null;
+  background: string | null;
+  updatedAt: number;
 }

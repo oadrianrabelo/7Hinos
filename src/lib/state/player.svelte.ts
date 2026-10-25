@@ -91,6 +91,16 @@ class Player {
     }
   }
 
+  /** Recarrega a música do painel depois de editada (se não estiver no ar). */
+  async refresh(id: number) {
+    if (this.song?.id !== id || this.live) return;
+    try {
+      this.#load(await api.song(id));
+    } catch (e) {
+      toasts.error(errorMessage(e));
+    }
+  }
+
   /** Encerra a apresentação atual e traz a música da fila para o painel. */
   openQueued() {
     const song = this.queued;

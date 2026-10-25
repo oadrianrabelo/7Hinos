@@ -5,6 +5,7 @@
     ChevronRight,
     Heart,
     LoaderCircle,
+    Pencil,
     Monitor,
     MonitorPlay,
     Pause,
@@ -116,8 +117,19 @@
       <div class="art"><Cover media={song.cover} radius="var(--radius-s)" /></div>
       <div class="grow">
         <h3 class="truncate">{song.title}</h3>
-        <p class="muted truncate">{song.subtitle}</p>
+        <p class="muted truncate">
+          {#if song.custom}<span class="custom">Letra da igreja</span> ·{/if}
+          {song.subtitle}
+        </p>
       </div>
+      <button
+        class="btn btn-plain btn-icon"
+        aria-label="Editar a letra"
+        title="Editar a letra"
+        onclick={() => nav.push(song.id >= 900_000_000 ? { name: "editor", id: song.id } : { name: "editor", basedOn: song.id })}
+      >
+        <Pencil size={16} />
+      </button>
       <button
         class="btn btn-plain btn-icon fav"
         class:on={settings.isFavorite(song.id)}
@@ -329,6 +341,11 @@
   .art {
     width: 2.8rem;
     flex: none;
+  }
+
+  .custom {
+    color: var(--accent);
+    font-weight: 600;
   }
 
   .fav.on {

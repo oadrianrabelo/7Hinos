@@ -30,7 +30,8 @@ pub struct Catalog {
 
 impl Catalog {
     /// Carrega as listas do idioma. `CatalogMissing` se ainda não houve download.
-    pub fn load(store: &Store, lang: Lang) -> Result<Self> {
+    /// `extra` são as músicas próprias da igreja, que entram na busca.
+    pub fn load(store: &Store, lang: Lang, extra: Vec<SongSummary>) -> Result<Self> {
         let code = lang.code();
         let categories: Vec<RawCategory> = read(store, &format!("{code}_categories"))?;
         let musics: Vec<RawSongRow> = read(store, &format!("{code}_musics"))?;
@@ -50,6 +51,7 @@ impl Catalog {
                 IndexedSong::new(model::song_summary(row, number), &row.lyric)
             })
             .collect();
+        index.extend(extra.into_iter().map(|s| IndexedSong::new(s, "")));
         index.sort_by(|a, b| a.summary.title.cmp(&b.summary.title));
         let by_id = index
             .iter()
@@ -168,7 +170,7 @@ mod tests {
     fn missing_catalog_is_reported_as_such() {
         let (_dir, store) = store_with(&[]);
         assert!(matches!(
-            Catalog::load(&store, Lang::Pt),
+            Catalog::load(&store, Lang::Pt, Vec::new()),
             Err(Error::CatalogMissing)
         ));
     }
@@ -192,7 +194,7 @@ mod tests {
                 r#"[{"id_music":1,"name":"Santo, Santo, Santo!","track":1}]"#,
             ),
         ]);
-        let catalog = Catalog::load(&store, Lang::Pt).unwrap();
+        let catalog = Catalog::load(&store, Lang::Pt, Vec::new()).unwrap();
         let media = MediaCache::new(store.dir().join("media"), reqwest::Client::new());
 
         let collections = catalog.collections(&media);

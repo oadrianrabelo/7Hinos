@@ -15,6 +15,7 @@ use crate::package;
 use crate::settings::{self, Settings, VideoItem};
 use crate::stage::{Scene, StageState, VideoState};
 use crate::state::AppState;
+use crate::user_songs::UserSong;
 
 pub const SETTINGS_EVENT: &str = "settings://changed";
 pub const CATALOG_EVENT: &str = "catalog://changed";
@@ -278,6 +279,9 @@ pub fn apply_local_sources(app: &AppHandle) {
     let media = state.library.media();
     let _ = std::fs::create_dir_all(media.root());
     let dirs = std::iter::once(media.root().to_path_buf())
+        .chain(std::iter::once(
+            state.library.user().media_dir().to_path_buf(),
+        ))
         .chain(folders.music.iter().cloned())
         .chain(folders.images.iter().cloned())
         .chain(folders.covers.iter().cloned());
@@ -370,6 +374,41 @@ pub fn song_played(app: AppHandle, state: State<AppState>, id: u32) -> Result<()
         });
     }
     Ok(())
+}
+
+// ── Músicas da igreja ───────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn user_songs_list(state: State<AppState>) -> Vec<UserSong> {
+    state.library.user().list()
+}
+
+/// A versão da igreja para um id: música própria ou correção de um hino.
+#[tauri::command]
+pub fn user_song_get(state: State<AppState>, id: u32) -> Option<UserSong> {
+    state.library.user().find(id)
+}
+
+#[tauri::command]
+pub fn user_song_save(app: AppHandle, state: State<AppState>, song: UserSong) -> Result<UserSong> {
+    let saved = state.library.user().save(song)?;
+    state.library.load(state.settings.get().language)?;
+    emit_catalog(&app, false);
+    Ok(saved)
+}
+
+#[tauri::command]
+pub fn user_song_delete(app: AppHandle, state: State<AppState>, id: u32) -> Result<()> {
+    state.library.user().delete(id)?;
+    state.library.load(state.settings.get().language)?;
+    emit_catalog(&app, false);
+    Ok(())
+}
+
+/// Copia um áudio ou imagem para dentro do app e devolve o nome guardado.
+#[tauri::command]
+pub fn user_media_add(state: State<AppState>, path: String) -> Result<String> {
+    state.library.user().add_media(std::path::Path::new(&path))
 }
 
 // ── Bíblia ──────────────────────────────────────────────────────────────────
@@ -503,8 +542,15 @@ pub async fn package_import(app: AppHandle, path: String) -> Result<package::Man
     .inspect_err(|e| log::warn!("importação do pacote falhou: {e}"))?;
 
     let lang = state.settings.get().language;
-    if let Some(dir) = imported.catalog {
-        library.import_catalog_dir(dir, lang).await?;
+    if let Some(file) = &imported.user_songs {
+        match library.user().merge_from(file) {
+            Ok(n) => log::info!("músicas da igreja do pacote: {n} novas ou atualizadas"),
+            Err(e) => log::warn!("músicas da igreja do pacote não lidas: {e}"),
+        }
+    }
+    match imported.catalog {
+        Some(dir) => library.import_catalog_dir(dir, lang).await?,
+        None => library.load(lang)?,
     }
     for video in &imported.content.videos {
         state

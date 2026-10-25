@@ -75,6 +75,8 @@ pub struct Song {
     pub instrumental: Option<Media>,
     pub duration_ms: Option<u32>,
     pub slides: Vec<Slide>,
+    /// Música própria ou letra corrigida pela igreja.
+    pub custom: bool,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -208,6 +210,7 @@ pub fn song(raw: &RawMusic, media: &MediaCache) -> Song {
         instrumental: media.resolve(&raw.url_instrumental_music),
         duration_ms: parse_time_ms(&raw.duration).filter(|ms| *ms > 0),
         slides,
+        custom: false,
     }
 }
 
