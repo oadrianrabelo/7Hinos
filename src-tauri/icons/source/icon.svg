@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <rect x="80" y="80" width="864" height="864" rx="200" fill="#173B53"/>
-  <g fill="none" stroke="#F1E4C6" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
-    <!-- cruz que nasce da lombada -->
-    <path d="M512 600 L512 232"/>
-    <path d="M424 338 L600 338"/>
+  <g fill="none" stroke="#F1E4C6" stroke-width="32">
+    <!-- cruz que nasce da lombada, pontas retas -->
+    <path d="M512 648 L512 228" stroke-linecap="butt"/>
+    <path d="M422 338 L602 338" stroke-linecap="butt"/>
     <!-- livro aberto -->
-    <path d="M512 640 Q 380 556 226 590 L 226 708 Q 380 678 512 762 Q 644 678 798 708 L 798 590 Q 644 556 512 640 Z"/>
-    <path d="M512 640 L512 762"/>
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M512 640 Q 380 556 226 590 L 226 708 Q 380 678 512 762 Q 644 678 798 708 L 798 590 Q 644 556 512 640 Z"/>
+      <path d="M512 640 L512 762"/>
+    </g>
   </g>
 </svg>
