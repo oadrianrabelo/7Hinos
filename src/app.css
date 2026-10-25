@@ -379,6 +379,29 @@ h3 {
   color: var(--text-3);
 }
 
+/* Campos de formulário com rótulo em cima. */
+.form-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.input {
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font: inherit;
+  font-weight: 400;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 input[type="range"] {
   appearance: none;
   -webkit-appearance: none;

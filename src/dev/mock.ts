@@ -201,6 +201,10 @@ export function install() {
             { kind: "video", path: "/Users/igreja/Videos/Informativo Mundial das Missões.mp4", title: "Informativo Mundial das Missões" },
             { kind: "song", id: 18, title: "Castelo Forte" },
           ],
+    idle: { image: null, text: "Bem-vindos!", showClock: true },
+    notices: [
+      { id: 1, title: "Santa Ceia", body: "Neste sábado, às 10h30. Prepare o coração." },
+    ],
     bibleVersion: null,
     keepPlayed: true,
     autoUpdateCatalog: true,
@@ -310,6 +314,8 @@ export function install() {
           return { ...a.song, id: a.song.id || 900000002 };
         case "user_song_delete":
           return;
+        case "user_media_dir":
+          return "/mock/user-media";
         case "user_media_add":
           return "arquivo.mp3";
         case "bible_versions":

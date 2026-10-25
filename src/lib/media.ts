@@ -5,10 +5,19 @@ import type { Media } from "./types";
 // backend (ver `media_server.rs`): o WebView do Linux não toca áudio e vídeo
 // pelo protocolo próprio do Tauri, e por HTTP funciona em todo lugar.
 let base = "";
+let userDir = "";
 
 /** Carregado uma vez, antes de montar a interface. */
 export async function initMedia() {
-  base = await invoke<string>("media_base").catch(() => "");
+  [base, userDir] = await Promise.all([
+    invoke<string>("media_base").catch(() => ""),
+    invoke<string>("user_media_dir").catch(() => ""),
+  ]);
+}
+
+/** Um arquivo da igreja (logo, fundo) guardado dentro do app. */
+export function userMediaSrc(name: string | null | undefined): string | null {
+  return name && userDir ? fileSrc(`${userDir}/${name}`) : null;
 }
 
 export function fileSrc(path: string): string {

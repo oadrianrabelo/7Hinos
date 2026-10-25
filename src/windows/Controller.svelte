@@ -7,7 +7,6 @@
   import FullShell from "../shell/FullShell.svelte";
   import SimpleShell from "../shell/SimpleShell.svelte";
   import Onboarding from "./Onboarding.svelte";
-  import { on } from "../lib/api";
   import { catalog } from "../lib/state/catalog.svelte";
   import { downloads } from "../lib/state/downloads.svelte";
   import { nav } from "../lib/state/nav.svelte";
@@ -15,6 +14,7 @@
   import { live } from "../lib/state/live.svelte";
   import { player } from "../lib/state/player.svelte";
   import { settings } from "../lib/state/settings.svelte";
+  import { stage } from "../lib/state/stage.svelte";
   import { updater } from "../lib/state/updater.svelte";
   import { video } from "../lib/state/video.svelte";
 
@@ -23,7 +23,7 @@
 
   onMount(async () => {
     await Promise.all([settings.init(), catalog.init(), outputs.init(), video.init(), downloads.init()]);
-    await on("stage://changed", (stage) => video.receive(stage.video));
+    await stage.init();
     ready = true;
     if (settings.current.autoUpdateApp) setTimeout(() => updater.checkInBackground(), 5000);
   });

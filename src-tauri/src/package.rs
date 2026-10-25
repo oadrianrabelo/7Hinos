@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, Result};
-use crate::settings::{SetItem, Settings, VideoItem};
+use crate::settings::{IdleScreen, Notice, SetItem, Settings, VideoItem};
 
 pub const FOLDER: &str = "7Hinos-pacote";
 const MANIFEST: &str = "pacote.json";
@@ -49,7 +49,8 @@ pub struct Content {
     pub setlist: Vec<SetItem>,
     /// Caminhos relativos a `videos/` quando os arquivos foram levados.
     pub videos: Vec<VideoItem>,
-    pub notices: Vec<serde_json::Value>,
+    pub notices: Vec<Notice>,
+    pub idle: Option<IdleScreen>,
 }
 
 /// As pastas do app que entram no pacote.
@@ -149,7 +150,8 @@ pub fn export(
         favorites: settings.favorites.clone(),
         setlist: settings.setlist.clone(),
         videos,
-        notices: Vec::new(),
+        notices: settings.notices.clone(),
+        idle: Some(settings.idle.clone()),
     };
     write_json(&root.join("conteudo.json"), &content)?;
 
@@ -248,6 +250,22 @@ pub fn merge_content(settings: &mut Settings, content: Content) {
     // O culto montado em casa é o que vale na igreja.
     if !content.setlist.is_empty() {
         settings.setlist = content.setlist;
+    }
+    for notice in content.notices {
+        if !settings
+            .notices
+            .iter()
+            .any(|n| n.title == notice.title && n.body == notice.body)
+        {
+            let id = settings.notices.iter().map(|n| n.id).max().unwrap_or(0) + 1;
+            settings.notices.push(Notice { id, ..notice });
+        }
+    }
+    // A tela de espera montada em casa vale se aqui ainda não há uma.
+    if let Some(idle) = content.idle {
+        if settings.idle == IdleScreen::default() {
+            settings.idle = idle;
+        }
     }
     for video in content.videos {
         if Path::new(&video.path).is_file() && !settings.videos.iter().any(|v| v.path == video.path)

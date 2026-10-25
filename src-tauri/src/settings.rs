@@ -65,6 +65,25 @@ pub enum SetItem {
     Video { path: String, title: String },
 }
 
+/// O que o telão mostra quando nada está sendo apresentado.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct IdleScreen {
+    /// Nome do arquivo em `user-media/` (logo ou imagem da igreja).
+    pub image: Option<String>,
+    pub text: String,
+    pub show_clock: bool,
+}
+
+/// Um aviso salvo para projetar quando precisar.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Notice {
+    pub id: u32,
+    pub title: String,
+    pub body: String,
+}
+
 /// Favorito da versão antiga, esperando o catálogo para virar um id.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -87,6 +106,8 @@ pub struct Settings {
     pub favorites: Vec<u32>,
     pub recent: Vec<u32>,
     pub videos: Vec<VideoItem>,
+    pub idle: IdleScreen,
+    pub notices: Vec<Notice>,
     /// Versão da Bíblia escolhida por último.
     pub bible_version: Option<i64>,
     /// A programação do culto, na ordem em que será apresentada.
@@ -115,6 +136,8 @@ impl Default for Settings {
             favorites: Vec::new(),
             recent: Vec::new(),
             videos: Vec::new(),
+            idle: IdleScreen::default(),
+            notices: Vec::new(),
             bible_version: None,
             setlist: Vec::new(),
             keep_played: true,

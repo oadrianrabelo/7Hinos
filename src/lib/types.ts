@@ -93,6 +93,8 @@ export interface Settings {
   recent: number[];
   videos: VideoItem[];
   setlist: SetItem[];
+  idle: IdleScreen;
+  notices: Notice[];
   bibleVersion: number | null;
   keepPlayed: boolean;
   autoUpdateCatalog: boolean;
@@ -157,7 +159,26 @@ export interface OfflineStatus {
   total: number;
 }
 
-export type Scene = { kind: "black" } | { kind: "slide"; slide: Slide; title: string };
+export type Scene =
+  | { kind: "black" }
+  | { kind: "slide"; slide: Slide; title: string }
+  /** Tela de espera (logo e texto da igreja). */
+  | { kind: "idle" }
+  /** Relógio, ou contagem regressiva até `until` (epoch em ms). */
+  | { kind: "clock"; until: number | null; label: string };
+
+export interface IdleScreen {
+  /** Arquivo guardado dentro do app (logo ou imagem). */
+  image: string | null;
+  text: string;
+  showClock: boolean;
+}
+
+export interface Notice {
+  id: number;
+  title: string;
+  body: string;
+}
 
 export interface VideoState {
   path: string;

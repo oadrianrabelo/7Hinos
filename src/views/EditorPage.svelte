@@ -128,15 +128,15 @@
 
   <div class="editor">
     <div class="form">
-      <label class="label"><span>Título</span>
+      <label class="form-label"><span>Título</span>
         <input class="input" bind:value={draft.title} placeholder="Nome da música" />
       </label>
       {#if !draft.basedOn}
-        <label class="label"><span>Autor ou origem <span class="muted">(opcional)</span></span>
+        <label class="form-label"><span>Autor ou origem <span class="muted">(opcional)</span></span>
           <input class="input" bind:value={draft.author} placeholder="Ex.: Ministério de louvor" />
         </label>
       {/if}
-      <label class="label grow"><span>Letra</span>
+      <label class="form-label grow"><span>Letra</span>
         <textarea class="input lyrics" bind:value={lyrics} placeholder={"Primeira estrofe\nsegunda linha\n\nRefrão\n..."} spellcheck="true"></textarea>
       </label>
       {#if !draft.basedOn}
@@ -175,28 +175,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.9rem;
-  }
-
-  .label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    font-weight: 600;
-  }
-
-  .input {
-    padding: 0.6rem 0.75rem;
-    border-radius: var(--radius);
-    border: 1px solid var(--border-strong);
-    background: var(--surface);
-    font: inherit;
-    font-weight: 400;
-    outline: none;
-  }
-
-  .input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
   }
 
   .lyrics {

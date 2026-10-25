@@ -256,10 +256,12 @@ class Player {
 
   #push() {
     const slide = this.slide;
-    const scene: Scene =
-      this.live && !this.blackout && slide && this.song
-        ? { kind: "slide", slide: $state.snapshot(slide), title: this.song.title }
-        : { kind: "black" };
+    // Fora do ar, o telão volta à tela de espera; "tela preta" é escolha explícita.
+    const scene: Scene = !this.live
+      ? { kind: "idle" }
+      : this.blackout || !slide || !this.song
+        ? { kind: "black" }
+        : { kind: "slide", slide: $state.snapshot(slide), title: this.song.title };
     void api.show(scene);
   }
 }

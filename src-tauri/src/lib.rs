@@ -173,6 +173,7 @@ pub fn run() {
             commands::user_song_save,
             commands::user_song_delete,
             commands::user_media_add,
+            commands::user_media_dir,
             commands::bible_versions,
             commands::bible_books,
             commands::bible_chapter,

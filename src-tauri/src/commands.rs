@@ -405,6 +405,17 @@ pub fn user_song_delete(app: AppHandle, state: State<AppState>, id: u32) -> Resu
     Ok(())
 }
 
+/// Pasta onde ficam os arquivos da igreja (logo, áudios, fundos).
+#[tauri::command]
+pub fn user_media_dir(state: State<AppState>) -> String {
+    state
+        .library
+        .user()
+        .media_dir()
+        .to_string_lossy()
+        .into_owned()
+}
+
 /// Copia um áudio ou imagem para dentro do app e devolve o nome guardado.
 #[tauri::command]
 pub fn user_media_add(state: State<AppState>, path: String) -> Result<String> {

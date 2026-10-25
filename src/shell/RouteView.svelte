@@ -9,6 +9,7 @@
   import DisplaysPage from "../views/DisplaysPage.svelte";
   import HomePage from "../views/HomePage.svelte";
   import HymnalPage from "../views/HymnalPage.svelte";
+  import ScreenPage from "../views/ScreenPage.svelte";
   import SearchPage from "../views/SearchPage.svelte";
   import SetlistPage from "../views/SetlistPage.svelte";
   import SettingsPage from "../views/SettingsPage.svelte";
@@ -33,6 +34,8 @@
   <EditorPage id={route.id} basedOn={route.basedOn} />
 {:else if route.name === "bible"}
   <BiblePage {simple} />
+{:else if route.name === "screen"}
+  <ScreenPage {simple} />
 {:else if route.name === "setlist"}
   <SetlistPage {simple} />
 {:else if route.name === "hymnal"}

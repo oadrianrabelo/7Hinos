@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BookMarked, BookOpen, Clock, Film, Heart, Library, ListMusic } from "@lucide/svelte";
+  import { BookMarked, BookOpen, Clock, Film, Heart, Library, ListMusic, Megaphone } from "@lucide/svelte";
   import SearchField from "../components/SearchField.svelte";
   import SongList from "../components/SongList.svelte";
   import { api } from "../lib/api";
@@ -26,6 +26,7 @@
 
   const tiles = [
     { label: "Culto de hoje", icon: ListMusic, route: { name: "setlist" }, tint: "#af52de" },
+    { label: "Avisos e relógio", icon: Megaphone, route: { name: "screen" }, tint: "#ff6b3d" },
     { label: "Hinário", icon: BookOpen, route: { name: "hymnal" }, tint: "#5b57e0" },
     { label: "Bíblia", icon: BookMarked, route: { name: "bible" }, tint: "#a2845e" },
     { label: "Coletâneas e CDs", icon: Library, route: { name: "collections" }, tint: "#34a853" },
@@ -109,7 +110,7 @@
   }
 
   .tile.wide {
-    grid-column: 1 / -1;
+    grid-column: span 2;
   }
 
   .tile:hover {

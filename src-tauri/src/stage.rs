@@ -23,6 +23,13 @@ pub enum Scene {
         slide: Slide,
         title: String,
     },
+    /// Tela de espera: logo e texto da igreja (configurados em Ajustes).
+    Idle,
+    /// Relógio, ou contagem regressiva até `until` (epoch em ms).
+    Clock {
+        until: Option<f64>,
+        label: String,
+    },
 }
 
 /// Um vídeo em reprodução. As telas calculam a posição atual a partir de

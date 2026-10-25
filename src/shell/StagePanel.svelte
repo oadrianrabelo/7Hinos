@@ -16,6 +16,7 @@
     Volume2,
   } from "@lucide/svelte";
   import Cover from "../components/Cover.svelte";
+  import SceneView from "../components/SceneView.svelte";
   import SlideView from "../components/SlideView.svelte";
   import { openSetItem } from "../lib/actions";
   import { formatTime } from "../lib/format";
@@ -27,6 +28,8 @@
   import { nav } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
   import { player } from "../lib/state/player.svelte";
+  import { screen } from "../lib/state/screen.svelte";
+  import { stage } from "../lib/state/stage.svelte";
   import { settings } from "../lib/state/settings.svelte";
   import { video } from "../lib/state/video.svelte";
 
@@ -43,9 +46,14 @@
   });
 
   const onBible = $derived(live.source === "bible");
+  // Aviso ou relógio no telão: a prévia mostra o palco como ele está.
+
   const previewSlide = $derived(onBible ? bible.slide : player.slide);
   const isLive = $derived(onBible ? bible.live : player.live);
   const isBlack = $derived(onBible ? bible.blackout : player.blackout);
+  const onScreen = $derived(live.source === "text" || live.source === "clock");
+  // Sem nada para mostrar, a prévia mostra o telão (tela de espera, preta...).
+  const showStage = $derived(onScreen || (!previewSlide && !isLive));
   const nextInSetlist = $derived(
     player.song ? nextAfter(setlist.items, { kind: "song", id: player.song.id, title: "" }) : null,
   );
@@ -55,7 +63,9 @@
 
 <aside class="stage">
   <header data-tauri-drag-region>
-    {#if isLive}
+    {#if onScreen}
+      <span class="pill live">{live.source === "clock" ? "Relógio" : "Aviso"}</span>
+    {:else if isLive}
       <span class="pill live">{isBlack ? "Tela preta" : onBible ? "Bíblia ao vivo" : "Ao vivo"}</span>
     {:else}
       <span class="pill">Prévia</span>
@@ -70,9 +80,25 @@
     </button>
   </header>
 
-  <div class="preview" class:dim={isLive && isBlack}>
-    <SlideView slide={previewSlide} style={settings.current.slide} />
+  <div class="preview" class:dim={!onScreen && isLive && isBlack}>
+    {#if showStage}
+      <SceneView scene={stage.current.scene} style={settings.current.slide} idle={settings.current.idle} />
+    {:else}
+      <SlideView slide={previewSlide} style={settings.current.slide} />
+    {/if}
   </div>
+
+  {#if onScreen}
+    <div class="bible-live">
+      <div class="buttons">
+        {#if live.source === "text"}
+          <button class="btn btn-lg btn-icon" class:on={screen.blackout} aria-label="Tela preta" title="Tela preta (B)" onclick={() => screen.presenter.toggleBlackout()}><SunMoon size={18} /></button>
+        {/if}
+        <button class="btn btn-lg btn-primary" onclick={() => screen.rest()}>Tirar do telão</button>
+      </div>
+      <button class="btn btn-plain" onclick={() => nav.reset({ name: "screen" })}>Avisos e relógio</button>
+    </div>
+  {/if}
 
   {#if onBible}
     <div class="bible-live">

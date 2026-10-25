@@ -135,7 +135,7 @@ class BiblePresenter {
     if (!this.live) return;
     this.live = false;
     this.blackout = false;
-    void api.show({ kind: "black" });
+    void api.show({ kind: "idle" });
     live.release("bible");
   }
 
