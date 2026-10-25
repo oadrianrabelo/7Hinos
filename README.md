@@ -251,23 +251,18 @@ versão; ao fazer o merge, a CI gera os instaladores de Windows (`.msi`/`.exe`),
 macOS (Apple Silicon e Intel) e Linux (`.deb`, `.rpm`, `.AppImage`) e os anexa à
 release no GitHub.
 
-### Ativando a atualização automática (uma vez)
+### Atualização automática
 
-O app só aceita atualizações assinadas. Para ligar:
+O app só aceita atualizações assinadas com a chave do projeto. A chave
+pública já está em `plugins.updater.pubkey` (`src-tauri/tauri.conf.json`); a
+privada fica nos *secrets* do repositório (`TAURI_SIGNING_PRIVATE_KEY` e, se
+tiver senha, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`), e o workflow de release a
+usa para assinar.
 
-1. Gere o par de chaves na sua máquina:
-   ```bash
-   npm run tauri signer generate -- -w ~/.tauri/7hinos.key
-   ```
-2. Em **Settings → Secrets and variables → Actions** do repositório, crie
-   `TAURI_SIGNING_PRIVATE_KEY` (conteúdo do arquivo `~/.tauri/7hinos.key`) e,
-   se usou senha, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
-3. Cole a chave pública (`~/.tauri/7hinos.key.pub`) em `plugins.updater.pubkey`
-   no `src-tauri/tauri.conf.json` e faça commit.
-
-Guarde a chave privada: sem ela, quem já instalou não recebe novas versões.
-Enquanto a chave não existir, as releases saem normalmente, só sem os arquivos
-de atualização.
+Guarde uma cópia da chave privada (`~/.tauri/7hinos.key`) fora do GitHub:
+sem ela, quem já instalou não recebe novas versões. Se um dia precisar de
+outra, gere com `npx tauri signer generate -w ~/.tauri/7hinos.key` e troque
+as duas pontas — quem tem a versão antiga precisará instalar a nova à mão.
 
 ## Observações
 
