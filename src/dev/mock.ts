@@ -185,7 +185,7 @@ export function install() {
     theme: (params.get("theme") as Settings["theme"]) ?? "system",
     language: "pt",
     uiScale: 1,
-    slide: { uppercase: true, textScale: 1, showImages: true, transitionMs: 450 },
+    slide: { font: "condensed", uppercase: true, textScale: 1, showImages: true, transitionMs: 450 },
     favorites: [18],
     recent: [101, 1, 18],
     videos: [
@@ -408,6 +408,8 @@ export function install() {
           stage = { ...stage, scene: a.scene, rev: stage.rev + 1 };
           changed("stage://changed", stage);
           return;
+        case "system_fonts":
+          return ["Arial", "Calibri", "Cambria", "Comic Sans MS", "Georgia", "Segoe UI", "Times New Roman", "Trebuchet MS", "Verdana"];
         case "stage_pulpit":
           stage = { ...stage, pulpit: a.pulpit, rev: stage.rev + 1 };
           changed("stage://changed", stage);

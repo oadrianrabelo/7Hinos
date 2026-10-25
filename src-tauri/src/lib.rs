@@ -6,6 +6,7 @@ mod contract;
 mod displays;
 mod downloads;
 mod error;
+mod fonts;
 mod legacy;
 mod library;
 mod media;
@@ -198,6 +199,7 @@ pub fn run() {
             commands::outputs_close_all,
             commands::outputs_reopen,
             commands::stage_pulpit,
+            commands::system_fonts,
             commands::video_tag,
             commands::displays_identify,
             commands::reset_all,

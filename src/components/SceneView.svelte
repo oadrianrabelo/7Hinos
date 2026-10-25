@@ -1,6 +1,7 @@
 <!-- Desenha qualquer cena do palco. O telão e a prévia usam o mesmo componente. -->
 <script lang="ts">
   import { clockText, countdownText } from "../lib/clock";
+  import { ensureFont, fontFamily } from "../lib/fonts";
   import { userMediaSrc } from "../lib/media";
   import { fitText } from "../lib/slides";
   import type { IdleScreen, Scene, ScreenStyle, SlideStyle } from "../lib/types";
@@ -25,11 +26,7 @@
 
   // Avisos, tela de espera e relógio seguem a aparência escolhida em
   // "Avisos e relógio"; os hinos seguem o estilo dos slides.
-  const fonts = {
-    condensed: "var(--font-slide)",
-    sans: "var(--font-ui)",
-    serif: 'Georgia, "Times New Roman", serif',
-  };
+  $effect(() => ensureFont(screen.font));
   const backdrop = $derived.by(() => {
     const image = userMediaSrc(screen.backgroundImage);
     if (image) return `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("${image}") center / cover`;
@@ -47,7 +44,7 @@
     style:background={backdrop}
     style:color={screen.textColor}
     style:--accent={screen.accentColor}
-    style:font-family={fonts[screen.font]}
+    style:font-family={fontFamily(screen.font)}
   >
     {@render body()}
   </div>

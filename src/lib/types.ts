@@ -66,6 +66,8 @@ export interface Song {
 }
 
 export interface SlideStyle {
+  /** Fonte da letra dos hinos (ver lib/fonts.ts). */
+  font: string;
   uppercase: boolean;
   textScale: number;
   showImages: boolean;
@@ -104,7 +106,8 @@ export interface ScreenProfile {
   outputs: ProfileOutput[];
 }
 
-export type ScreenFont = "condensed" | "sans" | "serif";
+/** Ver lib/fonts.ts: "condensed", "lora", "system:Arial", "file:x.ttf"… */
+export type ScreenFont = string;
 
 /** Aparência dos avisos, da tela de espera e do relógio. */
 export interface ScreenStyle {

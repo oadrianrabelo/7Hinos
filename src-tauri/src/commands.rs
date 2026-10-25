@@ -655,6 +655,15 @@ pub fn stage_video(app: AppHandle, state: State<AppState>, video: Option<VideoSt
     state.stage.set_video(&app, video);
 }
 
+/// Famílias de fonte instaladas no computador. Lento na primeira vez em
+/// computadores com muitas fontes, por isso assíncrono.
+#[tauri::command]
+pub async fn system_fonts() -> Vec<String> {
+    tauri::async_runtime::spawn_blocking(crate::fonts::system_families)
+        .await
+        .unwrap_or_default()
+}
+
 #[tauri::command]
 pub fn stage_pulpit(app: AppHandle, state: State<AppState>, pulpit: Pulpit) {
     state.stage.set_pulpit(&app, pulpit);

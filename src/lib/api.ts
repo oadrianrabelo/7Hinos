@@ -83,6 +83,8 @@ export const api = {
   show: (scene: Scene) => invoke<void>("stage_show", { scene }),
   setVideo: (video: VideoState | null) => invoke<void>("stage_video", { video }),
   setPulpit: (pulpit: Pulpit) => invoke<void>("stage_pulpit", { pulpit }),
+  /** Famílias de fonte instaladas no computador. */
+  systemFonts: () => invoke<string[]>("system_fonts"),
   identifyDisplays: () => invoke<void>("displays_identify"),
   /** Apaga acervo, mídias, Bíblia, músicas e preferências, e reinicia. */
   resetAll: () => invoke<void>("reset_all"),

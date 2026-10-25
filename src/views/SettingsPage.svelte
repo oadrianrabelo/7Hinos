@@ -2,6 +2,7 @@
   import { ClipboardCopy, FileText, FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Trash2, X } from "@lucide/svelte";
   import { ask } from "@tauri-apps/plugin-dialog";
   import DownloadButton from "../components/DownloadButton.svelte";
+  import FontPicker from "../components/FontPicker.svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import TransferPanel from "../components/TransferPanel.svelte";
   import SlideView from "../components/SlideView.svelte";
@@ -196,6 +197,10 @@
         </div>
       </div>
     </div>
+    <div class="font-box card">
+      <span class="section-title">Letra dos slides</span>
+      <FontPicker value={s.slide.font} onchange={(font) => settings.saveSlide({ font })} />
+    </div>
   </section>
 
   <section>
@@ -325,6 +330,13 @@
 </div>
 
 <style>
+  .font-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.9rem 1rem;
+  }
+
   .danger {
     color: var(--danger, #d93025);
   }
