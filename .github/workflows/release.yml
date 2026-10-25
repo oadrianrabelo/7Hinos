@@ -8,6 +8,11 @@ permissions:
   contents: write
   pull-requests: write
 
+# Um release por vez: dois merges seguidos não disputam a mesma release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
@@ -82,5 +87,93 @@ jobs:
           releaseName: 7Hinos ${{ needs.release-please.outputs.tag_name }}
           releaseDraft: false
           prerelease: false
-          includeUpdaterJson: true
+          # O latest.json é montado uma vez só, no fim, com as três plataformas:
+          # gerado por cada build em paralelo, um poderia apagar o outro.
+          includeUpdaterJson: false
           args: ${{ matrix.args }} ${{ steps.updater.outputs.args }}
+
+  # Confere a release, monta o latest.json da atualização automática e
+  # completa as notas com instruções de instalação.
+  publish:
+    needs: [release-please, build]
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+          SIGNED: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const tag = process.env.TAG;
+            const { data: release } = await github.rest.repos.getReleaseByTag({ owner, repo, tag });
+            const assets = release.assets;
+            const find = (re) => assets.find((a) => re.test(a.name));
+
+            // 1. Os instaladores das três plataformas precisam estar lá.
+            const expected = {
+              "Windows (.exe)": /_x64-setup\.exe$/,
+              "Windows (.msi)": /_x64_.*\.msi$/,
+              "macOS (.dmg)": /_universal\.dmg$/,
+              "Linux (.AppImage)": /_amd64\.AppImage$/,
+              "Linux (.deb)": /_amd64\.deb$/,
+            };
+            const missing = Object.entries(expected).filter(([, re]) => !find(re)).map(([n]) => n);
+            if (missing.length) core.setFailed(`Faltam na release ${tag}: ${missing.join(", ")}`);
+
+            // 2. latest.json, se houver assinatura.
+            if (process.env.SIGNED === "true") {
+              const read = async (asset) => {
+                const res = await github.request("GET /repos/{owner}/{repo}/releases/assets/{id}", {
+                  owner, repo, id: asset.id, headers: { accept: "application/octet-stream" },
+                });
+                return Buffer.from(res.data).toString("utf8").trim();
+              };
+              const entry = async (re) => {
+                const file = find(re);
+                const sig = file && find(new RegExp(`^${file.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\.sig$`));
+                if (!file || !sig) return null;
+                return { url: file.browser_download_url, signature: await read(sig) };
+              };
+              const windows = await entry(/_x64-setup\.exe$/);
+              const mac = await entry(/_universal\.app\.tar\.gz$/);
+              const linux = await entry(/_amd64\.AppImage$/);
+              const platforms = {};
+              if (windows) platforms["windows-x86_64"] = windows;
+              if (mac) Object.assign(platforms, { "darwin-aarch64": mac, "darwin-x86_64": mac });
+              if (linux) platforms["linux-x86_64"] = linux;
+              const lacking = ["windows-x86_64", "darwin-aarch64", "linux-x86_64"].filter((p) => !platforms[p]);
+              if (lacking.length) core.setFailed(`Atualização automática sem: ${lacking.join(", ")}`);
+
+              const latest = {
+                version: tag.replace(/^v/, ""),
+                notes: `Novidades: ${release.html_url}`,
+                pub_date: new Date().toISOString(),
+                platforms,
+              };
+              const old = find(/^latest\.json$/);
+              if (old) await github.rest.repos.deleteReleaseAsset({ owner, repo, asset_id: old.id });
+              await github.rest.repos.uploadReleaseAsset({
+                owner, repo, release_id: release.id, name: "latest.json",
+                data: JSON.stringify(latest, null, 2),
+                headers: { "content-type": "application/json" },
+              });
+            } else {
+              core.warning("Sem TAURI_SIGNING_PRIVATE_KEY: release sem atualização automática.");
+            }
+
+            // 3. Como instalar, no fim das notas (uma vez só).
+            const marker = "<!-- como-instalar -->";
+            if (!release.body?.includes(marker)) {
+              const howto = [
+                marker,
+                "### Como instalar",
+                "- **Windows**: baixe o `.exe` (recomendado) ou o `.msi`. O instalador já traz tudo para funcionar sem internet. Se aparecer “O Windows protegeu o computador”, clique em *Mais informações → Executar assim mesmo*.",
+                "- **macOS** (Intel e Apple Silicon): baixe o `.dmg`. Na primeira vez, clique com o botão direito no 7Hinos → *Abrir*. Se aparecer “está danificado”, rode no Terminal: `xattr -cr /Applications/7Hinos.app`.",
+                "- **Linux**: `.AppImage` (qualquer distribuição), `.deb` (Ubuntu/Debian) ou `.rpm` (Fedora).",
+                "",
+                "Quem já tem o 7Hinos 1.0 ou mais novo recebe esta versão sozinho: o app baixa em segundo plano e pede para reiniciar.",
+              ].join("\n");
+              await github.rest.repos.updateRelease({ owner, repo, release_id: release.id, body: `${release.body ?? ""}\n\n${howto}` });
+            }
