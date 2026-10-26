@@ -62,8 +62,13 @@ experiência.
   versículo no telão. Vem do LouvorJA desktop ou é baixada uma vez.
 - **Apresentações.** O PDF do pregador (ou fotos) vira slides no próprio
   7Hinos, com setas e passador, sem abrir outro programa. Do PowerPoint: salve
-  como PDF (ou instale o LibreOffice para importar direto). A **Lição da Escola
-  Sabatina** do trimestre é baixada e aberta da mesma forma.
+  como PDF (ou instale o LibreOffice para importar direto). Durante a
+  apresentação: **zoom**, **foco** (o resto escurece), **marca-texto**,
+  **caneta**, **laser** e borracha, que aparecem ao vivo no telão, e
+  transições entre páginas (suave, deslizar, aproximar). Cada apresentação
+  reabre na página onde parou. A **Lição da Escola Sabatina** do trimestre é
+  baixada e aberta da mesma forma — uma por uma ou todas de uma vez — e o app
+  lembra onde a classe parou na semana anterior.
 - **Controle pelo celular.** Pelo Wi‑Fi da igreja, sem internet: passar
   slides e páginas, tela preta, abrir um hino pelo número ou um item do culto.
   Em **Ajustes → Controle pelo celular**, é só ler o QR code.

@@ -214,6 +214,7 @@ pub fn run() {
             commands::deck_add_page,
             commands::deck_import_images,
             commands::deck_rename,
+            commands::deck_progress,
             commands::deck_delete,
             commands::pdf_read,
             commands::office_to_pdf,

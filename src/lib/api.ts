@@ -95,6 +95,7 @@ export const api = {
     invoke<Deck>("deck_add_page", bytes, { headers: { "deck-id": id, ext } }),
   importImages: (title: string, paths: string[]) => invoke<Deck>("deck_import_images", { title, paths }),
   renameDeck: (id: string, title: string) => invoke<Deck>("deck_rename", { id, title }),
+  deckProgress: (id: string, page: number) => invoke<Deck>("deck_progress", { id, page }),
   deleteDeck: (id: string) => invoke<void>("deck_delete", { id }),
   readPdf: (path: string) => invoke<ArrayBuffer>("pdf_read", { path }),
   officeToPdf: (path: string) => invoke<string>("office_to_pdf", { path }),

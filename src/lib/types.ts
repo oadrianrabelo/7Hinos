@@ -243,13 +243,40 @@ export type Scene =
   /** `next`: o slide seguinte, para o monitor de retorno. */
   | { kind: "slide"; slide: Slide; title: string; next?: Slide | null }
   /** Página de apresentação (PDF, imagem, lição), mostrada inteira. */
-  | { kind: "image"; src: string; title: string; page: number; total: number; next?: string | null }
+  | { kind: "image"; src: string; title: string; page: number; total: number; next?: string | null; overlay?: PageOverlay | null }
   /** Tela de espera (logo e texto da igreja). */
   | { kind: "idle" }
   /** Relógio, ou contagem regressiva até `until` (epoch em ms). */
   | { kind: "clock"; until: number | null; label: string }
   /** Sorteio: as telas embaralham `candidates` e param em `result` (ver lib/draw.ts). */
   | { kind: "draw"; title: string; result: string; candidates: string[]; startedAt: number; durationMs: number };
+
+/** Um traço de caneta ou marca-texto, em coordenadas da página (0 a 1). */
+export interface Stroke {
+  tool: "pen" | "marker";
+  color: string;
+  /** Espessura em milésimos da largura da página. */
+  width: number;
+  points: [number, number][];
+}
+
+export type PageTransition = "none" | "fade" | "slide" | "zoom";
+
+/**
+ * Ferramentas do apresentador sobre uma página: tudo em coordenadas da
+ * página (0 a 1), para ficar igual em qualquer tela.
+ */
+export interface PageOverlay {
+  /** Aproximar: o ponto que fica no centro e quanto aumentar (1 = normal). */
+  zoom?: { x: number; y: number; scale: number } | null;
+  /** Foco: um círculo claro, o resto escurecido (raio em fração da largura). */
+  spotlight?: { x: number; y: number; r: number } | null;
+  strokes?: Stroke[];
+  laser?: { x: number; y: number } | null;
+  transition?: PageTransition;
+  /** 1 avançou, -1 voltou (a transição "deslizar" segue o sentido). */
+  dir?: number;
+}
 
 export interface IdleScreen {
   /** Arquivo guardado dentro do app (logo ou imagem). */
@@ -387,6 +414,10 @@ export interface Deck {
   pages: string[];
   createdAt: number;
   source: string;
+  /** Onde parou (índice da página). */
+  lastPage: number;
+  /** Última vez que foi aberta (epoch em segundos); 0 = nunca. */
+  openedAt: number;
 }
 
 export interface Lesson {

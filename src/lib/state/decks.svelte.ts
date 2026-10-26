@@ -2,11 +2,25 @@
 
 import { api, errorMessage } from "../api";
 import { renderPdf } from "../pdf";
-import type { Deck, Lesson, Scene } from "../types";
+import type { Deck, Lesson, PageOverlay, PageTransition, Scene, Stroke } from "../types";
 import { live } from "./live.svelte";
 import { outputs } from "./outputs.svelte";
 import { toasts } from "./toasts.svelte";
 import { video } from "./video.svelte";
+
+export type DeckTool = "none" | "zoom" | "spotlight" | "marker" | "pen" | "laser" | "eraser";
+
+const TRANSITION_KEY = "7hinos.deckTransition";
+
+function savedTransition(): PageTransition {
+  try {
+    const t = localStorage.getItem(TRANSITION_KEY);
+    if (t === "none" || t === "fade" || t === "slide" || t === "zoom") return t;
+  } catch {
+    // Sem armazenamento: usa o padrão.
+  }
+  return "fade";
+}
 
 const fileTitle = (path: string) =>
   (path.split(/[\\/]/).pop() ?? "Apresentação").replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
@@ -22,6 +36,137 @@ class Decks {
   /** Importação em andamento, para mostrar o progresso. */
   importing = $state<{ title: string; done: number; total: number } | null>(null);
 
+  // Ferramentas do apresentador. Os desenhos ficam guardados por página
+  // enquanto a apresentação estiver aberta; zoom, foco e laser valem só para
+  // a página atual.
+  tool = $state<DeckTool>("none");
+  penColor = $state("#ff3b30");
+  markerColor = $state("#ffe14d");
+  transition = $state<PageTransition>(savedTransition());
+  marks = $state<Record<number, Stroke[]>>({});
+  zoom = $state<PageOverlay["zoom"]>(null);
+  spotlight = $state<PageOverlay["spotlight"]>(null);
+  laser = $state<PageOverlay["laser"]>(null);
+  #direction = 1;
+  #frame = 0;
+  #progressTimer: ReturnType<typeof setTimeout> | undefined;
+
+  get overlay(): PageOverlay {
+    return {
+      zoom: this.zoom,
+      spotlight: this.spotlight,
+      laser: this.laser,
+      strokes: this.marks[this.index] ?? [],
+      transition: this.transition,
+      dir: this.#direction,
+    };
+  }
+
+  setTransition(t: PageTransition) {
+    this.transition = t;
+    try {
+      localStorage.setItem(TRANSITION_KEY, t);
+    } catch {
+      // Só não lembra na próxima vez.
+    }
+  }
+
+  /** Vai para a página `i` (no telão, se estiver no ar), guardando onde parou. */
+  go(i: number) {
+    const deck = this.deck;
+    if (!deck?.pages.length) return;
+    const target = Math.max(0, Math.min(deck.pages.length - 1, i));
+    if (target !== this.index) {
+      this.#direction = target > this.index ? 1 : -1;
+      this.zoom = null;
+      this.spotlight = null;
+      this.laser = null;
+    }
+    this.index = target;
+    this.#saveProgress();
+    if (this.live) this.#push();
+  }
+
+  #saveProgress() {
+    const deck = this.deck;
+    if (!deck) return;
+    clearTimeout(this.#progressTimer);
+    const page = this.index;
+    this.#progressTimer = setTimeout(() => {
+      void api
+        .deckProgress(deck.id, page)
+        .then((saved) => {
+          this.list = this.list.map((d) => (d.id === saved.id ? saved : d));
+        })
+        .catch(() => {});
+    }, 600);
+  }
+
+  // Desenho e laser mudam muitas vezes por segundo: manda no máximo um
+  // quadro por vez para as telas.
+  pushOverlay() {
+    if (!this.live || this.#frame) return;
+    this.#frame = requestAnimationFrame(() => {
+      this.#frame = 0;
+      this.#push();
+    });
+  }
+
+  setZoom(zoom: PageOverlay["zoom"]) {
+    this.zoom = zoom;
+    this.pushOverlay();
+  }
+
+  setSpotlight(spotlight: PageOverlay["spotlight"]) {
+    this.spotlight = spotlight;
+    this.pushOverlay();
+  }
+
+  setLaser(laser: PageOverlay["laser"]) {
+    this.laser = laser;
+    this.pushOverlay();
+  }
+
+  /** Começa um traço novo (caneta ou marca-texto) na página atual. */
+  beginStroke(stroke: Stroke) {
+    this.marks[this.index] = [...(this.marks[this.index] ?? []), stroke];
+    this.pushOverlay();
+  }
+
+  /** Atualiza o último traço enquanto a pessoa desenha. */
+  extendStroke(points: [number, number][]) {
+    const list = this.marks[this.index];
+    if (!list?.length) return;
+    this.marks[this.index] = [...list.slice(0, -1), { ...list[list.length - 1], points }];
+    this.pushOverlay();
+  }
+
+  eraseStroke(i: number) {
+    const list = this.marks[this.index] ?? [];
+    this.marks[this.index] = list.filter((_, j) => j !== i);
+    this.pushOverlay();
+  }
+
+  undo() {
+    const list = this.marks[this.index] ?? [];
+    if (!list.length) return;
+    this.marks[this.index] = list.slice(0, -1);
+    this.pushOverlay();
+  }
+
+  /** Limpa desenhos, foco e zoom da página atual. */
+  clearPage() {
+    this.marks[this.index] = [];
+    this.zoom = null;
+    this.spotlight = null;
+    this.laser = null;
+    this.pushOverlay();
+  }
+
+  get hasMarks() {
+    return (this.marks[this.index]?.length ?? 0) > 0 || !!this.zoom || !!this.spotlight;
+  }
+
   async load() {
     [this.list, this.#dir] = await Promise.all([api.decks(), api.decksDir()]);
   }
@@ -30,7 +175,7 @@ class Decks {
     return `${this.#dir}/${deck.id}/${deck.pages[i]}`;
   }
 
-  async importPdf(path: string, title = fileTitle(path), source = "pdf"): Promise<Deck | null> {
+  async importPdf(path: string, title = fileTitle(path), source = "pdf", quiet = false): Promise<Deck | null> {
     this.importing = { title, done: 0, total: 0 };
     let deck: Deck | null = null;
     try {
@@ -41,7 +186,7 @@ class Decks {
         this.importing = { title, done: page, total };
         deck = await api.addDeckPage(id, jpeg, "jpg");
       });
-      toasts.show(`“${title}” pronta: ${deck.pages.length} páginas.`, "success");
+      if (!quiet) toasts.show(`“${title}” pronta: ${deck.pages.length} páginas.`, "success");
       return deck;
     } catch (e) {
       // Sem páginas, a apresentação pela metade não serve para nada.
@@ -79,17 +224,48 @@ class Decks {
     }
   }
 
-  async importLesson(quarter: string, lesson: Lesson): Promise<Deck | null> {
+  async importLesson(quarter: string, lesson: Lesson, quiet = false): Promise<Deck | null> {
     const title = `Lição ${lesson.number} — ${lesson.title}`;
     this.importing = { title, done: 0, total: 0 };
     try {
       const path = await api.downloadLesson(quarter, lesson);
-      return await this.importPdf(path, title, "lesson");
+      return await this.importPdf(path, title, "lesson", quiet);
     } catch (e) {
       this.importing = null;
       toasts.error(errorMessage(e));
       return null;
     }
+  }
+
+  /** Lote em andamento ("Baixar todas"), para o botão mostrar o progresso. */
+  batch = $state<{ done: number; total: number } | null>(null);
+
+  /**
+   * Baixa e prepara todas as lições do trimestre que ainda não estão aqui,
+   * uma de cada vez. Se uma falhar, segue com as outras.
+   */
+  async importAllLessons(quarter: string, lessons: Lesson[], ready: (l: Lesson) => boolean) {
+    const missing = lessons.filter((l) => !ready(l));
+    if (!missing.length) return toasts.show("Todas as lições do trimestre já estão aqui.", "success");
+    let ok = 0;
+    this.batch = { done: 0, total: missing.length };
+    try {
+      for (const lesson of missing) {
+        if (await this.importLesson(quarter, lesson, true)) ok++;
+        this.batch = { done: this.batch.done + 1, total: missing.length };
+      }
+    } finally {
+      this.batch = null;
+    }
+    toasts.show(
+      ok === missing.length ? `${ok} lições prontas para usar sem internet.` : `${ok} de ${missing.length} lições prontas; tente de novo as que faltaram.`,
+      ok === missing.length ? "success" : "info",
+    );
+  }
+
+  /** A lição aberta por último, para continuar de onde parou. */
+  get lastLesson(): Deck | null {
+    return this.list.filter((d) => d.source === "lesson" && d.openedAt > 0).sort((a, b) => b.openedAt - a.openedAt)[0] ?? null;
   }
 
   async rename(deck: Deck, title: string) {
@@ -107,17 +283,37 @@ class Decks {
     await this.load();
   }
 
-  /** Abre no painel, sem ir para o telão. */
+  /** Abre no painel, sem ir para o telão, na página onde parou da última vez. */
   open(deck: Deck) {
-    if (this.deck?.id !== deck.id) this.index = 0;
+    if (this.deck?.id !== deck.id) {
+      this.marks = {};
+      this.zoom = null;
+      this.spotlight = null;
+      this.laser = null;
+      this.tool = "none";
+      const resume = deck.lastPage > 0 && deck.lastPage < deck.pages.length ? deck.lastPage : 0;
+      this.index = resume;
+      if (resume) {
+        toasts.show(`Continuando da página ${resume + 1}, onde parou.`, "info", { label: "Do começo", run: () => this.go(0) }, 6000);
+      }
+    }
     this.deck = deck;
+    this.#saveProgress();
   }
 
   /** Mostra a página `i` no telão. */
   show(i: number) {
     const deck = this.deck;
     if (!deck?.pages.length) return;
-    this.index = Math.max(0, Math.min(deck.pages.length - 1, i));
+    const target = Math.max(0, Math.min(deck.pages.length - 1, i));
+    if (target !== this.index) {
+      this.#direction = target > this.index ? 1 : -1;
+      this.zoom = null;
+      this.spotlight = null;
+      this.laser = null;
+    }
+    this.index = target;
+    this.#saveProgress();
     if (!this.live) {
       if (video.state) video.stop();
       live.claim("deck");
@@ -163,6 +359,7 @@ class Decks {
           page: this.index + 1,
           total: deck.pages.length,
           next: this.index + 1 < deck.pages.length ? this.pagePath(deck, this.index + 1) : null,
+          overlay: this.overlay,
         };
     void api.show(scene);
   }

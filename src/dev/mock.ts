@@ -237,6 +237,20 @@ export function install() {
         ? { kind: "slide", slide: sample.slides[1], title: sample.title, next: sample.slides[2] }
         : params.get("scene") === "notice"
           ? { kind: "slide", title: "Santa Ceia", next: null, slide: { kind: "text", text: "Vamos celebrar a Ceia do Senhor", aux: "Santa Ceia", image: null, imagePosition: 5 } as never }
+          : params.get("scene") === "page"
+            ? {
+                kind: "image",
+                src: "/mock/apresentacoes/a1/pagina-001.jpg",
+                title: "Sermão",
+                page: 1,
+                total: 3,
+                next: "/mock/apresentacoes/a1/pagina-002.jpg",
+                overlay: {
+                  strokes: [{ tool: "marker", color: "#ffe14d", width: 22, points: [[0.08, 0.36], [0.58, 0.36]] }],
+                  spotlight: { x: 0.78, y: 0.72, r: 0.15 },
+                  laser: { x: 0.3, y: 0.45 },
+                },
+              }
           : params.get("scene") === "idle"
             ? { kind: "idle" }
             : { kind: "black" },
@@ -269,7 +283,8 @@ export function install() {
       const a = (args ?? {}) as Record<string, any>;
       switch (cmd) {
         case "media_base":
-          return "";
+          // Páginas de exemplo desenhadas pelo vite.config.ts (plugin mock-media).
+          return "/__mock-media";
         case "app_version":
           return "0.5.0";
         case "settings_get":
@@ -418,9 +433,11 @@ export function install() {
           return;
         case "decks_list":
           return [
-            { id: "a1", title: "Sermão — O Bom Pastor", pages: ["pagina-001.jpg", "pagina-002.jpg", "pagina-003.jpg"], createdAt: 2, source: "pdf" },
-            { id: "b2", title: "Lição 04 — A fé de Abraão", pages: ["pagina-001.jpg", "pagina-002.jpg"], createdAt: 1, source: "lesson" },
+            { id: "a1", title: "Sermão — O Bom Pastor", pages: ["pagina-001.jpg", "pagina-002.jpg", "pagina-003.jpg"], createdAt: 2, source: "pdf", lastPage: 0, openedAt: 0 },
+            { id: "b2", title: "Lição 04 — A fé de Abraão", pages: ["pagina-001.jpg", "pagina-002.jpg"], createdAt: 1, source: "lesson", lastPage: 1, openedAt: 100 },
           ];
+        case "deck_progress":
+          return { id: a.id, title: "", pages: [], createdAt: 0, source: "", lastPage: a.page, openedAt: Math.floor(Date.now() / 1000) };
         case "decks_dir":
           return "/mock/apresentacoes";
         case "lesson_quarter":

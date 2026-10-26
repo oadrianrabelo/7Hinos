@@ -9,6 +9,7 @@
   import { backgroundPosition, fitText } from "../lib/slides";
   import { timerDisplay } from "../lib/timer";
   import type { Settings, StageState } from "../lib/types";
+  import PageView from "./PageView.svelte";
   import SceneView from "./SceneView.svelte";
 
   let { stage, prefs }: { stage: StageState; prefs: Settings } = $props();
@@ -102,7 +103,7 @@
         {current.text}
       </p>
     {:else if scene.kind === "image"}
-      <img class="page" src={fileSrc(scene.src)} alt="" />
+      <div class="page"><PageView src={fileSrc(scene.src)} overlay={scene.overlay} /></div>
     {:else if scene.kind === "clock" && scene.until !== null}
       <p class="big">{countdownText(scene.until, now)}</p>
     {:else}

@@ -30,6 +30,12 @@ pub struct Deck {
     /// De onde veio: "pdf", "images" ou "lesson".
     #[serde(default)]
     pub source: String,
+    /// Onde parou (índice da página), para continuar na próxima vez.
+    #[serde(default)]
+    pub last_page: u32,
+    /// Quando foi aberta pela última vez (epoch em segundos); 0 = nunca.
+    #[serde(default)]
+    pub opened_at: u64,
 }
 
 pub struct Decks {
@@ -81,6 +87,8 @@ impl Decks {
             pages: Vec::new(),
             created_at,
             source: source.to_owned(),
+            last_page: 0,
+            opened_at: 0,
         };
         fs::create_dir_all(self.dir(&deck.id)?)?;
         self.save(&deck)?;
@@ -130,6 +138,18 @@ impl Decks {
     pub fn rename(&self, id: &str, title: &str) -> Result<Deck> {
         let mut deck = self.get(id)?;
         deck.title = clean_title(title);
+        self.save(&deck)?;
+        Ok(deck)
+    }
+
+    /// Guarda onde parou (e quando), para continuar de lá na próxima vez.
+    pub fn set_progress(&self, id: &str, page: u32) -> Result<Deck> {
+        let mut deck = self.get(id)?;
+        deck.last_page = page.min(deck.pages.len().saturating_sub(1) as u32);
+        deck.opened_at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or_default();
         self.save(&deck)?;
         Ok(deck)
     }
@@ -242,6 +262,11 @@ mod tests {
             decks.rename(&deck.id, "Culto jovem").unwrap().title,
             "Culto jovem"
         );
+        let deck = decks.set_progress(&deck.id, 9).unwrap();
+        assert_eq!(deck.last_page, 1, "não passa da última página");
+        assert!(deck.opened_at > 0);
+        assert_eq!(decks.get(&deck.id).unwrap().last_page, 1);
+
         decks.delete(&deck.id).unwrap();
         assert!(decks.list().is_empty());
     }
