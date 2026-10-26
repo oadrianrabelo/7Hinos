@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/oadrianrabelo/7Hinos/compare/v1.3.0...v1.3.1) (2026-10-26)
+
+
+### 🐛 Correções
+
+* retorno vazio, páginas do PDF sem imagem e lista da lição ([#24](https://github.com/oadrianrabelo/7Hinos/issues/24)) ([24110a9](https://github.com/oadrianrabelo/7Hinos/commit/24110a9b98e4e57d9f95ed61a6c6501795d93fcf))
+
 ## [1.3.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.2.0...v1.3.0) (2026-10-25)
 
 
