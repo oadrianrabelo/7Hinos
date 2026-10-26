@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.3.1...v1.4.0) (2026-10-26)
+
+
+### ✨ Novas Funcionalidades
+
+* **apresentações:** zoom, foco, marca-texto, caneta, laser e transições; lição inteira e continuar ([#28](https://github.com/oadrianrabelo/7Hinos/issues/28)) ([84c8a8e](https://github.com/oadrianrabelo/7Hinos/commit/84c8a8e464ce7f9ba2a656010d55329c0480182c))
+* sorteio, liturgia, novidades, seletor de cores e fontes serifadas ([#26](https://github.com/oadrianrabelo/7Hinos/issues/26)) ([3db46db](https://github.com/oadrianrabelo/7Hinos/commit/3db46dbc201f7d9076559b253097cc2d2d2f2c6d))
+
 ## [1.3.1](https://github.com/oadrianrabelo/7Hinos/compare/v1.3.0...v1.3.1) (2026-10-26)
 
 
