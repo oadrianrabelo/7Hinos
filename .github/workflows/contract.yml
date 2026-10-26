@@ -19,7 +19,7 @@ jobs:
     if: github.event_name != 'push' || contains(github.event.head_commit.message, '[contrato]')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Dependências do sistema (WebKitGTK)
         run: |
           sudo apt-get update
@@ -35,7 +35,7 @@ jobs:
         env:
           CONTRACT_OUT: ${{ github.workspace }}/amostras
         run: cargo test contract -- --ignored --nocapture --test-threads=1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: amostras-louvorja
@@ -43,7 +43,7 @@ jobs:
           if-no-files-found: ignore
       - name: Abrir issue se o contrato quebrou
         if: failure() && github.event_name == 'schedule'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const title = 'O formato do LouvorJA mudou (teste de contrato falhou)';

@@ -39,6 +39,8 @@
     "targets": "all",
     "createUpdaterArtifacts": false,
     "category": "Music",
+    "license": "GPL-3.0-or-later",
+    "copyright": "© 2026 Adrian Rabelo — GPL-3.0",
     "shortDescription": "Hinos e louvores com projeção de slides",
     "longDescription": "Toque hinos e louvores do acervo do LouvorJA, projete a letra em uma ou mais telas e reproduza vídeos durante o culto.",
     "icon": [

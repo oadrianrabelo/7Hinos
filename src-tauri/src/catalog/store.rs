@@ -56,7 +56,7 @@ impl Store {
                     continue;
                 }
                 // Os pacotes já tiveram as chaves na raiz e dentro de `json_db/`.
-                let Some(key) = Path::new(entry.name())
+                let Some(key) = Path::new(&*entry.name()?)
                     .file_name()
                     .and_then(|n| n.to_str())
                     .and_then(|n| n.strip_suffix(".json"))

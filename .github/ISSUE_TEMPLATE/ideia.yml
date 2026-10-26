@@ -1,0 +1,17 @@
+name: Ideia ou sugestão
+description: Algo que ajudaria no culto da sua igreja.
+title: "[Ideia] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: ideia
+    attributes:
+      label: Qual é a ideia?
+      placeholder: "Ex.: poder mostrar o nome de quem vai pregar antes do sermão."
+    validations:
+      required: true
+  - type: textarea
+    id: por-que
+    attributes:
+      label: Em que momento do culto isso ajudaria?
+      description: Conte como vocês fazem hoje e o que fica difícil.

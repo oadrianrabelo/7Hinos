@@ -316,3 +316,14 @@ as duas pontas — quem tem a versão antiga precisará instalar a nova à mão.
   (`gstreamer1.0-plugins-good`), normalmente já instalados.
 - Acervo, letras e mídias pertencem ao LouvorJA e seus autores. O 7Hinos só os
   consome pela API pública.
+
+## Licença
+
+O código do 7Hinos é software livre, sob a
+[GNU General Public License v3.0 ou posterior](LICENSE): qualquer pessoa ou
+igreja pode usar, estudar, modificar e distribuir — e quem distribuir uma
+versão modificada precisa manter o código aberto, sob a mesma licença.
+
+A licença vale para o código deste repositório. Hinos, letras, áudios,
+imagens e textos bíblicos vêm do LouvorJA e de seus autores e continuam com
+os direitos deles; as fontes embutidas são livres (SIL Open Font License).
