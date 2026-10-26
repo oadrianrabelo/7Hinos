@@ -15,6 +15,18 @@ import "@fontsource/poppins/700.css";
 import "@fontsource/bebas-neue/400.css";
 import "@fontsource/merriweather/400.css";
 import "@fontsource/merriweather/700.css";
+// Serifadas, que combinam com a igreja.
+import "@fontsource-variable/eb-garamond";
+import "@fontsource-variable/cormorant-garamond";
+import "@fontsource-variable/crimson-pro";
+import "@fontsource-variable/alegreya";
+import "@fontsource-variable/noto-serif/wght.css";
+import "@fontsource-variable/cinzel";
+import "@fontsource/libre-baskerville/400.css";
+import "@fontsource/libre-baskerville/700.css";
+import "@fontsource/pt-serif/400.css";
+import "@fontsource/pt-serif/700.css";
+import "@fontsource/dm-serif-display/400.css";
 import "./app.css";
 
 import { mount } from "svelte";

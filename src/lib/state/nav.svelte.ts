@@ -5,6 +5,8 @@ export type Route =
   | { name: "setlist" }
   | { name: "bible" }
   | { name: "screen" }
+  | { name: "draw" }
+  | { name: "news" }
   | { name: "decks" }
   | { name: "mysongs" }
   /** Editor: `id` de uma música própria ou `basedOn` para corrigir um hino. */

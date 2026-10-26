@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { addItem, contains, moveItem, nextAfter, removeAt } from "./setlist";
+import { makePart } from "./liturgy";
+import { addItem, addParts, contains, itemKey, moveItem, nextAfter, removeAt, updateAt } from "./setlist";
 import type { SetItem } from "./types";
 
 const song = (id: number): SetItem => ({ kind: "song", id, title: `Hino ${id}` });
@@ -27,5 +28,18 @@ describe("setlist", () => {
     expect(nextAfter(list, song(3))).toBeNull();
     expect(nextAfter(list, song(9))).toBeNull();
     expect(nextAfter(list, null)).toBeNull();
+  });
+
+  it("keeps repeated liturgy parts apart and edits in place", () => {
+    const a = makePart("Oração");
+    const b = makePart("Oração", 5);
+    expect(a.id).not.toBe(b.id);
+    const list = addParts([song(1)], [a, b]);
+    expect(list.length).toBe(3);
+    expect(contains(list, b)).toBe(true);
+    expect(itemKey(a)).not.toBe(itemKey(b));
+    const edited = updateAt(list, 2, { note: "Ir. Ana" });
+    expect(edited[2].note).toBe("Ir. Ana");
+    expect(edited[1]).toBe(list[1]);
   });
 });

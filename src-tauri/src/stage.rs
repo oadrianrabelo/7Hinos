@@ -41,6 +41,16 @@ pub enum Scene {
     Idle,
     /// Relógio, ou contagem regressiva até `until` (epoch em ms).
     Clock { until: Option<f64>, label: String },
+    /// Sorteio: cada tela embaralha `candidates` desde `started_at` (epoch em
+    /// ms) por `duration_ms` e para em `result`, escolhido pelo controle.
+    #[serde(rename_all = "camelCase")]
+    Draw {
+        title: String,
+        result: String,
+        candidates: Vec<String>,
+        started_at: f64,
+        duration_ms: u32,
+    },
 }
 
 /// Um vídeo em reprodução. As telas calculam a posição atual a partir de
@@ -184,5 +194,19 @@ mod tests {
             let json = serde_json::to_string(&scene).unwrap();
             assert_eq!(serde_json::from_str::<Scene>(&json).unwrap(), scene);
         }
+    }
+
+    #[test]
+    fn draw_reads_camel_case_from_the_interface() {
+        let json = r#"{"kind":"draw","title":"Sorteio","result":"7",
+            "candidates":["1","7"],"startedAt":10.0,"durationMs":4000}"#;
+        let scene: Scene = serde_json::from_str(json).unwrap();
+        assert!(matches!(
+            scene,
+            Scene::Draw {
+                duration_ms: 4000,
+                ..
+            }
+        ));
     }
 }

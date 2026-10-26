@@ -68,6 +68,8 @@ export interface Song {
 export interface SlideStyle {
   /** Fonte da letra dos hinos (ver lib/fonts.ts). */
   font: string;
+  /** Fonte dos versículos; vazio = a mesma dos hinos. */
+  bibleFont: string;
   uppercase: boolean;
   textScale: number;
   showImages: boolean;
@@ -75,11 +77,17 @@ export interface SlideStyle {
 }
 
 /** Um item da programação do culto. */
-export type SetItem =
+export type SetItem = (
   | { kind: "song"; id: number; title: string }
   | { kind: "deck"; id: string; title: string }
   /** `tag` semanal: na hora toca o vídeo "de hoje" daquele tipo. */
-  | { kind: "video"; path: string; title: string; tag?: string | null };
+  | { kind: "video"; path: string; title: string; tag?: string | null }
+  /** Momento da liturgia (oração, leitura, sermão…); `minutes` vai para o cronômetro do púlpito. */
+  | { kind: "part"; id: string; title: string; minutes?: number | null }
+) & {
+  /** Anotação: quem dirige, o que lembrar. */
+  note?: string;
+};
 
 /** O que o monitor de retorno mostra além da letra. */
 export interface MonitorOptions {
@@ -89,6 +97,10 @@ export interface MonitorOptions {
   /** A mesma imagem de fundo do telão, escurecida. */
   showBackground: boolean;
   textScale: number;
+  /** Recado do púlpito: fonte (vazio = a da interface), cor do texto e da faixa. */
+  messageFont: string;
+  messageColor: string;
+  messageBackground: string;
 }
 
 /** Controle pelo celular na rede local. */
@@ -128,7 +140,7 @@ export interface ScreenStyle {
   font: ScreenFont;
   textColor: string;
   accentColor: string;
-  /** "gradient" ou uma cor #rrggbb. */
+  /** Cor lisa "#rrggbb" ou degradê "radial:#centro,#borda" (ver lib/colors.ts). */
   background: string;
   backgroundImage: string | null;
 }
@@ -235,7 +247,9 @@ export type Scene =
   /** Tela de espera (logo e texto da igreja). */
   | { kind: "idle" }
   /** Relógio, ou contagem regressiva até `until` (epoch em ms). */
-  | { kind: "clock"; until: number | null; label: string };
+  | { kind: "clock"; until: number | null; label: string }
+  /** Sorteio: as telas embaralham `candidates` e param em `result` (ver lib/draw.ts). */
+  | { kind: "draw"; title: string; result: string; candidates: string[]; startedAt: number; durationMs: number };
 
 export interface IdleScreen {
   /** Arquivo guardado dentro do app (logo ou imagem). */

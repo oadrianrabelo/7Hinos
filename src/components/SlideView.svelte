@@ -19,9 +19,10 @@
   const key = $derived(
     slide ? [slide.kind, slide.text, slide.aux, slide.image?.url, slide.repeat].join("|") : "black",
   );
-  // A fonte escolhida em Ajustes → Slides vale para hinos e versículos.
-  const family = $derived(fontFamily(style.font));
-  $effect(() => ensureFont(style.font));
+  // A fonte de Ajustes → Slides; os versículos podem ter a sua.
+  const font = $derived(slide?.kind === "verse" && style.bibleFont ? style.bibleFont : style.font);
+  const family = $derived(fontFamily(font));
+  $effect(() => ensureFont(font));
   const image = $derived(style.showImages ? mediaSrc(slide?.image) : null);
   const size = $derived(slide ? fitText(slide.text, slide.kind, style.textScale) : null);
   const duration = $derived(animate ? style.transitionMs : 0);

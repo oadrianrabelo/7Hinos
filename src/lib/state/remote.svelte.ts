@@ -74,10 +74,13 @@ class RemoteControl {
     const source = live.source;
     const items = setlist.items;
     const base = {
-      setlist: items.map((i) => ({ kind: i.kind, title: i.title })),
-      setlistCurrent: items.findIndex(
-        (i) => (i.kind === "song" && player.song?.id === i.id) || (i.kind === "deck" && decks.deck?.id === i.id && decks.live),
-      ),
+      setlist: items.map((i) => ({ kind: i.kind, title: i.note ? `${i.title} — ${i.note}` : i.title })),
+      setlistCurrent:
+        setlist.currentIndex >= 0
+          ? setlist.currentIndex
+          : items.findIndex(
+              (i) => (i.kind === "song" && player.song?.id === i.id) || (i.kind === "deck" && decks.deck?.id === i.id && decks.live),
+            ),
     };
     if (source === "deck" && decks.deck) {
       return {

@@ -383,6 +383,7 @@ mod tests {
             setlist: vec![SetItem::Song {
                 id: 1,
                 title: "Hino".into(),
+                note: String::new(),
             }],
             videos: vec![VideoItem {
                 path: video.to_string_lossy().into(),

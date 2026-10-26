@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BookMarked, BookOpen, Clock, Film, Heart, House, Library, ListMusic, Megaphone, MonitorPlay, Presentation, Music4, Settings } from "@lucide/svelte";
+  import { BookMarked, BookOpen, Clock, Dices, Film, Heart, House, Library, ListMusic, Megaphone, MonitorPlay, Presentation, Music4, Settings } from "@lucide/svelte";
   import SearchField from "../components/SearchField.svelte";
   import { playSong } from "../lib/actions";
   import { api } from "../lib/api";
@@ -32,6 +32,7 @@
     { route: { name: "bible" }, label: "Bíblia", icon: BookMarked },
     { route: { name: "decks" }, label: "Apresentações", icon: Presentation },
     { route: { name: "screen" }, label: "Avisos e relógio", icon: Megaphone },
+    { route: { name: "draw" }, label: "Sorteio", icon: Dices },
     { route: { name: "collections" }, label: "Coletâneas", icon: Library },
     { route: { name: "favorites" }, label: "Favoritos", icon: Heart },
     { route: { name: "recent" }, label: "Recentes", icon: Clock },

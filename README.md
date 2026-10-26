@@ -38,7 +38,9 @@ experiência.
   pregador**, em vermelho com "Faltam" e "Passou" quando estoura o tempo
   combinado. A igreja não vê nada disso. Dá para esconder a próxima letra,
   as horas ou o título, mostrar o fundo do telão e mudar o tamanho da letra,
-  em **Telas**.
+  em **Telas**. Avisos, tela de espera, relógio e sorteio aparecem no retorno
+  como no telão. O cronômetro aceita qualquer tempo (e ±1 minuto com ele
+  andando), e o recado tem letra e cores à escolha.
 - **Telas difíceis.** Telão e retorno também abrem em janela, para telas que
   o sistema não lista direito (alguns adaptadores USB para HDMI): arraste
   para a tela e dê dois cliques. **Identificar telas** mostra o nome de cada
@@ -50,8 +52,11 @@ experiência.
   todas nos mesmos lugares, sem parar o vídeo.
 - **Avisos, relógio e tela de espera.** Avisos da semana salvos para projetar
   com um clique, relógio, contagem regressiva ("O culto começa em 05:00") e
-  uma tela de espera com o logo e o nome da igreja — com letra, cores e fundo
-  (cor ou imagem) à escolha.
+  uma tela de espera com o logo e o nome da igreja — com letra, cores (prontas
+  ou qualquer uma, no seletor) e fundo: degradês circulares, cor lisa,
+  degradê personalizado ou imagem.
+- **Sorteio.** Números (de… até…) ou uma lista de nomes, sem repetir quem já
+  saiu, com suspense no telão e a lista dos sorteados.
 - **Bíblia.** As versões do LouvorJA (em português e espanhol), busca
   por referência ("jo 3 16", "Salmos 23:1-4") ou por palavra, versículo a
   versículo no telão. Vem do LouvorJA desktop ou é baixada uma vez.
@@ -62,8 +67,10 @@ experiência.
 - **Controle pelo celular.** Pelo Wi‑Fi da igreja, sem internet: passar
   slides e páginas, tela preta, abrir um hino pelo número ou um item do culto.
   Em **Ajustes → Controle pelo celular**, é só ler o QR code.
-- **Fontes.** Dez fontes livres embutidas, as instaladas no computador e
-  arquivos `.ttf`/`.otf`, para os hinos e para os avisos.
+- **Fontes.** Mais de vinte fontes livres embutidas (muitas com serifa:
+  Garamond, Baskerville, Cinzel…), as instaladas no computador e arquivos
+  `.ttf`/`.otf`, escolhidas num menu com a prévia de cada uma. Hinos, Bíblia,
+  avisos e recado do púlpito podem ter fontes diferentes.
 - **Músicas da igreja.** Cadastre corinhos e hinos que não estão no acervo
   (com áudio e fundo, se quiser) ou corrija a letra de um hino; nenhuma
   atualização apaga o que a igreja fez.
@@ -86,8 +93,14 @@ experiência.
   mesmo botão (ou a primeira abertura) importa tudo.
 - **Traz tudo da versão anterior.** Favoritos, vídeos, tema e as músicas já
   baixadas pela versão antiga do 7Hinos são migrados na primeira abertura.
-- **Culto de hoje.** Monte antes a ordem dos hinos e vídeos; na hora, o painel
-  (ou o modo simples) mostra sempre o próximo item.
+- **Culto de hoje e liturgia.** Monte antes a ordem dos hinos, vídeos,
+  apresentações e momentos (oração, leitura, sermão…) — ou comece por um
+  modelo (Culto divino, Escola Sabatina, Culto jovem). Cada item aceita uma
+  anotação ("Pr. Silva"); um momento com tempo liga o cronômetro do púlpito
+  ao começar. Na hora, o painel mostra sempre o próximo; clique duplo num
+  hino troca na hora, mesmo com outro tocando.
+- **Novidades.** Depois de cada atualização, o app avisa e mostra o que mudou
+  (também em **Ajustes → Sobre → Novidades**).
 - **Sempre em dia com o LouvorJA.** O acervo é conferido ao abrir e a cada
   3 horas; sem internet, tenta de novo sozinho (1, 5, 15, 30 e 60 minutos) e
   confere na hora em que a conexão volta. O app também baixa novas versões

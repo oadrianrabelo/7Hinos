@@ -5,6 +5,8 @@
   import CollectionPage from "../views/CollectionPage.svelte";
   import CollectionsPage from "../views/CollectionsPage.svelte";
   import DecksPage from "../views/DecksPage.svelte";
+  import DrawPage from "../views/DrawPage.svelte";
+  import NewsPage from "../views/NewsPage.svelte";
   import EditorPage from "../views/EditorPage.svelte";
   import MySongsPage from "../views/MySongsPage.svelte";
   import DisplaysPage from "../views/DisplaysPage.svelte";
@@ -39,6 +41,10 @@
   <DecksPage {simple} />
 {:else if route.name === "screen"}
   <ScreenPage {simple} />
+{:else if route.name === "draw"}
+  <DrawPage />
+{:else if route.name === "news"}
+  <NewsPage />
 {:else if route.name === "setlist"}
   <SetlistPage {simple} />
 {:else if route.name === "hymnal"}

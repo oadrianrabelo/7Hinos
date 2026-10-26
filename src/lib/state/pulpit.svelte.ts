@@ -40,6 +40,11 @@ class PulpitControl {
     return this.#setTimer({ ...timer, elapsedMs: elapsedMs(timer, Date.now()), startedAt: null });
   }
 
+  /** Zera e começa de novo, com outro tempo (um novo momento do culto). */
+  restart(limitMs: number | null) {
+    return this.#setTimer({ elapsedMs: 0, startedAt: Date.now(), limitMs });
+  }
+
   /** Zera e esconde o cronômetro do retorno. */
   reset() {
     return this.#set({ timer: null });

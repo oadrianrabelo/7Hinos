@@ -185,7 +185,7 @@ export function install() {
     theme: (params.get("theme") as Settings["theme"]) ?? "system",
     language: "pt",
     uiScale: 1,
-    slide: { font: "condensed", uppercase: true, textScale: 1, showImages: true, transitionMs: 450 },
+    slide: { font: "condensed", bibleFont: "", uppercase: true, textScale: 1, showImages: true, transitionMs: 450 },
     favorites: [18],
     recent: [101, 1, 18],
     videos: [
@@ -202,7 +202,7 @@ export function install() {
             { kind: "song", id: 18, title: "Castelo Forte" },
           ],
     idle: { image: null, text: "Bem-vindos!", showClock: true },
-    monitor: { showNext: params.get("next") !== "0", showClock: true, showTitle: true, showBackground: params.get("bg") === "1", textScale: 1 },
+    monitor: { showNext: params.get("next") !== "0", showClock: true, showTitle: true, showBackground: params.get("bg") === "1", textScale: 1, messageFont: "", messageColor: "#000000", messageBackground: "#ffd36b" },
     screenProfiles: [
       {
         id: 1,

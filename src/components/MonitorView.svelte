@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
   import { clockText, countdownText } from "../lib/clock";
+  import { ensureFont, fontFamily } from "../lib/fonts";
   import { fileSrc, mediaSrc } from "../lib/media";
   import { backgroundPosition, fitText } from "../lib/slides";
   import { timerDisplay } from "../lib/timer";
@@ -12,6 +13,7 @@
 
   let { stage, prefs }: { stage: StageState; prefs: Settings } = $props();
   const options = $derived(prefs.monitor);
+  $effect(() => ensureFont(options.messageFont));
 
   let now = $state(Date.now());
   $effect(() => {
@@ -25,7 +27,10 @@
   // Avisos, tela de espera e relógio aparecem como no telão (mesmas cores e
   // fontes); só a letra dos hinos e da Bíblia ganha o formato do retorno.
   const mirrored = $derived(
-    scene.kind === "idle" || scene.kind === "clock" || (scene.kind === "slide" && scene.slide.kind === "text"),
+    scene.kind === "idle" ||
+      scene.kind === "clock" ||
+      scene.kind === "draw" ||
+      (scene.kind === "slide" && scene.slide.kind === "text"),
   );
   const current = $derived(scene.kind === "slide" && !mirrored ? scene.slide : null);
   // O mesmo fundo do telão, bem escurecido: a letra continua sendo o principal.
@@ -48,6 +53,8 @@
         return "Tela de espera";
       case "clock":
         return scene.until !== null ? scene.label || "Contagem regressiva" : "Relógio no telão";
+      case "draw":
+        return "Sorteio";
       default:
         return "";
     }
@@ -74,7 +81,16 @@
   </header>
 
   {#if message}
-    {#key message}<p class="message">{message}</p>{/key}
+    {#key message}
+      <p
+        class="message"
+        style:color={options.messageColor || null}
+        style:--message-bg={options.messageBackground || null}
+        style:font-family={options.messageFont ? fontFamily(options.messageFont) : null}
+      >
+        {message}
+      </p>
+    {/key}
   {/if}
 
   <main>
@@ -214,13 +230,14 @@
     line-height: 1.15;
     text-align: center;
     color: #000;
-    background: #ffd36b;
+    background: var(--message-bg, #ffd36b);
     animation: arrive 0.6s ease-out 3;
   }
 
+  /* Pisca três vezes ao chegar, para chamar a atenção. */
   @keyframes arrive {
     50% {
-      background: #fff;
+      filter: brightness(1.6);
     }
   }
 

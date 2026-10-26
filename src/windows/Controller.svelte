@@ -18,6 +18,8 @@
   import { updater } from "../lib/state/updater.svelte";
   import { remote } from "../lib/state/remote.svelte";
   import { video } from "../lib/state/video.svelte";
+  import { toasts } from "../lib/state/toasts.svelte";
+  import { api } from "../lib/api";
 
   let ready = $state(false);
   let full = $state<FullShell>();
@@ -31,7 +33,23 @@
     const preferred = settings.current.screenProfiles.find((p) => p.id === settings.current.defaultProfile);
     if (preferred && settings.current.onboarded && !outputs.outputs.length) void outputs.applyProfile(preferred);
     if (settings.current.autoUpdateApp) setTimeout(() => updater.checkInBackground(), 5000);
+    void announceUpdate();
   });
+
+  /** Depois de uma atualização, avisa uma vez e leva às Novidades. */
+  async function announceUpdate() {
+    const KEY = "7hinos.lastVersion";
+    try {
+      const version = await api.appVersion();
+      const before = localStorage.getItem(KEY);
+      localStorage.setItem(KEY, version);
+      if (before && before !== version && settings.current.onboarded) {
+        toasts.show(`O 7Hinos foi atualizado para a versão ${version}.`, "success", { label: "Ver novidades", run: () => nav.push({ name: "news" }) }, 12_000);
+      }
+    } catch {
+      // Sem armazenamento ou sem versão: só não avisa.
+    }
+  }
 
   // Tema e tamanho do texto valem para a janela inteira.
   $effect(() => {

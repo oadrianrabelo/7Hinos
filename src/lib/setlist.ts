@@ -9,6 +9,7 @@ const weekly = (tag: string | null | undefined) => (tagInfo(tag)?.weekly ? tag :
 export function sameItem(a: SetItem, b: SetItem): boolean {
   if (a.kind === "song" && b.kind === "song") return a.id === b.id;
   if (a.kind === "deck" && b.kind === "deck") return a.id === b.id;
+  if (a.kind === "part" && b.kind === "part") return a.id === b.id;
   if (a.kind === "video" && b.kind === "video") {
     // "Informativo de hoje" é um lugar na programação, não um arquivo.
     const wa = weekly(a.tag);
@@ -25,6 +26,22 @@ export function contains(list: SetItem[], item: SetItem): boolean {
 /** Acrescenta no fim; o mesmo hino ou vídeo não entra duas vezes. */
 export function addItem(list: SetItem[], item: SetItem): SetItem[] {
   return contains(list, item) ? list : [...list, item];
+}
+
+/** Acrescenta momentos da liturgia (que podem se repetir: duas orações). */
+export function addParts(list: SetItem[], parts: SetItem[]): SetItem[] {
+  return [...list, ...parts];
+}
+
+/** Muda um item no lugar (a anotação, o tempo de um momento). */
+export function updateAt(list: SetItem[], index: number, patch: Partial<SetItem>): SetItem[] {
+  return list.map((item, i) => (i === index ? ({ ...item, ...patch } as SetItem) : item));
+}
+
+/** Chave estável para listas na tela. */
+export function itemKey(item: SetItem): string {
+  if (item.kind === "video") return `video|${item.path}|${item.tag ?? ""}`;
+  return `${item.kind}|${item.id}`;
 }
 
 export function removeAt(list: SetItem[], index: number): SetItem[] {
