@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/oadrianrabelo/7Hinos/compare/v1.4.1...v1.4.2) (2026-10-26)
+
+
+### 🔧 Manutenção
+
+* licença GPL-3.0, Dependabot, dependências e Actions atualizadas ([#31](https://github.com/oadrianrabelo/7Hinos/issues/31)) ([15bf7cc](https://github.com/oadrianrabelo/7Hinos/commit/15bf7cc030df07c876f9e955aa29e778d0556e73))
+
 ## [1.4.1](https://github.com/oadrianrabelo/7Hinos/compare/v1.4.0...v1.4.1) (2026-10-26)
 
 
