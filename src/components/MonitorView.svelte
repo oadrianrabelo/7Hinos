@@ -96,7 +96,7 @@
 
   <main>
     {#if mirrored}
-      <div class="mirror"><SceneView {scene} style={prefs.slide} idle={prefs.idle} screen={prefs.screenStyle} /></div>
+      <div class="mirror"><SceneView {scene} style={prefs.slide} idle={prefs.idle} screen={prefs.screenStyle} plain={!options.showBackground} /></div>
     {:else if current && size}
       {#if current.aux}<p class="aux">{current.aux}</p>{/if}
       <p class="text" class:prose={current.kind === "verse" || current.kind === "text"} style:font-size="min({size.cqh}cqh, {size.cqw}cqw)">
