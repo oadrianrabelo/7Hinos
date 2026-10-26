@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/oadrianrabelo/7Hinos/compare/v1.4.0...v1.4.1) (2026-10-26)
+
+
+### 🐛 Correções
+
+* zoom na tela inteira e rolagem; vídeo no retorno; cronômetro à vista ([#29](https://github.com/oadrianrabelo/7Hinos/issues/29)) ([12ebf4b](https://github.com/oadrianrabelo/7Hinos/commit/12ebf4b7fc1f38b2af42694fc8128b6260747a6e))
+
 ## [1.4.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.3.1...v1.4.0) (2026-10-26)
 
 
