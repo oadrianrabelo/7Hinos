@@ -1,7 +1,7 @@
 {
   "name": "sete-hinos",
   "private": true,
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Hinos e louvores com projeção de slides e vídeos",
   "type": "module",
   "scripts": {
