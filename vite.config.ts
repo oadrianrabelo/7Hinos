@@ -19,8 +19,12 @@ function mockMedia(): Plugin {
 <text x="110" y="410" font-family="Georgia" font-size="52" fill="#222">pelas ovelhas.” (João 10:11)</text>
 <circle cx="1250" cy="650" r="150" fill="#e8b04b"/><rect x="110" y="560" width="700" height="40" rx="8" fill="#9fb3c2"/>
 <rect x="110" y="630" width="560" height="40" rx="8" fill="#9fb3c2"/><rect x="110" y="700" width="640" height="40" rx="8" fill="#9fb3c2"/></svg>`;
+        // Páginas "retrato-…": uma folha A4 em pé, para testar zoom e rolagem.
+        const tall = `<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1754" viewBox="0 0 1240 1754">
+<rect width="1240" height="1754" fill="#fff"/><text x="80" y="200" font-family="Arial" font-size="90" fill="#111">PREGAI O EVANGELHO</text>
+${Array.from({ length: 12 }, (_, i) => `<text x="80" y="${360 + i * 115}" font-family="Arial" font-size="56" fill="#222">Linha ${i + 1}: o que Deus tem feito enquanto…</text>`).join("")}</svg>`;
         res.setHeader("Content-Type", "image/svg+xml");
-        res.end(svg);
+        res.end(path.includes("retrato") ? tall : svg);
       });
     },
   };

@@ -8,7 +8,7 @@ import { outputs } from "./outputs.svelte";
 import { toasts } from "./toasts.svelte";
 import { video } from "./video.svelte";
 
-export type DeckTool = "none" | "zoom" | "spotlight" | "marker" | "pen" | "laser" | "eraser";
+export type DeckTool = "none" | "zoom" | "hand" | "spotlight" | "marker" | "pen" | "laser" | "eraser";
 
 const TRANSITION_KEY = "7hinos.deckTransition";
 
@@ -47,6 +47,11 @@ class Decks {
   zoom = $state<PageOverlay["zoom"]>(null);
   spotlight = $state<PageOverlay["spotlight"]>(null);
   laser = $state<PageOverlay["laser"]>(null);
+  /**
+   * "Ajustar à largura" vale para as próximas páginas também (PDF em pé):
+   * guarda a escala e cada página nova começa do alto, na largura da tela.
+   */
+  widthScale = $state<number | null>(null);
   #direction = 1;
   #frame = 0;
   #progressTimer: ReturnType<typeof setTimeout> | undefined;
@@ -76,15 +81,18 @@ class Decks {
     const deck = this.deck;
     if (!deck?.pages.length) return;
     const target = Math.max(0, Math.min(deck.pages.length - 1, i));
-    if (target !== this.index) {
-      this.#direction = target > this.index ? 1 : -1;
-      this.zoom = null;
-      this.spotlight = null;
-      this.laser = null;
-    }
+    if (target !== this.index) this.#turnTo(target);
     this.index = target;
     this.#saveProgress();
     if (this.live) this.#push();
+  }
+
+  /** Ao trocar de página: zera foco e laser; o zoom só fica se for "na largura". */
+  #turnTo(target: number) {
+    this.#direction = target > this.index ? 1 : -1;
+    this.zoom = this.widthScale ? { x: 0.5, y: 0, scale: this.widthScale } : null;
+    this.spotlight = null;
+    this.laser = null;
   }
 
   #saveProgress() {
@@ -113,6 +121,15 @@ class Decks {
   }
 
   setZoom(zoom: PageOverlay["zoom"]) {
+    this.zoom = zoom;
+    // Voltar à página inteira desliga o "na largura" das próximas páginas.
+    if (!zoom) this.widthScale = null;
+    this.pushOverlay();
+  }
+
+  /** Página em pé na largura da tela, e as próximas também. */
+  fitToWidth(zoom: PageOverlay["zoom"]) {
+    this.widthScale = zoom?.scale ?? null;
     this.zoom = zoom;
     this.pushOverlay();
   }
@@ -158,6 +175,7 @@ class Decks {
   clearPage() {
     this.marks[this.index] = [];
     this.zoom = null;
+    this.widthScale = null;
     this.spotlight = null;
     this.laser = null;
     this.pushOverlay();
@@ -290,6 +308,7 @@ class Decks {
       this.zoom = null;
       this.spotlight = null;
       this.laser = null;
+      this.widthScale = null;
       this.tool = "none";
       const resume = deck.lastPage > 0 && deck.lastPage < deck.pages.length ? deck.lastPage : 0;
       this.index = resume;
@@ -306,12 +325,7 @@ class Decks {
     const deck = this.deck;
     if (!deck?.pages.length) return;
     const target = Math.max(0, Math.min(deck.pages.length - 1, i));
-    if (target !== this.index) {
-      this.#direction = target > this.index ? 1 : -1;
-      this.zoom = null;
-      this.spotlight = null;
-      this.laser = null;
-    }
+    if (target !== this.index) this.#turnTo(target);
     this.index = target;
     this.#saveProgress();
     if (!this.live) {

@@ -63,7 +63,9 @@ experiência.
 - **Apresentações.** O PDF do pregador (ou fotos) vira slides no próprio
   7Hinos, com setas e passador, sem abrir outro programa. Do PowerPoint: salve
   como PDF (ou instale o LibreOffice para importar direto). Durante a
-  apresentação: **zoom**, **foco** (o resto escurece), **marca-texto**,
+  apresentação: **zoom** na tela inteira (um PDF em pé cresce para os lados),
+  **Ajustar à largura** com rolagem pela roda do mouse, **mão** para mover,
+  barras de rolagem na prévia, **foco** (o resto escurece), **marca-texto**,
   **caneta**, **laser** e borracha, que aparecem ao vivo no telão, e
   transições entre páginas (suave, deslizar, aproximar). Cada apresentação
   reabre na página onde parou. A **Lição da Escola Sabatina** do trimestre é
