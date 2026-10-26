@@ -91,7 +91,8 @@
     }
   }
 
-  const lessonDeck = (number: string) => decks.list.find((d) => d.source === "lesson" && d.title.startsWith(`Lição ${number} —`));
+  const lessonDeck = (l: { number: string; title: string }) =>
+    decks.list.find((d) => d.source === "lesson" && d.title === `Lição ${l.number} — ${l.title}`);
   const sourceLabel: Record<string, string> = { pdf: "PDF", images: "Imagens", lesson: "Lição" };
 </script>
 
@@ -213,8 +214,8 @@
         <div class="grow">
           <h3>{lesson.title || `Trimestre ${lesson.quarter}`}</h3>
           <ul>
-            {#each lesson.lessons as l (l.number)}
-              {@const ready = lessonDeck(l.number)}
+            {#each lesson.lessons as l, i (i)}
+              {@const ready = lessonDeck(l)}
               <li>
                 <span class="n">{l.number}</span>
                 <span class="grow truncate">{l.title}</span>

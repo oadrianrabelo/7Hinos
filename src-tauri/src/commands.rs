@@ -296,7 +296,16 @@ pub fn apply_local_sources(app: &AppHandle) {
     let settings = state.settings.get();
     let folders = louvorja::local_folders(&settings.local_sources, settings.language);
     let media = state.library.media();
-    let _ = std::fs::create_dir_all(media.root());
+    // Só pastas que existem entram na lista do servidor de mídia; as do app
+    // são criadas já, senão a primeira apresentação importada (ou o primeiro
+    // logo) fica sem aparecer até o app ser reaberto.
+    for dir in [
+        media.root(),
+        state.library.user().media_dir(),
+        state.decks.root(),
+    ] {
+        let _ = std::fs::create_dir_all(dir);
+    }
     let dirs = std::iter::once(media.root().to_path_buf())
         .chain(std::iter::once(
             state.library.user().media_dir().to_path_buf(),

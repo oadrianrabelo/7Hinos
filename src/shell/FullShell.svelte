@@ -30,7 +30,7 @@
       {/if}
     </div>
     <div class="page scroll" bind:this={page}>
-      <RouteView />
+      <div class="content"><RouteView /></div>
     </div>
   </main>
   <ErrorBoundary where="painel ao vivo"><StagePanel /></ErrorBoundary>
@@ -61,5 +61,11 @@
   .page {
     flex: 1;
     padding: 0.25rem 2rem 2.5rem;
+  }
+
+  /* Em telas largas o conteúdo fica no meio, não colado na barra lateral. */
+  .content {
+    max-width: 76rem;
+    margin: 0 auto;
   }
 </style>

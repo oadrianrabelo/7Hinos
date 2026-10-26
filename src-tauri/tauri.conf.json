@@ -27,7 +27,7 @@
       "csp": {
         "default-src": "'self'",
         "connect-src": "ipc: http://ipc.localhost",
-        "img-src": "'self' http://127.0.0.1:* https://files.louvorja.com.br data: blob:",
+        "img-src": "'self' http://127.0.0.1:* https: data: blob:",
         "media-src": "'self' http://127.0.0.1:* https://files.louvorja.com.br https://mp3.louvorja.com.br blob:",
         "style-src": "'self' 'unsafe-inline'",
         "font-src": "'self' data:"

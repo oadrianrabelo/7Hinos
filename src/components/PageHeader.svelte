@@ -5,10 +5,11 @@
     title,
     subtitle = "",
     actions,
-  }: { title: string; subtitle?: string; actions?: Snippet } = $props();
+    narrow = false,
+  }: { title: string; subtitle?: string; actions?: Snippet; narrow?: boolean } = $props();
 </script>
 
-<header class="page-header">
+<header class="page-header" class:narrow>
   <div class="text">
     <h1>{title}</h1>
     {#if subtitle}<p class="muted">{subtitle}</p>{/if}
@@ -23,6 +24,12 @@
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1.25rem;
+  }
+
+  /* Acompanha as páginas de formulário (Ajustes, Avisos), centralizadas. */
+  .narrow {
+    max-width: 52rem;
+    margin-inline: auto;
   }
 
   .text {

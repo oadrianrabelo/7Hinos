@@ -74,7 +74,7 @@
   }
 </script>
 
-<PageHeader title="Avisos e relógio" subtitle="O que aparece no telão entre um hino e outro, e recados para o púlpito">
+<PageHeader narrow title="Avisos e relógio" subtitle="O que aparece no telão entre um hino e outro, e recados para o púlpito">
   {#snippet actions()}
     {#if live.source === "text" || live.source === "clock"}
       <button class="btn" onclick={() => screen.rest()}><X size={15} /> Tirar do telão</button>
@@ -196,6 +196,8 @@
     flex-direction: column;
     gap: 1rem;
     max-width: 52rem;
+    width: 100%;
+    margin-inline: auto;
   }
 
   .quick {
