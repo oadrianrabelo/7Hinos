@@ -82,7 +82,7 @@
     <label class="row">
       <span class="grow">
         Mostrar a imagem de fundo
-        <span class="muted block">A mesma do telão, escurecida para a letra continuar fácil de ler.</span>
+        <span class="muted block">A mesma do telão (também nos avisos e na tela de espera), escurecida para a letra continuar fácil de ler. Desligada, o fundo fica preto.</span>
       </span>
       <input type="checkbox" class="switch" checked={mon.showBackground} onchange={(e) => setMon({ showBackground: e.currentTarget.checked })} />
     </label>

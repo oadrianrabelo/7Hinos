@@ -15,7 +15,15 @@
     style,
     idle,
     screen,
-  }: { scene: Scene; style: SlideStyle; idle: IdleScreen; screen: ScreenStyle } = $props();
+    plain = false,
+  }: {
+    scene: Scene;
+    style: SlideStyle;
+    idle: IdleScreen;
+    screen: ScreenStyle;
+    /** Fundo preto e letra branca, sem a imagem ou a cor (retorno sem fundo). */
+    plain?: boolean;
+  } = $props();
 
   // O relógio anda sozinho em cada tela, sem depender de mensagens.
   let now = $state(Date.now());
@@ -42,6 +50,7 @@
   // "Avisos e relógio"; os hinos seguem o estilo dos slides.
   $effect(() => ensureFont(screen.font));
   const backdrop = $derived.by(() => {
+    if (plain) return "#000";
     const image = userMediaSrc(screen.backgroundImage);
     if (image) return `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("${image}") center / cover`;
     return backgroundCss(screen.background);
@@ -54,7 +63,7 @@
   <div
     class="screen {kind}"
     style:background={backdrop}
-    style:color={screen.textColor}
+    style:color={plain ? "#fff" : screen.textColor}
     style:--accent={screen.accentColor}
     style:font-family={fontFamily(screen.font)}
   >
