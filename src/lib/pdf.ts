@@ -8,11 +8,14 @@ export async function renderPdf(
   data: ArrayBuffer,
   onPage: (jpeg: Uint8Array, page: number, total: number) => Promise<void>,
 ): Promise<number> {
-  const pdfjs = await import("pdfjs-dist");
-  const worker = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+  // A versão "legacy" funciona também em macOS e WebView2 mais antigos (o
+  // telão da igreja nem sempre é um computador novo).
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const worker = (await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url")).default;
   pdfjs.GlobalWorkerOptions.workerSrc = worker;
 
-  const doc = await pdfjs.getDocument({ data: new Uint8Array(data) }).promise;
+  const task = pdfjs.getDocument({ data: new Uint8Array(data) });
+  const doc = await task.promise;
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Este computador não conseguiu desenhar o PDF.");
@@ -28,7 +31,8 @@ export async function renderPdf(
       canvas.height = Math.round(viewport.height);
       context.fillStyle = "#fff";
       context.fillRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: context, viewport }).promise;
+      // O fundo branco já está pintado: o pdf.js desenha por cima, no mesmo canvas.
+      await page.render({ canvas, canvasContext: context, viewport, background: "transparent" }).promise;
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
       if (!blob) throw new Error(`Não deu para converter a página ${n}.`);
       await onPage(new Uint8Array(await blob.arrayBuffer()), n, doc.numPages);
@@ -36,6 +40,7 @@ export async function renderPdf(
     }
     return doc.numPages;
   } finally {
-    await doc.destroy();
+    // Fecha o documento e o worker (no pdf.js 5+ isso fica na tarefa de carga).
+    await task.destroy();
   }
 }
