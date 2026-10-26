@@ -19,6 +19,7 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      release_id: ${{ steps.release.outputs.id }}
     steps:
       - uses: googleapis/release-please-action@v5
         id: release
@@ -79,17 +80,16 @@ jobs:
             echo "::warning::TAURI_SIGNING_PRIVATE_KEY não configurada: release sem atualização automática."
           fi
 
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ needs.release-please.outputs.tag_name }}
-          releaseName: 7Hinos ${{ needs.release-please.outputs.tag_name }}
-          releaseDraft: false
-          prerelease: false
+          # Pelo id (e não pela tag): assim a action só envia os arquivos e não
+          # mexe no título nem nas notas que o release-please escreveu.
+          releaseId: ${{ needs.release-please.outputs.release_id }}
           # O latest.json é montado uma vez só, no fim, com as três plataformas:
           # gerado por cada build em paralelo, um poderia apagar o outro.
-          includeUpdaterJson: false
+          uploadUpdaterJson: false
           args: ${{ matrix.args }} ${{ steps.updater.outputs.args }}
 
       # Instalador alternativo com o WebView2 embutido (~180 MB a mais), para

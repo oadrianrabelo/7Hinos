@@ -84,12 +84,12 @@ jobs:
 
       - run: npm ci
 
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           releaseId: ${{ needs.release.outputs.id }}
-          includeUpdaterJson: false
+          uploadUpdaterJson: false
           args: ${{ matrix.args }}
       # Instalador alternativo com o WebView2 embutido (~180 MB a mais), para
       # computadores sem internet que nunca tiveram o WebView2. O principal

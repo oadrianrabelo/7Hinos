@@ -19,6 +19,11 @@ updates:
     commit-message:
       prefix: fix(deps)
       prefix-development: chore(deps)
+    ignore:
+      # TypeScript 7 (a reescrita nativa) ainda não funciona com o svelte-check.
+      # Tirar daqui quando o Svelte der suporte.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     groups:
       tauri:
         patterns: ["@tauri-apps/*"]
