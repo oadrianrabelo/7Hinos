@@ -7,9 +7,11 @@
   import { fileSrc, mediaSrc } from "../lib/media";
   import { backgroundPosition, fitText } from "../lib/slides";
   import { timerDisplay } from "../lib/timer";
-  import type { MonitorOptions, StageState } from "../lib/types";
+  import type { Settings, StageState } from "../lib/types";
+  import SceneView from "./SceneView.svelte";
 
-  let { stage, options }: { stage: StageState; options: MonitorOptions } = $props();
+  let { stage, prefs }: { stage: StageState; prefs: Settings } = $props();
+  const options = $derived(prefs.monitor);
 
   let now = $state(Date.now());
   $effect(() => {
@@ -20,7 +22,12 @@
   const scene = $derived(stage.scene);
   const message = $derived(stage.pulpit?.message ?? null);
   const timer = $derived(stage.pulpit?.timer ? timerDisplay(stage.pulpit.timer, now) : null);
-  const current = $derived(scene.kind === "slide" ? scene.slide : null);
+  // Avisos, tela de espera e relógio aparecem como no telão (mesmas cores e
+  // fontes); só a letra dos hinos e da Bíblia ganha o formato do retorno.
+  const mirrored = $derived(
+    scene.kind === "idle" || scene.kind === "clock" || (scene.kind === "slide" && scene.slide.kind === "text"),
+  );
+  const current = $derived(scene.kind === "slide" && !mirrored ? scene.slide : null);
   // O mesmo fundo do telão, bem escurecido: a letra continua sendo o principal.
   const image = $derived(options.showBackground && current ? mediaSrc(current.image) : null);
   const backdrop = $derived(
@@ -50,7 +57,7 @@
 <div class="monitor" class:with-bg={!!backdrop} style:background={backdrop}>
   <header>
     <span class="title truncate">
-      {#if scene.kind === "image"}{options.showTitle ? `${scene.title} · ${scene.page}/${scene.total}` : ""}{:else if scene.kind !== "slide"}{status}{:else if options.showTitle}{scene.title}{/if}
+      {#if scene.kind === "image"}{options.showTitle ? `${scene.title} · ${scene.page}/${scene.total}` : ""}{:else if scene.kind !== "slide"}{status}{:else if mirrored}Aviso{:else if options.showTitle}{scene.title}{/if}
     </span>
     {#if timer}
       <span class="timer" class:limited={timer.limited} class:warn={timer.warn} class:over={timer.over}>
@@ -71,7 +78,9 @@
   {/if}
 
   <main>
-    {#if current && size}
+    {#if mirrored}
+      <div class="mirror"><SceneView {scene} style={prefs.slide} idle={prefs.idle} screen={prefs.screenStyle} /></div>
+    {:else if current && size}
       {#if current.aux}<p class="aux">{current.aux}</p>{/if}
       <p class="text" class:prose={current.kind === "verse" || current.kind === "text"} style:font-size="min({size.cqh}cqh, {size.cqw}cqw)">
         {current.text}
@@ -95,7 +104,7 @@
         <span class="next">Fim</span>
       {/if}
     </footer>
-  {:else if options.showNext}
+  {:else if options.showNext && !mirrored}
   <footer class:empty={!next}>
     <span class="tag">A seguir</span>
     <span class="next truncate">{next ? next.text.replace(/\n+/g, " / ") : scene.kind === "slide" ? "Fim" : "—"}</span>
@@ -107,8 +116,10 @@
   .monitor {
     position: fixed;
     inset: 0;
-    display: grid;
-    grid-template-rows: auto auto 1fr auto;
+    /* Coluna flexível: a letra ocupa o que sobra, com ou sem recado e rodapé
+       (num grid fixo, sem o recado ela caía numa linha de altura zero). */
+    display: flex;
+    flex-direction: column;
     background: #000;
     color: #fff;
     font-family: var(--font-slide);
@@ -214,12 +225,22 @@
   }
 
   main {
+    flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     padding: 2vh 3vw;
     container-type: size;
+    overflow: hidden;
+  }
+
+  /* O telão em miniatura, do maior tamanho que couber em 16:9. */
+  .mirror {
+    width: min(100cqw, calc(100cqh * 16 / 9));
+    aspect-ratio: 16 / 9;
+    margin: auto;
+    border-radius: 1.2cqh;
     overflow: hidden;
   }
 

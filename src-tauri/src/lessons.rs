@@ -113,19 +113,40 @@ fn parse(quarter: &str, pdfs: Vec<RawPdf>, index: Option<RawIndex>) -> LessonQua
     let (title, cover) = index
         .map(|i| (i.title, i.covers.and_then(|c| c.portrait)))
         .unwrap_or_default();
+    // A API às vezes repete o número (a introdução e a lição 1 com o mesmo
+    // "target", ou mais de um PDF por lição). O número precisa ser único:
+    // ele vira o nome do arquivo e identifica a lição na tela.
+    let mut seen = std::collections::HashMap::<String, usize>::new();
+    let lessons = pdfs
+        .into_iter()
+        .map(|p| {
+            // "pt/ss/2026-04/01" → "01"
+            let base = p
+                .target
+                .trim_end_matches('/')
+                .rsplit('/')
+                .next()
+                .unwrap_or_default();
+            let base = if base.is_empty() { "00" } else { base }.to_owned();
+            let count = seen.entry(base.clone()).or_default();
+            *count += 1;
+            let number = if *count == 1 {
+                base
+            } else {
+                format!("{base}-{count}")
+            };
+            Lesson {
+                number,
+                title: p.title,
+                src: p.src,
+            }
+        })
+        .collect();
     LessonQuarter {
         quarter: quarter.to_owned(),
         title,
         cover,
-        lessons: pdfs
-            .into_iter()
-            .map(|p| Lesson {
-                // "pt/ss/2026-04/01" → "01"
-                number: p.target.rsplit('/').next().unwrap_or_default().to_owned(),
-                title: p.title,
-                src: p.src,
-            })
-            .collect(),
+        lessons,
     }
 }
 
@@ -187,6 +208,22 @@ mod tests {
         assert_eq!(q.cover.as_deref(), Some("https://x/capa.png"));
         assert_eq!(q.lessons[1].number, "01");
         assert_eq!(q.lessons[1].title, "A criação");
+    }
+
+    #[test]
+    fn repeated_numbers_become_unique() {
+        let pdfs: Vec<RawPdf> = serde_json::from_str(
+            r#"[{"title":"Introdução","src":"https://x/a.pdf","target":"pt/ss/2026-04/01"},
+                {"title":"A criação","src":"https://x/b.pdf","target":"pt/ss/2026-04/01"},
+                {"title":"O dilúvio","src":"https://x/c.pdf","target":"pt/ss/2026-04/02/"}]"#,
+        )
+        .unwrap();
+        let numbers: Vec<String> = parse("2026-04", pdfs, None)
+            .lessons
+            .into_iter()
+            .map(|l| l.number)
+            .collect();
+        assert_eq!(numbers, ["01", "01-2", "02"]);
     }
 
     #[test]

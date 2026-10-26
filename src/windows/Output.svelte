@@ -83,7 +83,7 @@
   {#if stage && prefs}
     <ErrorBoundary where="projeção {label}" silent>
       {#if role === "monitor"}
-        <MonitorView {stage} options={prefs.monitor} />
+        <MonitorView {stage} {prefs} />
       {:else if showVideo && stage.video}
         {@const v = stage.video}
         <VideoLayer

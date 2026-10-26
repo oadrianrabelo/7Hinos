@@ -124,7 +124,7 @@
   }
 </script>
 
-<PageHeader title="Ajustes" />
+<PageHeader narrow title="Ajustes" />
 
 <div class="settings">
   <section>
@@ -352,6 +352,8 @@
     flex-direction: column;
     gap: 2rem;
     max-width: 52rem;
+    width: 100%;
+    margin-inline: auto;
   }
 
   section {

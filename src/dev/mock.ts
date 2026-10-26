@@ -232,7 +232,14 @@ export function install() {
   // ?scene=slide: as telas já abrem com um hino no ar (para ver telão e retorno).
   const sample = song(1);
   let stage: StageState = {
-    scene: params.get("scene") === "slide" ? { kind: "slide", slide: sample.slides[1], title: sample.title, next: sample.slides[2] } : { kind: "black" },
+    scene:
+      params.get("scene") === "slide"
+        ? { kind: "slide", slide: sample.slides[1], title: sample.title, next: sample.slides[2] }
+        : params.get("scene") === "notice"
+          ? { kind: "slide", title: "Santa Ceia", next: null, slide: { kind: "text", text: "Vamos celebrar a Ceia do Senhor", aux: "Santa Ceia", image: null, imagePosition: 5 } as never }
+          : params.get("scene") === "idle"
+            ? { kind: "idle" }
+            : { kind: "black" },
     video: null,
     pulpit:
       params.get("pulpit") === "1"
