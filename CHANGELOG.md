@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.4.2...v1.5.0) (2026-10-26)
+
+
+### ✨ Novas Funcionalidades
+
+* Ajuda com "Pergunte ao 7Hinos", passeio pelo programa e "Voltar ao padrão" ([#39](https://github.com/oadrianrabelo/7Hinos/issues/39)) ([1b46288](https://github.com/oadrianrabelo/7Hinos/commit/1b46288d3221b1b61f5f47f571418258714de31f))
+
+
+### 🐛 Correções
+
+* **deps:** pdf.js 6 e tauri-action v1 ([#36](https://github.com/oadrianrabelo/7Hinos/issues/36)) ([403a462](https://github.com/oadrianrabelo/7Hinos/commit/403a46284f50fcbc24122b6d5fa641bcf31d6a7e))
+* **retorno:** fundo preto quando "Mostrar a imagem de fundo" está desligado ([#38](https://github.com/oadrianrabelo/7Hinos/issues/38)) ([5c3d7df](https://github.com/oadrianrabelo/7Hinos/commit/5c3d7df953c34c71161e316367bb13631b5a237e))
+
 ## [1.4.2](https://github.com/oadrianrabelo/7Hinos/compare/v1.4.1...v1.4.2) (2026-10-26)
 
 
