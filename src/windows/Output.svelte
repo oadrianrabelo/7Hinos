@@ -6,6 +6,7 @@
   import { onMount } from "svelte";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import ErrorBoundary from "../components/ErrorBoundary.svelte";
+  import MonitorClock from "../components/MonitorClock.svelte";
   import MonitorView from "../components/MonitorView.svelte";
   import SceneView from "../components/SceneView.svelte";
   import VideoLayer from "../components/VideoLayer.svelte";
@@ -82,7 +83,7 @@
 <div class="output" class:idle onmousemove={wake} ondblclick={toggleFullscreen} role="presentation">
   {#if stage && prefs}
     <ErrorBoundary where="projeção {label}" silent>
-      {#if role === "monitor"}
+      {#if role === "monitor" && !(showVideo && stage.video)}
         <MonitorView {stage} {prefs} />
       {:else if showVideo && stage.video}
         {@const v = stage.video}
@@ -92,6 +93,10 @@
           onerror={() => void tell("video://failed", { path: v.path, title: v.title })}
           onended={() => v.targets[0] === label && void tell("video://ended", { path: v.path })}
         />
+        {#if role === "monitor"}
+          <!-- No retorno, as horas continuam à vista durante o vídeo. -->
+          <MonitorClock pulpit={stage.pulpit} options={prefs.monitor} />
+        {/if}
       {:else}
         <SceneView scene={stage.scene} style={prefs.slide} idle={prefs.idle} screen={prefs.screenStyle} />
       {/if}

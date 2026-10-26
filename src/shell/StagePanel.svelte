@@ -35,6 +35,7 @@
   import { player } from "../lib/state/player.svelte";
   import { decks } from "../lib/state/decks.svelte";
   import { pulpit } from "../lib/state/pulpit.svelte";
+  import { timerDisplay } from "../lib/timer";
   import { screen } from "../lib/state/screen.svelte";
   import { stage } from "../lib/state/stage.svelte";
   import { settings } from "../lib/state/settings.svelte";
@@ -66,6 +67,16 @@
     setlist.next ?? (player.song ? nextAfter(setlist.items, { kind: "song", id: player.song.id, title: "" }) : null),
   );
   const progress = $derived(player.duration ? (player.time / player.duration) * 100 : 0);
+
+  // Cronômetro do púlpito: aparece aqui enquanto existir, para nunca ficar
+  // ligado no retorno sem a pessoa saber onde desligar.
+  let pulpitNow = $state(Date.now());
+  $effect(() => {
+    if (!pulpit.current.timer) return;
+    const t = setInterval(() => (pulpitNow = Date.now()), 500);
+    return () => clearInterval(t);
+  });
+  const pulpitTimer = $derived(pulpit.current.timer ? timerDisplay(pulpit.current.timer, pulpitNow) : null);
   const modes: [PlayMode, string][] = [["voice", "Cantado"], ["playback", "Playback"], ["lyrics", "Só letra"]];
 </script>
 
@@ -173,6 +184,17 @@
       <span class="pill">Púlpito</span>
       <span class="truncate grow">“{pulpit.current.message}”</span>
       <button class="btn btn-plain" onclick={() => pulpit.clearMessage()}>Tirar</button>
+    </div>
+  {/if}
+
+  {#if pulpitTimer}
+    <div class="video-strip">
+      <span class="pill" class:live={pulpitTimer.over || pulpitTimer.warn}>Cronômetro</span>
+      <span class="truncate grow timer-text">{pulpitTimer.label} {pulpitTimer.text}</span>
+      <button class="btn btn-plain btn-icon" aria-label={pulpit.running ? "Pausar o cronômetro" : "Continuar o cronômetro"} title={pulpit.running ? "Pausar" : "Continuar"} onclick={() => (pulpit.running ? pulpit.pause() : pulpit.start())}>
+        {#if pulpit.running}<Pause size={15} />{:else}<Play size={15} />{/if}
+      </button>
+      <button class="btn btn-plain" title="Zera e tira o cronômetro do retorno" onclick={() => pulpit.reset()}>Tirar</button>
     </div>
   {/if}
 
@@ -601,6 +623,11 @@
     padding: 0.75rem 1rem;
     font-size: 0.82rem;
     border-top: 1px solid var(--border);
+  }
+
+  .timer-text {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
   }
 
   .link {

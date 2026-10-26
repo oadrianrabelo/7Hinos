@@ -59,8 +59,9 @@ export async function playNow(item: SetItem) {
 export async function playVideo(item: VideoItem, targets: string[] = []) {
   if (!outputs.isProjecting && !(await outputs.ensureOpen())) await outputs.open(null);
   const open = outputs.outputs.map((o) => o.label);
-  const chosen = targets.filter((t) => open.includes(t));
-  video.play(item, chosen.length ? chosen : outputs.audience.map((o) => o.label));
+  // Telões primeiro: o primeiro alvo é o que toca o som.
+  const chosen = outputs.forVideo.map((o) => o.label).filter((l) => targets.includes(l) && open.includes(l));
+  video.play(item, chosen.length ? chosen : outputs.forVideo.map((o) => o.label));
 }
 
 /** Abre um item da programação do culto. */

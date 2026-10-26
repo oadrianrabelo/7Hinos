@@ -27,6 +27,11 @@ class OutputsState {
   }
 
   /** Telas que a igreja vê (sem os monitores de retorno). */
+  /** Todas as telas abertas, telões primeiro (o primeiro toca o som dos vídeos). */
+  get forVideo() {
+    return [...this.outputs].sort((a, b) => Number(a.role === "monitor") - Number(b.role === "monitor"));
+  }
+
   get audience() {
     return this.outputs.filter((o) => o.role === "audience");
   }
