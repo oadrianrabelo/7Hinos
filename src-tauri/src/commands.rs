@@ -806,6 +806,11 @@ pub fn deck_rename(state: State<AppState>, id: String, title: String) -> Result<
 }
 
 #[tauri::command]
+pub fn deck_progress(state: State<AppState>, id: String, page: u32) -> Result<Deck> {
+    state.decks.set_progress(&id, page)
+}
+
+#[tauri::command]
 pub fn deck_delete(state: State<AppState>, id: String) -> Result<()> {
     state.decks.delete(&id)
 }

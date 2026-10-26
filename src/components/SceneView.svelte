@@ -7,6 +7,7 @@
   import { fileSrc, userMediaSrc } from "../lib/media";
   import { fitText } from "../lib/slides";
   import type { IdleScreen, Scene, ScreenStyle, SlideStyle } from "../lib/types";
+  import PageView from "./PageView.svelte";
   import SlideView from "./SlideView.svelte";
 
   let {
@@ -70,7 +71,7 @@
 {:else if scene.kind === "slide"}
   <SlideView slide={scene.slide} {style} />
 {:else if scene.kind === "image"}
-  <div class="screen page"><img class="page-img" src={fileSrc(scene.src)} alt="" /></div>
+  <div class="screen page"><PageView src={fileSrc(scene.src)} overlay={scene.overlay} /></div>
 {:else if scene.kind === "idle"}
   {#snippet idleBody()}
     {#if logo}<img src={logo} alt="" />{/if}
@@ -118,14 +119,6 @@
     font-family: var(--font-slide);
   }
 
-  .page-img {
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    max-height: none;
-    object-fit: contain;
-    filter: none;
-  }
 
   img {
     max-width: 70cqw;

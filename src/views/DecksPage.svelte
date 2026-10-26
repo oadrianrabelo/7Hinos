@@ -5,6 +5,7 @@
     BookOpenText,
     ChevronLeft,
     ChevronRight,
+    Download,
     FileText,
     Images,
     ListChecks,
@@ -17,6 +18,7 @@
     Trash2,
   } from "@lucide/svelte";
   import { ask, open } from "@tauri-apps/plugin-dialog";
+  import DeckStage from "../components/DeckStage.svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import { api, errorMessage } from "../lib/api";
   import { fileSrc } from "../lib/media";
@@ -105,15 +107,10 @@
   </PageHeader>
 
   <div class="viewer">
-    <div class="stage-preview" class:dim={decks.live && decks.blackout}>
-      {#if deck.pages.length}
-        <img src={fileSrc(decks.pagePath(deck, decks.index))} alt="Página {decks.index + 1}" />
-      {/if}
-      {#if decks.live}<span class="pill live on-air">{decks.blackout ? "Tela preta" : "No telão"}</span>{/if}
-    </div>
+    {#if deck.pages.length}<DeckStage src={fileSrc(decks.pagePath(deck, decks.index))} />{/if}
     <div class="controls">
       <span class="count">{decks.index + 1} / {deck.pages.length}</span>
-      <button class="btn btn-lg btn-icon" aria-label="Anterior" disabled={decks.index === 0} onclick={() => (decks.live ? decks.previous() : (decks.index = Math.max(0, decks.index - 1)))}>
+      <button class="btn btn-lg btn-icon" aria-label="Anterior" disabled={decks.index === 0} onclick={() => decks.go(decks.index - 1)}>
         <ChevronLeft size={20} />
       </button>
       {#if decks.live}
@@ -121,7 +118,7 @@
         <button class="btn btn-lg btn-icon" class:on={decks.blackout} aria-label="Tela preta" title="Tela preta (B)" onclick={() => decks.toggleBlackout()}><SunMoon size={18} /></button>
         <button class="btn btn-lg" onclick={() => decks.stop()}><Square size={15} /> Encerrar</button>
       {:else}
-        <button class="btn btn-lg btn-icon" aria-label="Próxima" disabled={decks.index >= deck.pages.length - 1} onclick={() => (decks.index = Math.min(deck.pages.length - 1, decks.index + 1))}>
+        <button class="btn btn-lg btn-icon" aria-label="Próxima" disabled={decks.index >= deck.pages.length - 1} onclick={() => decks.go(decks.index + 1)}>
           <ChevronRight size={20} />
         </button>
         <button class="btn btn-lg btn-live" onclick={() => decks.show(decks.index)}><Presentation size={18} /> Projetar</button>
@@ -131,7 +128,7 @@
 
   <div class="thumbs">
     {#each deck.pages as _, i (i)}
-      <button class="thumb" class:current={i === decks.index} onclick={() => (decks.live ? decks.show(i) : (decks.index = i))}>
+      <button class="thumb" class:current={i === decks.index} onclick={() => decks.go(i)}>
         <img src={fileSrc(decks.pagePath(deck, i))} alt="" loading="lazy" />
         <span>{i + 1}</span>
       </button>
@@ -207,12 +204,34 @@
       {/if}
     </header>
     <p class="muted">Baixa o PDF da lição (precisa de internet uma vez) e abre como apresentação. Leve no pacote de pendrive para a igreja.</p>
+    {#if decks.lastLesson}
+      {@const last = decks.lastLesson}
+      <button class="resume" onclick={() => decks.open(last)}>
+        <span class="resume-icon"><BookOpenText size={18} /></span>
+        <span class="grow">
+          <strong>Continuar de onde parou</strong>
+          <span class="muted block">{last.title} · página {last.lastPage + 1} de {last.pages.length}</span>
+        </span>
+        <ChevronRight size={18} />
+      </button>
+    {/if}
     {#if lessonError}<p class="error">{lessonError}</p>{/if}
     {#if lesson}
       <div class="lesson-body">
         {#if lesson.cover}<img class="lesson-cover" src={lesson.cover} alt="" />{/if}
         <div class="grow">
-          <h3>{lesson.title || `Trimestre ${lesson.quarter}`}</h3>
+          <div class="lesson-head">
+            <h3 class="grow">{lesson.title || `Trimestre ${lesson.quarter}`}</h3>
+            {#if lesson.lessons.some((l) => !lessonDeck(l))}
+              <button
+                class="btn"
+                disabled={!!decks.importing || !!decks.batch}
+                onclick={() => lesson && decks.importAllLessons(lesson.quarter, lesson.lessons, (l) => !!lessonDeck(l))}
+              >
+                {#if decks.batch}<LoaderCircle size={15} class="spin" /> {decks.batch.done} de {decks.batch.total}{:else}<Download size={15} /> Baixar todas{/if}
+              </button>
+            {/if}
+          </div>
           <ul>
             {#each lesson.lessons as l, i (i)}
               {@const ready = lessonDeck(l)}
@@ -234,6 +253,51 @@
 {/if}
 
 <style>
+  .resume {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    margin: 0.25rem 0 0.5rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-l);
+    background: var(--accent-soft);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .resume:hover {
+    filter: brightness(1.03);
+  }
+
+  .resume-icon {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: var(--radius);
+    color: #fff;
+    background: var(--accent);
+  }
+
+  .resume .block {
+    display: block;
+    font-size: 0.85rem;
+  }
+
+  .lesson-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .lesson-head h3 {
+    margin: 0;
+  }
+
   .viewer {
     display: flex;
     flex-direction: column;
@@ -241,32 +305,6 @@
     margin-bottom: 1rem;
   }
 
-  .stage-preview {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    max-height: 52vh;
-    border-radius: var(--radius-l);
-    overflow: hidden;
-    background: #000;
-    display: grid;
-    place-items: center;
-  }
-
-  .stage-preview.dim img {
-    opacity: 0.25;
-  }
-
-  .stage-preview img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-
-  .on-air {
-    position: absolute;
-    top: 0.6rem;
-    left: 0.6rem;
-  }
 
   .controls {
     display: flex;

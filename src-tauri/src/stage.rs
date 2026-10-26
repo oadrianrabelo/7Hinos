@@ -36,6 +36,10 @@ pub enum Scene {
         /// A página seguinte, para o monitor de retorno.
         #[serde(default)]
         next: Option<String>,
+        /// Ferramentas do apresentador (zoom, foco, caneta, laser) e a
+        /// transição da página. Só a interface lê; aqui só passa adiante.
+        #[serde(default, skip_serializing_if = "serde_json::Value::is_null")]
+        overlay: serde_json::Value,
     },
     /// Tela de espera: logo e texto da igreja (configurados em Ajustes).
     Idle,
