@@ -1,0 +1,42 @@
+name: Algo não funcionou
+description: Conte o que aconteceu para a gente corrigir.
+title: "[Problema] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por avisar! Quanto mais detalhe, mais rápido sai a correção.
+        Dica: em **Ajustes → Sobre → Copiar diagnóstico** o 7Hinos copia a versão e o sistema para colar aqui.
+  - type: textarea
+    id: oque
+    attributes:
+      label: O que aconteceu?
+      description: E o que você esperava que acontecesse.
+      placeholder: "Ex.: cliquei em Projetar e o telão ficou preto."
+    validations:
+      required: true
+  - type: textarea
+    id: passos
+    attributes:
+      label: Como fazer acontecer de novo
+      placeholder: |
+        1. Abri Apresentações
+        2. Importei um PDF
+        3. ...
+  - type: textarea
+    id: diagnostico
+    attributes:
+      label: Diagnóstico
+      description: Cole o que o botão "Copiar diagnóstico" copiou (versão, sistema, telas).
+      render: text
+  - type: dropdown
+    id: sistema
+    attributes:
+      label: Sistema
+      options: [Windows, macOS, Linux]
+  - type: textarea
+    id: imagens
+    attributes:
+      label: Fotos ou prints (opcional)
+      description: Arraste as imagens para cá.

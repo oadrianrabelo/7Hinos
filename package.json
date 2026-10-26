@@ -3,6 +3,11 @@
   "private": true,
   "version": "1.4.1",
   "description": "Hinos e louvores com projeção de slides e vídeos",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oadrianrabelo/7Hinos"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

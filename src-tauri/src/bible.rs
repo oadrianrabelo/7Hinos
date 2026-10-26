@@ -362,7 +362,7 @@ impl Bible {
                 .map_err(sql)?;
             for i in 0..total {
                 let mut entry = archive.by_index(i)?;
-                let name = Path::new(entry.name())
+                let name = Path::new(&*entry.name()?)
                     .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("")

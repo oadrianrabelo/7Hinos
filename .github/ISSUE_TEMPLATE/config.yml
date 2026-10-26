@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Baixar a versão mais recente
+    url: https://github.com/oadrianrabelo/7Hinos/releases/latest
+    about: Instaladores para Windows, macOS e Linux.

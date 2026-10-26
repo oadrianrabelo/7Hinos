@@ -1,0 +1,59 @@
+# Atualizações automáticas de dependências.
+#
+# - Uma vez por semana, agrupadas: menos PRs para revisar.
+# - Versões novas "grandes" (major) vêm separadas, porque podem quebrar algo.
+# - Dependências do app usam "fix(deps)": ao entrar na main, o release-please
+#   publica uma versão de correção e as igrejas recebem pela atualização
+#   automática. Ferramentas de desenvolvimento e do GitHub usam "chore(deps)",
+#   que não gera versão nova sozinho.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Manaus
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: fix(deps)
+      prefix-development: chore(deps)
+    groups:
+      tauri:
+        patterns: ["@tauri-apps/*"]
+      fontes:
+        patterns: ["@fontsource/*", "@fontsource-variable/*"]
+      npm-menores:
+        update-types: [minor, patch]
+        exclude-patterns: ["@tauri-apps/*", "@fontsource/*", "@fontsource-variable/*"]
+
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Manaus
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: fix(deps)
+    groups:
+      tauri:
+        patterns: ["tauri", "tauri-*"]
+      cargo-menores:
+        update-types: [minor, patch]
+        exclude-patterns: ["tauri", "tauri-*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Manaus
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      actions:
+        patterns: ["*"]
