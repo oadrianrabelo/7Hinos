@@ -1,6 +1,7 @@
 <script lang="ts">
   import { BookOpen, ChevronLeft, ChevronRight, CloudDownload, LoaderCircle, Search, Square, SunMoon } from "@lucide/svelte";
   import PageHeader from "../components/PageHeader.svelte";
+  import Tip from "../components/Tip.svelte";
   import { api } from "../lib/api";
   import { formatBytes } from "../lib/format";
   import { bible } from "../lib/state/bible.svelte";
@@ -60,6 +61,8 @@
     {/if}
   {/snippet}
 </PageHeader>
+
+<Tip id="bible" article="biblia">Escreva a referência, como “João 3:16” ou “Salmos 23”, e o versículo já aparece. Clique nele para mostrar no telão.</Tip>
 
 {#if !bible.loaded}
   <div class="empty"><LoaderCircle size={28} class="spin" /></div>

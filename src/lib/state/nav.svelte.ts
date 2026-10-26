@@ -19,6 +19,8 @@ export type Route =
   | { name: "videos" }
   | { name: "displays" }
   | { name: "settings" }
+  /** Ajuda: os artigos e o "Pergunte ao 7Hinos"; `article` abre um direto. */
+  | { name: "help"; article?: string }
   /** Modo simples: página da música com os botões grandes. */
   | { name: "song"; id: number }
   /** Modo simples: a apresentação em andamento. */

@@ -3,7 +3,7 @@
   e nenhuma ação escondida em menu ou atalho.
 -->
 <script lang="ts">
-  import { ChevronLeft, House, Presentation, Settings } from "@lucide/svelte";
+  import { ChevronLeft, CircleHelp, House, Presentation, Settings } from "@lucide/svelte";
   import RouteView from "./RouteView.svelte";
   import SimpleHome from "./SimpleHome.svelte";
   import SimpleLive from "./SimpleLive.svelte";
@@ -36,7 +36,8 @@
     {/if}
     <div class="spacer" data-tauri-drag-region></div>
     {#if route.name === "home"}
-      <button class="btn btn-lg btn-plain" onclick={() => nav.push({ name: "settings" })}><Settings size={20} /> Ajustes</button>
+      <button class="btn btn-lg btn-plain" data-tour="simple-help" onclick={() => nav.push({ name: "help" })}><CircleHelp size={20} /> Ajuda</button>
+      <button class="btn btn-lg btn-plain" data-tour="simple-settings" onclick={() => nav.push({ name: "settings" })}><Settings size={20} /> Ajustes</button>
     {/if}
     {#if player.live && route.name !== "live"}
       <button class="btn btn-live btn-lg" onclick={() => nav.push({ name: "live" })}>
