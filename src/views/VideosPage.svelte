@@ -22,7 +22,7 @@
   const targets = $derived(
     chosen.filter((l) => outputs.outputs.some((o) => o.label === l)).length
       ? chosen.filter((l) => outputs.outputs.some((o) => o.label === l))
-      : outputs.audience.map((o) => o.label),
+      : outputs.forVideo.map((o) => o.label),
   );
 
   async function addVideos() {

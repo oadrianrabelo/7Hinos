@@ -7,39 +7,104 @@ import type { PageOverlay, Stroke } from "./types";
 export type Zoom = NonNullable<PageOverlay["zoom"]>;
 
 export const MIN_ZOOM = 1;
-export const MAX_ZOOM = 6;
+export const MAX_ZOOM = 8;
 
-/** Mantém o centro do zoom onde a página ainda cobre a tela inteira. */
-export function clampZoom(zoom: Zoom): Zoom | null {
-  const scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom.scale));
-  if (scale <= 1.001) return null;
-  const half = 0.5 / scale;
-  const clamp = (v: number) => Math.min(1 - half, Math.max(half, v));
-  return { x: clamp(zoom.x), y: clamp(zoom.y), scale };
+/**
+ * A "câmera" sobre a página. `zoom.scale` é relativo à página inteira
+ * cabendo na tela (1 = como abre); `x`, `y` é o ponto da página no centro da
+ * tela. Aproximar usa a tela toda: um PDF em pé cresce para os lados,
+ * ocupando as barras pretas.
+ */
+export interface Geometry {
+  /** Tamanho da tela (ou da prévia), em pixels. */
+  cw: number;
+  ch: number;
+  /** Largura/altura da página. */
+  aspect: number;
+}
+
+export interface Camera {
+  /** Tamanho da página na tela, em pixels. */
+  w: number;
+  h: number;
+  /** Onde fica o canto de cima da página, em pixels a partir do canto da tela. */
+  left: number;
+  top: number;
+  scale: number;
+  /** O centro efetivo, depois de limitado. */
+  x: number;
+  y: number;
+}
+
+/** A página inteira cabendo na tela. */
+export function fitSize(g: Geometry): { w: number; h: number } {
+  if (!g.cw || !g.ch) return { w: 0, h: 0 };
+  return g.cw / g.ch > g.aspect ? { w: g.ch * g.aspect, h: g.ch } : { w: g.cw, h: g.cw / g.aspect };
 }
 
 /**
- * Translação (em frações do tamanho da página) e escala para o CSS, com
- * `transform-origin: 0 0`: o ponto (x, y) da página vai para o centro.
+ * Onde a página fica com o zoom pedido. Numa direção em que a página é menor
+ * que a tela, ela fica no meio; na outra, a borda nunca entra (não aparece
+ * fundo preto entre a página e a beira da tela).
  */
-export function zoomTransform(zoom: Zoom | null | undefined): { tx: number; ty: number; scale: number } {
-  if (!zoom) return { tx: 0, ty: 0, scale: 1 };
-  return { tx: 0.5 - zoom.x * zoom.scale, ty: 0.5 - zoom.y * zoom.scale, scale: zoom.scale };
+export function camera(zoom: Zoom | null | undefined, g: Geometry): Camera {
+  const fit = fitSize(g);
+  const scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom?.scale ?? 1));
+  const w = fit.w * scale;
+  const h = fit.h * scale;
+  const axis = (want: number, size: number, screen: number) => {
+    if (size <= screen) return 0.5;
+    const half = screen / (2 * size);
+    return Math.min(1 - half, Math.max(half, want));
+  };
+  const x = axis(zoom?.x ?? 0.5, w, g.cw);
+  const y = axis(zoom?.y ?? 0.5, h, g.ch);
+  return { w, h, left: g.cw / 2 - x * w, top: g.ch / 2 - y * h, scale, x, y };
 }
 
-/** Um ponto na caixa da página na tela (0 a 1) → o ponto da página, com o zoom. */
-export function toPage(px: number, py: number, zoom: Zoom | null | undefined): [number, number] {
-  const { tx, ty, scale } = zoomTransform(zoom);
-  return [(px - tx) / scale, (py - ty) / scale];
+/** Guarda o zoom já limitado (ou nada, se voltou ao normal). */
+function settle(zoom: Zoom, g: Geometry): Zoom | null {
+  const cam = camera(zoom, g);
+  if (cam.scale <= 1.001) return null;
+  return { x: round(cam.x), y: round(cam.y), scale: round(cam.scale) };
+}
+
+/** Um ponto da tela (pixels) → o ponto da página (0 a 1). */
+export function screenToPage(sx: number, sy: number, zoom: Zoom | null | undefined, g: Geometry): [number, number] {
+  const cam = camera(zoom, g);
+  return [(sx - cam.left) / (cam.w || 1), (sy - cam.top) / (cam.h || 1)];
 }
 
 /** Aproxima (ou afasta) mantendo parado o ponto sob o cursor. */
-export function zoomAt(zoom: Zoom | null | undefined, px: number, py: number, factor: number): Zoom | null {
-  const current = zoom ?? { x: 0.5, y: 0.5, scale: 1 };
-  const [x, y] = toPage(px, py, current);
-  const scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, current.scale * factor));
-  // O ponto (x, y) continua em (px, py): centro = x + (0.5 - px) / scale.
-  return clampZoom({ x: x + (0.5 - px) / scale, y: y + (0.5 - py) / scale, scale });
+export function zoomAt(zoom: Zoom | null | undefined, sx: number, sy: number, factor: number, g: Geometry): Zoom | null {
+  const fit = fitSize(g);
+  if (!fit.w) return zoom ?? null;
+  const [px, py] = screenToPage(sx, sy, zoom, g);
+  const scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, (zoom?.scale ?? 1) * factor));
+  const w = fit.w * scale;
+  const h = fit.h * scale;
+  // O ponto (px, py) continua em (sx, sy): left = sx - px·w, e x = (cw/2 - left)/w.
+  return settle({ x: (g.cw / 2 - (sx - px * w)) / w, y: (g.ch / 2 - (sy - py * h)) / h, scale }, g);
+}
+
+/** Arrasta a página (mão ou rolagem), em pixels da tela. */
+export function pan(zoom: Zoom | null | undefined, dx: number, dy: number, g: Geometry): Zoom | null {
+  if (!zoom) return null;
+  const cam = camera(zoom, g);
+  return settle({ x: cam.x - dx / (cam.w || 1), y: cam.y - dy / (cam.h || 1), scale: cam.scale }, g);
+}
+
+/** Ocupa a largura da tela, começando do alto da página (bom para PDF em pé). */
+export function fitWidth(g: Geometry): Zoom | null {
+  const fit = fitSize(g);
+  if (!fit.w || fit.w >= g.cw - 1) return null;
+  return settle({ x: 0.5, y: 0, scale: g.cw / fit.w }, g);
+}
+
+/** Uma página em pé (mais alta que a tela) que vale a pena ajustar à largura. */
+export function isTall(g: Geometry): boolean {
+  const fit = fitSize(g);
+  return !!fit.w && fit.w < g.cw * 0.8;
 }
 
 /** Distância (em frações da largura) do ponto até o traço mais perto. */
@@ -83,7 +148,7 @@ export function addPoint(points: [number, number][], x: number, y: number, min =
   return [...points, [round(x), round(y)]];
 }
 
-const round = (n: number) => Math.round(n * 10_000) / 10_000;
+const round = (n: number) => Math.round(n * 1_000_000) / 1_000_000;
 
 /** O caminho SVG de um traço numa caixa de `w` × `h`. */
 export function strokePath(stroke: Stroke, w: number, h: number): string {

@@ -433,6 +433,7 @@ export function install() {
           return;
         case "decks_list":
           return [
+            { id: "c3", title: "Estudo (PDF em pé)", pages: ["retrato-001.jpg", "retrato-002.jpg"], createdAt: 3, source: "pdf", lastPage: 0, openedAt: 0 },
             { id: "a1", title: "Sermão — O Bom Pastor", pages: ["pagina-001.jpg", "pagina-002.jpg", "pagina-003.jpg"], createdAt: 2, source: "pdf", lastPage: 0, openedAt: 0 },
             { id: "b2", title: "Lição 04 — A fé de Abraão", pages: ["pagina-001.jpg", "pagina-002.jpg"], createdAt: 1, source: "lesson", lastPage: 1, openedAt: 100 },
           ];

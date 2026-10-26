@@ -8,8 +8,10 @@
     Crosshair,
     Eraser,
     Focus,
+    Hand,
     Highlighter,
     MousePointer2,
+    MoveHorizontal,
     PenLine,
     RotateCcw,
     Trash2,
@@ -17,19 +19,23 @@
     ZoomIn,
     ZoomOut,
   } from "@lucide/svelte";
-  import { addPoint, strokeAt, toPage, zoomAt } from "../lib/overlay";
+  import { addPoint, camera, fitWidth, isTall, pan, screenToPage, strokeAt, zoomAt, type Geometry } from "../lib/overlay";
   import { decks, type DeckTool } from "../lib/state/decks.svelte";
   import type { PageTransition } from "../lib/types";
   import PageView from "./PageView.svelte";
 
   let { src }: { src: string } = $props();
 
-  let box: { el: HTMLElement; aspect: number } | null = null;
+  let screen = $state<{ el: HTMLElement; geometry: Geometry } | null>(null);
   let drawing: [number, number][] | null = null;
+  // Arrastar com a mão (ou com o zoom): de onde veio e se já andou.
+  let grab: { x: number; y: number; moved: boolean } | null = null;
+  let panning = $state(false);
 
   const tools: [DeckTool, string, typeof ZoomIn, string][] = [
-    ["none", "Normal", MousePointer2, "Só olhar (as setas passam as páginas)"],
-    ["zoom", "Zoom", ZoomIn, "Clique para aproximar; Alt+clique afasta; a roda do mouse também"],
+    ["none", "Normal", MousePointer2, "Só olhar (as setas passam as páginas; a roda do mouse rola a página aproximada)"],
+    ["zoom", "Zoom", ZoomIn, "Clique para aproximar, Alt+clique afasta, arraste para mover; a roda do mouse aproxima"],
+    ["hand", "Mão", Hand, "Arraste para mover a página aproximada"],
     ["spotlight", "Foco", Focus, "Clique onde quer destacar; o resto escurece. A roda muda o tamanho"],
     ["marker", "Marca-texto", Highlighter, "Arraste sobre o texto para marcar"],
     ["pen", "Caneta", PenLine, "Desenhe à mão livre"],
@@ -45,27 +51,31 @@
     ["zoom", "Aproximar"],
   ];
 
-  /** Ponto do evento na página (0 a 1), já descontando o zoom. */
-  function point(e: PointerEvent | WheelEvent): { px: number; py: number; x: number; y: number } | null {
-    if (!box) return null;
-    const r = box.el.getBoundingClientRect();
+  /** Ponto do evento na tela (pixels) e na página (0 a 1), já com o zoom. */
+  function point(e: PointerEvent | WheelEvent): { sx: number; sy: number; x: number; y: number } | null {
+    if (!screen) return null;
+    const r = screen.el.getBoundingClientRect();
     if (!r.width || !r.height) return null;
-    const px = (e.clientX - r.left) / r.width;
-    const py = (e.clientY - r.top) / r.height;
-    const [x, y] = toPage(px, py, decks.zoom);
-    return { px, py, x, y };
+    const sx = e.clientX - r.left;
+    const sy = e.clientY - r.top;
+    const [x, y] = screenToPage(sx, sy, decks.zoom, screen.geometry);
+    return { sx, sy, x, y };
   }
 
   const inside = (x: number, y: number) => x >= 0 && x <= 1 && y >= 0 && y <= 1;
+  // Botão do meio arrasta em qualquer ferramenta, como na maioria dos programas.
+  const grabs = (e: PointerEvent) => e.button === 1 || decks.tool === "hand" || decks.tool === "zoom";
 
   function down(e: PointerEvent) {
     const p = point(e);
-    if (!p || e.button !== 0) return;
+    if (!p || (e.button !== 0 && e.button !== 1)) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    if (grabs(e)) {
+      grab = { x: e.clientX, y: e.clientY, moved: false };
+      if (e.button === 1) e.preventDefault();
+      return;
+    }
     switch (decks.tool) {
-      case "zoom":
-        decks.setZoom(zoomAt(decks.zoom, p.px, p.py, e.altKey || e.shiftKey ? 0.5 : 2));
-        break;
       case "spotlight":
         if (inside(p.x, p.y)) decks.setSpotlight({ x: p.x, y: p.y, r: decks.spotlight?.r ?? 0.13 });
         break;
@@ -90,7 +100,16 @@
 
   function move(e: PointerEvent) {
     const p = point(e);
-    if (!p) return;
+    if (!p || !screen) return;
+    if (grab && e.buttons) {
+      const dx = e.clientX - grab.x;
+      const dy = e.clientY - grab.y;
+      if (!grab.moved && Math.hypot(dx, dy) < 4) return;
+      grab = { x: e.clientX, y: e.clientY, moved: true };
+      panning = true;
+      decks.setZoom(pan(decks.zoom, dx, dy, screen.geometry));
+      return;
+    }
     if (decks.tool === "laser") return decks.setLaser(inside(p.x, p.y) ? { x: p.x, y: p.y } : null);
     if (!e.buttons) return;
     if (drawing) {
@@ -106,26 +125,45 @@
     }
   }
 
-  function up() {
+  function up(e: PointerEvent) {
+    // Com o zoom, um clique sem arrastar aproxima (Alt ou Shift afasta).
+    if (grab && !grab.moved && decks.tool === "zoom" && e.button === 0 && screen) {
+      const p = point(e);
+      if (p) decks.setZoom(zoomAt(decks.zoom, p.sx, p.sy, e.altKey || e.shiftKey ? 0.5 : 2, screen.geometry));
+    }
+    grab = null;
+    panning = false;
     drawing = null;
   }
 
   function erase(x: number, y: number) {
-    const i = strokeAt(decks.marks[decks.index] ?? [], x, y, 1 / (box?.aspect ?? 16 / 9));
+    const aspect = screen?.geometry.aspect ?? 16 / 9;
+    const i = strokeAt(decks.marks[decks.index] ?? [], x, y, 1 / aspect);
     if (i >= 0) decks.eraseStroke(i);
   }
 
   function wheel(e: WheelEvent) {
     const p = point(e);
-    if (!p) return;
-    if (decks.tool === "spotlight" && decks.spotlight) {
+    if (!p || !screen) return;
+    if (decks.tool === "spotlight" && decks.spotlight && !e.ctrlKey) {
       e.preventDefault();
       const r = Math.min(0.5, Math.max(0.04, decks.spotlight.r * (e.deltaY < 0 ? 1.1 : 0.9)));
       decks.setSpotlight({ ...decks.spotlight, r });
     } else if (decks.tool === "zoom" || e.ctrlKey) {
       e.preventDefault();
-      decks.setZoom(zoomAt(decks.zoom, p.px, p.py, e.deltaY < 0 ? 1.2 : 1 / 1.2));
+      decks.setZoom(zoomAt(decks.zoom, p.sx, p.sy, e.deltaY < 0 ? 1.2 : 1 / 1.2, screen.geometry));
+    } else if (decks.zoom) {
+      // Aproximada, a roda rola a página (Shift: para os lados).
+      e.preventDefault();
+      const [dx, dy] = e.shiftKey ? [e.deltaY, e.deltaX] : [e.deltaX, e.deltaY];
+      decks.setZoom(pan(decks.zoom, -dx, -dy, screen.geometry));
     }
+  }
+
+  function zoomCenter(factor: number) {
+    if (!screen) return;
+    const { cw, ch } = screen.geometry;
+    decks.setZoom(zoomAt(decks.zoom, cw / 2, ch / 2, factor, screen.geometry));
   }
 
   function pick(tool: DeckTool) {
@@ -133,6 +171,41 @@
     if (decks.tool !== "laser") decks.setLaser(null);
   }
 
+  const tall = $derived(screen ? isTall(screen.geometry) : false);
+
+  // Barras de rolagem: mostram que parte da página está no telão e arrastam.
+  const bars = $derived.by(() => {
+    if (!screen || !decks.zoom) return null;
+    const g = screen.geometry;
+    const cam = camera(decks.zoom, g);
+    return {
+      v: cam.h > g.ch + 1 ? { start: -cam.top / cam.h, size: g.ch / cam.h, ratio: cam.h / g.ch } : null,
+      h: cam.w > g.cw + 1 ? { start: -cam.left / cam.w, size: g.cw / cam.w, ratio: cam.w / g.cw } : null,
+    };
+  });
+
+  let barDrag: { axis: "v" | "h"; last: number; ratio: number } | null = null;
+
+  function barDown(e: PointerEvent, axis: "v" | "h", ratio: number) {
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    barDrag = { axis, last: axis === "v" ? e.clientY : e.clientX, ratio };
+    panning = true;
+  }
+
+  function barMove(e: PointerEvent) {
+    if (!barDrag || !screen) return;
+    const now = barDrag.axis === "v" ? e.clientY : e.clientX;
+    // Arrastar a barra para baixo mostra mais embaixo: a página sobe.
+    const delta = -(now - barDrag.last) * barDrag.ratio;
+    barDrag = { ...barDrag, last: now };
+    decks.setZoom(pan(decks.zoom, barDrag.axis === "h" ? delta : 0, barDrag.axis === "v" ? delta : 0, screen.geometry));
+  }
+
+  function barUp() {
+    barDrag = null;
+    panning = false;
+  }
   const zoomPercent = $derived(Math.round((decks.zoom?.scale ?? 1) * 100));
 </script>
 
@@ -147,9 +220,10 @@
 
 <div class="stage-wrap">
   <div class="stage-preview" class:dim={decks.live && decks.blackout}>
-    <PageView {src} overlay={decks.overlay} animate={false} onbox={(b) => (box = b)} />
+    <PageView {src} overlay={decks.overlay} animate={false} smooth={!panning} onbox={(b) => (screen = b)} />
     <div
       class="capture tool-{decks.tool}"
+      class:grabbing={panning}
       role="presentation"
       onpointerdown={down}
       onpointermove={move}
@@ -158,6 +232,34 @@
       onpointerleave={() => decks.tool === "laser" && decks.setLaser(null)}
       onwheel={wheel}
     ></div>
+    {#if bars?.v}
+      <div class="bar vertical" role="presentation">
+        <span
+          class="thumb"
+          role="presentation"
+          style:top="{bars.v.start * 100}%"
+          style:height="{bars.v.size * 100}%"
+          onpointerdown={(e) => bars?.v && barDown(e, "v", bars.v.ratio)}
+          onpointermove={barMove}
+          onpointerup={barUp}
+          onpointercancel={barUp}
+        ></span>
+      </div>
+    {/if}
+    {#if bars?.h}
+      <div class="bar horizontal" role="presentation">
+        <span
+          class="thumb"
+          role="presentation"
+          style:left="{bars.h.start * 100}%"
+          style:width="{bars.h.size * 100}%"
+          onpointerdown={(e) => bars?.h && barDown(e, "h", bars.h.ratio)}
+          onpointermove={barMove}
+          onpointerup={barUp}
+          onpointercancel={barUp}
+        ></span>
+      </div>
+    {/if}
     {#if decks.live}<span class="pill live on-air">{decks.blackout ? "Tela preta" : "No telão"}</span>{/if}
   </div>
 
@@ -187,11 +289,16 @@
           {/each}
         </div>
       {/if}
-      {#if decks.tool === "zoom" || decks.zoom}
+      {#if tall && !decks.zoom}
+        <button class="btn" title="A página em pé ocupa a largura da tela; role com a roda do mouse" onclick={() => screen && decks.fitToWidth(fitWidth(screen.geometry))}>
+          <MoveHorizontal size={15} /> Ajustar à largura
+        </button>
+      {/if}
+      {#if decks.tool === "zoom" || decks.tool === "hand" || decks.zoom}
         <div class="zoom">
-          <button class="btn btn-plain btn-icon" aria-label="Afastar" title="Afastar" disabled={!decks.zoom} onclick={() => decks.setZoom(zoomAt(decks.zoom, 0.5, 0.5, 1 / 1.5))}><ZoomOut size={16} /></button>
+          <button class="btn btn-plain btn-icon" aria-label="Afastar" title="Afastar" disabled={!decks.zoom} onclick={() => zoomCenter(1 / 1.5)}><ZoomOut size={16} /></button>
           <span class="pct">{zoomPercent}%</span>
-          <button class="btn btn-plain btn-icon" aria-label="Aproximar" title="Aproximar" onclick={() => decks.setZoom(zoomAt(decks.zoom, 0.5, 0.5, 1.5))}><ZoomIn size={16} /></button>
+          <button class="btn btn-plain btn-icon" aria-label="Aproximar" title="Aproximar" onclick={() => zoomCenter(1.5)}><ZoomIn size={16} /></button>
           {#if decks.zoom}
             <button class="btn btn-plain" onclick={() => decks.setZoom(null)}><RotateCcw size={14} /> Página inteira</button>
           {/if}
@@ -255,6 +362,55 @@
 
   .tool-eraser {
     cursor: cell;
+  }
+
+  .tool-hand {
+    cursor: grab;
+  }
+
+  .capture.grabbing {
+    cursor: grabbing;
+  }
+
+  .bar {
+    position: absolute;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  .bar.vertical {
+    top: 0.5rem;
+    bottom: 0.5rem;
+    right: 0.35rem;
+    width: 0.55rem;
+  }
+
+  .bar.horizontal {
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.35rem;
+    height: 0.55rem;
+  }
+
+  .thumb {
+    position: absolute;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .vertical .thumb {
+    left: 0;
+    right: 0;
+    min-height: 1.5rem;
+  }
+
+  .horizontal .thumb {
+    top: 0;
+    bottom: 0;
+    min-width: 1.5rem;
   }
 
   .on-air {
