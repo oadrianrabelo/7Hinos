@@ -1,6 +1,9 @@
 <script lang="ts">
   import { AppWindow, Monitor, MonitorOff, MonitorPlay, MonitorSpeaker, RefreshCw, RotateCw, ScanEye } from "@lucide/svelte";
   import PageHeader from "../components/PageHeader.svelte";
+  import ResetButton from "../components/ResetButton.svelte";
+  import { MONITOR_DEFAULTS } from "../lib/defaults";
+  import Tip from "../components/Tip.svelte";
   import ProfilesPanel from "../components/ProfilesPanel.svelte";
   import { api } from "../lib/api";
   import { outputs } from "../lib/state/outputs.svelte";
@@ -29,6 +32,8 @@
     <button class="btn" onclick={() => outputs.refresh()}><RefreshCw size={15} /> Atualizar</button>
   {/snippet}
 </PageHeader>
+
+<Tip id="displays" article="ligar-telao">Ligue o projetor ou a TV no computador antes. Cada tela que aparecer aqui pode ser o telão ou o retorno.</Tip>
 
 <ProfilesPanel />
 
@@ -67,9 +72,12 @@
 </div>
 
 <section class="monitor-options">
-  <div>
-    <h2>Tela de retorno</h2>
-    <p class="muted">O que aparece para quem canta ou prega. Vale para todas as telas de retorno.</p>
+  <div class="head">
+    <div>
+      <h2>Tela de retorno</h2>
+      <p class="muted">O que aparece para quem canta ou prega. Vale para todas as telas de retorno.</p>
+    </div>
+    <ResetButton current={mon} defaults={MONITOR_DEFAULTS} onreset={() => setMon({ ...MONITOR_DEFAULTS })} />
   </div>
   <div class="group">
     <label class="row">
@@ -198,6 +206,13 @@
 
   .monitor-options h2 {
     margin: 0;
+  }
+
+  .monitor-options .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
   }
 
   .block {

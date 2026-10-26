@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BookMarked, BookOpen, Clock, Dices, Film, Heart, House, Library, ListMusic, Megaphone, MonitorPlay, Presentation, Music4, Settings } from "@lucide/svelte";
+  import { BookMarked, BookOpen, CircleHelp, Clock, Dices, Film, Heart, House, Library, ListMusic, Megaphone, MonitorPlay, Presentation, Music4, Settings } from "@lucide/svelte";
   import SearchField from "../components/SearchField.svelte";
   import { playSong } from "../lib/actions";
   import { api } from "../lib/api";
@@ -59,12 +59,12 @@
     <img src="/icon.png" alt="" width="26" height="26" />
     <span>7Hinos</span>
   </div>
-  <div class="search"><SearchField bind:this={search} bind:value={query} placeholder="Buscar hinos" oninput={onSearch} onsubmit={onSubmit} /></div>
+  <div class="search" data-tour="search"><SearchField bind:this={search} bind:value={query} placeholder="Buscar hinos" oninput={onSearch} onsubmit={onSubmit} /></div>
 
   <ul>
     {#each items as item (item.label)}
       <li>
-        <button class="item" class:active={section === item.route.name} onclick={() => nav.reset(item.route)}>
+        <button class="item" class:active={section === item.route.name} data-tour={item.route.name} onclick={() => nav.reset(item.route)}>
           <item.icon size={17} />
           {item.label}
           {#if item.route.name === "setlist" && setlist.items.length}
@@ -79,7 +79,7 @@
 
   <ul>
     <li>
-      <button class="item" class:active={section === "displays"} onclick={() => nav.reset({ name: "displays" })}>
+      <button class="item" class:active={section === "displays"} data-tour="displays" onclick={() => nav.reset({ name: "displays" })}>
         <MonitorPlay size={17} />
         Telas
         {#if outputs.isProjecting}<span class="dot" title="Projetando"></span>{/if}
@@ -89,6 +89,12 @@
       <button class="item" class:active={section === "settings"} onclick={() => nav.reset({ name: "settings" })}>
         <Settings size={17} />
         Ajustes
+      </button>
+    </li>
+    <li>
+      <button class="item" class:active={section === "help"} data-tour="help" title="Ajuda (F1)" onclick={() => nav.reset({ name: "help" })}>
+        <CircleHelp size={17} />
+        Ajuda
       </button>
     </li>
   </ul>

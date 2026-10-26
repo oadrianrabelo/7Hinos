@@ -7,6 +7,7 @@
   import FullShell from "../shell/FullShell.svelte";
   import SimpleShell from "../shell/SimpleShell.svelte";
   import Onboarding from "./Onboarding.svelte";
+  import Tour from "../components/Tour.svelte";
   import { catalog } from "../lib/state/catalog.svelte";
   import { downloads } from "../lib/state/downloads.svelte";
   import { nav } from "../lib/state/nav.svelte";
@@ -19,6 +20,7 @@
   import { remote } from "../lib/state/remote.svelte";
   import { video } from "../lib/state/video.svelte";
   import { toasts } from "../lib/state/toasts.svelte";
+  import { tour } from "../lib/state/tour.svelte";
   import { api } from "../lib/api";
 
   let ready = $state(false);
@@ -72,6 +74,11 @@
 
   const needsOnboarding = $derived(ready && (!settings.current.onboarded || !catalog.installed));
 
+  // Depois da primeira configuração, oferece o passeio (uma vez só).
+  $effect(() => {
+    if (ready && !needsOnboarding) tour.maybeOffer();
+  });
+
   /**
    * Atalhos compatíveis com passadores de slide (PageUp/PageDown, B e ponto).
    * Ignorados enquanto se digita.
@@ -79,6 +86,13 @@
   function onKey(e: KeyboardEvent) {
     const target = e.target as HTMLElement;
     const typing = target.closest("input, textarea, select") && !(target as HTMLInputElement).type?.match(/range|checkbox/);
+    if (e.key === "F1") {
+      e.preventDefault();
+      if (nav.current.name === "help") return;
+      if (settings.current.mode === "simple") nav.push({ name: "help" });
+      else nav.reset({ name: "help" });
+      return;
+    }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
       e.preventDefault();
       full?.focusSearch();
@@ -144,6 +158,7 @@
 
 <DownloadsStrip />
 <Toasts />
+{#if ready && !needsOnboarding}<Tour />{/if}
 
 <style>
   .splash {

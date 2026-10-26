@@ -10,6 +10,7 @@
   import EditorPage from "../views/EditorPage.svelte";
   import MySongsPage from "../views/MySongsPage.svelte";
   import DisplaysPage from "../views/DisplaysPage.svelte";
+  import HelpPage from "../views/HelpPage.svelte";
   import HomePage from "../views/HomePage.svelte";
   import HymnalPage from "../views/HymnalPage.svelte";
   import ScreenPage from "../views/ScreenPage.svelte";
@@ -63,6 +64,8 @@
   <DisplaysPage />
 {:else if route.name === "settings"}
   <SettingsPage />
+{:else if route.name === "help"}
+  <HelpPage article={route.article} />
 {/if}
 </ErrorBoundary>
 {/key}

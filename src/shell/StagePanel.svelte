@@ -80,7 +80,7 @@
   const modes: [PlayMode, string][] = [["voice", "Cantado"], ["playback", "Playback"], ["lyrics", "Só letra"]];
 </script>
 
-<aside class="stage">
+<aside class="stage" data-tour="stage">
   <header data-tauri-drag-region>
     {#if onScreen}
       <span class="pill live">{live.source === "clock" ? "Relógio" : live.source === "deck" ? "Apresentação" : live.source === "draw" ? "Sorteio" : "Aviso"}</span>

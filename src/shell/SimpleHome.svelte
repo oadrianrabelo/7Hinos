@@ -39,7 +39,7 @@
 
 <div class="home">
   <h1>O que vamos cantar?</h1>
-  <SearchField bind:value={query} large autofocus placeholder="Digite o nome, o número ou um pedaço da letra" onsubmit={() => results[0] && selectSong(results[0])} />
+  <div data-tour="simple-search"><SearchField bind:value={query} large autofocus placeholder="Digite o nome, o número ou um pedaço da letra" onsubmit={() => results[0] && selectSong(results[0])} /></div>
 
   {#if query.trim()}
     {#if results.length}
@@ -48,9 +48,9 @@
       <p class="muted none">Nenhum hino encontrado com “{query}”.</p>
     {/if}
   {:else}
-    <div class="tiles">
+    <div class="tiles" data-tour="simple-tiles">
       {#each tiles as t (t.label)}
-        <button class="tile card" class:wide={t.route.name === "setlist"} class:full={t.route.name === "decks"} style:--tint={t.tint} onclick={() => nav.push(t.route)}>
+        <button class="tile card" class:wide={t.route.name === "setlist"} class:full={t.route.name === "decks"} data-tour={t.route.name === "setlist" ? "simple-setlist" : undefined} style:--tint={t.tint} onclick={() => nav.push(t.route)}>
           <span class="icon"><t.icon size={30} /></span>
           <span class="label">
             {t.label}

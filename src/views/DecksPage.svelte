@@ -20,6 +20,7 @@
   import { ask, open } from "@tauri-apps/plugin-dialog";
   import DeckStage from "../components/DeckStage.svelte";
   import PageHeader from "../components/PageHeader.svelte";
+  import Tip from "../components/Tip.svelte";
   import { api, errorMessage } from "../lib/api";
   import { fileSrc } from "../lib/media";
   import { decks } from "../lib/state/decks.svelte";
@@ -105,6 +106,8 @@
       <button class="btn" onclick={() => (decks.deck = null)}><ArrowLeft size={15} /> Todas</button>
     {/snippet}
   </PageHeader>
+
+  <Tip id="deck-tools" article="zoom-caneta">Use as ferramentas embaixo da página para dar zoom, destacar um trecho ou escrever por cima. A tecla Esc volta ao normal.</Tip>
 
   <div class="viewer">
     {#if deck.pages.length}<DeckStage src={fileSrc(decks.pagePath(deck, decks.index))} />{/if}
