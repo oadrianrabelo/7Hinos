@@ -121,11 +121,20 @@ fn parse(quarter: &str, pdfs: Vec<RawPdf>, index: Option<RawIndex>) -> LessonQua
         .into_iter()
         .map(|p| {
             // "pt/ss/2026-04/01" → "01"
-            let base = p.target.trim_end_matches('/').rsplit('/').next().unwrap_or_default();
+            let base = p
+                .target
+                .trim_end_matches('/')
+                .rsplit('/')
+                .next()
+                .unwrap_or_default();
             let base = if base.is_empty() { "00" } else { base }.to_owned();
             let count = seen.entry(base.clone()).or_default();
             *count += 1;
-            let number = if *count == 1 { base } else { format!("{base}-{count}") };
+            let number = if *count == 1 {
+                base
+            } else {
+                format!("{base}-{count}")
+            };
             Lesson {
                 number,
                 title: p.title,
