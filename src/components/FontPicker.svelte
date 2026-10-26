@@ -1,20 +1,38 @@
 <!--
-  Escolha de fonte: as embutidas no 7Hinos, as instaladas no computador ou um
-  arquivo de fonte (.ttf, .otf). Cada opção aparece escrita na própria fonte.
+  Escolha de fonte: um botão com a fonte atual que abre um menu flutuante com
+  as embutidas no 7Hinos, as instaladas no computador ou um arquivo de fonte
+  (.ttf, .otf). Cada opção aparece escrita na própria fonte.
 -->
 <script lang="ts">
-  import { Check, FileType, Search } from "@lucide/svelte";
-  import { open } from "@tauri-apps/plugin-dialog";
+  import { Check, ChevronDown, FileType, Search } from "@lucide/svelte";
+  import { open as openDialog } from "@tauri-apps/plugin-dialog";
   import { untrack } from "svelte";
   import { api, errorMessage } from "../lib/api";
   import { BUILTIN_FONTS, ensureFont, fontFamily, fontName } from "../lib/fonts";
   import { toasts } from "../lib/state/toasts.svelte";
+  import Popover from "./Popover.svelte";
 
   let {
     value,
     onchange,
     sample = "Santo, Santo, Santo",
-  }: { value: string; onchange: (font: string) => void; sample?: string } = $props();
+    label = "Letra",
+  }: { value: string; onchange: (font: string) => void; sample?: string; label?: string } = $props();
+
+  let open = $state(false);
+  let trigger = $state<HTMLButtonElement>();
+
+  const groups: [string, (typeof BUILTIN_FONTS)[number]["kind"][]][] = [
+    ["Com serifa", ["com serifa"]],
+    ["Títulos", ["títulos"]],
+    ["Sem serifa", ["sem serifa"]],
+    ["Condensadas (cabe mais letra)", ["condensada"]],
+  ];
+  const builtinKind = $derived(BUILTIN_FONTS.find((f) => f.id === value)?.kind);
+  const kindLabel = $derived(
+    value.startsWith("system:") ? "do computador" : value.startsWith("file:") ? "arquivo" : (builtinKind ?? ""),
+  );
+  $effect(() => ensureFont(value));
 
   // Abre na aba da fonte atual; depois a pessoa navega à vontade.
   let tab = $state<"builtin" | "system" | "file">(
@@ -39,7 +57,7 @@
   const filtered = $derived((system ?? []).filter((f) => normalize(f).includes(normalize(query))).slice(0, 200));
 
   async function pickFile() {
-    const picked = await open({
+    const picked = await openDialog({
       title: "Escolha um arquivo de fonte",
       filters: [{ name: "Fonte", extensions: ["ttf", "otf", "woff", "woff2"] }],
     });
@@ -55,6 +73,16 @@
   }
 </script>
 
+<button class="trigger" bind:this={trigger} aria-expanded={open} aria-label="{label}: {fontName(value)}" onclick={() => (open = !open)}>
+  <span class="aa" style:font-family={fontFamily(value)}>Aa</span>
+  <span class="grow">
+    <span class="name truncate" style:font-family={fontFamily(value)}>{fontName(value)}</span>
+    <span class="kind">{kindLabel}</span>
+  </span>
+  <ChevronDown size={16} />
+</button>
+
+<Popover bind:open anchor={trigger} width={30}>
 <div class="picker">
   <div class="segmented tabs">
     <button aria-pressed={tab === "builtin"} onclick={() => (tab = "builtin")}>Do 7Hinos</button>
@@ -63,15 +91,17 @@
   </div>
 
   {#if tab === "builtin"}
-    <div class="grid">
-      {#each BUILTIN_FONTS as font (font.id)}
-        <button class="font card" class:on={value === font.id} onclick={() => onchange(font.id)}>
-          <span class="sample" style:font-family={font.family}>{font.name}</span>
-          <span class="kind">{font.kind}</span>
-          {#if value === font.id}<span class="check"><Check size={14} /></span>{/if}
-        </button>
-      {/each}
-    </div>
+    {#each groups as [title, kinds] (title)}
+      <span class="font-group">{title}</span>
+      <div class="grid">
+        {#each BUILTIN_FONTS.filter((f) => kinds.includes(f.kind)) as font (font.id)}
+          <button class="font" class:on={value === font.id} onclick={() => onchange(font.id)}>
+            <span class="sample" style:font-family={font.family}>{font.name}</span>
+            {#if value === font.id}<span class="check"><Check size={14} /></span>{/if}
+          </button>
+        {/each}
+      </div>
+    {/each}
   {:else if tab === "system"}
     <label class="field">
       <Search size={15} />
@@ -107,8 +137,62 @@
     </div>
   {/if}
 </div>
+</Popover>
 
 <style>
+  .trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    max-width: 22rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .trigger:hover,
+  .trigger[aria-expanded="true"] {
+    border-color: var(--accent);
+  }
+
+  .aa {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    border-radius: var(--radius-s);
+    background: var(--surface-2);
+    font-size: 1.2rem;
+  }
+
+  .trigger .grow {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .trigger .name {
+    display: block;
+    font-size: 1.05rem;
+    line-height: 1.2;
+  }
+
+  .font-group {
+    margin-top: 0.3rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
   .picker {
     display: flex;
     flex-direction: column;
@@ -122,7 +206,7 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.45rem;
   }
 
@@ -132,10 +216,18 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.15rem;
-    padding: 0.55rem 0.7rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
     text-align: left;
     color: var(--text);
     cursor: pointer;
+  }
+
+  .font:hover {
+    border-color: var(--border-strong);
+    background: var(--hover);
   }
 
   .font.on {

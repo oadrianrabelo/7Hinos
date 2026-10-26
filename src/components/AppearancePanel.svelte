@@ -6,31 +6,15 @@
   import { settings } from "../lib/state/settings.svelte";
   import { toasts } from "../lib/state/toasts.svelte";
   import type { Scene, ScreenStyle } from "../lib/types";
+  import { ACCENT_COLORS, TEXT_COLORS } from "../lib/colors";
+  import BackgroundPicker from "./BackgroundPicker.svelte";
+  import ColorPicker from "./ColorPicker.svelte";
   import FontPicker from "./FontPicker.svelte";
   import SceneView from "./SceneView.svelte";
 
   const s = $derived(settings.current);
   const st = $derived(s.screenStyle);
   const save = (patch: Partial<ScreenStyle>) => settings.save({ screenStyle: patch });
-
-  const textColors = [
-    ["#ffffff", "Branco"],
-    ["#f1e4c6", "Creme"],
-    ["#ffe9a8", "Amarelo claro"],
-  ];
-  const accents = [
-    ["#ffc94a", "Dourado"],
-    ["#ffffff", "Branco"],
-    ["#8fd0f2", "Azul claro"],
-    ["#ff8a80", "Vermelho claro"],
-  ];
-  const backgrounds = [
-    ["gradient", "Azul do 7Hinos", "radial-gradient(ellipse at 50% 35%, #1d4560 0%, #0b1d2b 80%)"],
-    ["#000000", "Preto", "#000000"],
-    ["#173b53", "Azul-marinho", "#173b53"],
-    ["#4a1c24", "Vinho", "#4a1c24"],
-    ["#1f3d2b", "Verde-escuro", "#1f3d2b"],
-  ];
 
   const sample: Scene = {
     kind: "slide",
@@ -97,36 +81,17 @@
 
       <div class="option">
         <span class="section-title">Cor do texto</span>
-        <div class="swatches">
-          {#each textColors as [value, label] (value)}
-            <button class="swatch" class:on={st.textColor === value} style:background={value} title={label} aria-label={label} onclick={() => save({ textColor: value })}></button>
-          {/each}
-        </div>
+        <ColorPicker label="Cor do texto" value={st.textColor} swatches={TEXT_COLORS} onchange={(textColor) => save({ textColor })} />
       </div>
 
       <div class="option">
         <span class="section-title">Cor dos títulos</span>
-        <div class="swatches">
-          {#each accents as [value, label] (value)}
-            <button class="swatch" class:on={st.accentColor === value} style:background={value} title={label} aria-label={label} onclick={() => save({ accentColor: value })}></button>
-          {/each}
-        </div>
+        <ColorPicker label="Cor dos títulos" value={st.accentColor} swatches={ACCENT_COLORS} onchange={(accentColor) => save({ accentColor })} />
       </div>
 
       <div class="option">
         <span class="section-title">Fundo</span>
-        <div class="swatches">
-          {#each backgrounds as [value, label, paint] (value)}
-            <button
-              class="swatch"
-              class:on={!st.backgroundImage && st.background === value}
-              style:background={paint}
-              title={label}
-              aria-label={label}
-              onclick={() => save({ background: value, backgroundImage: null })}
-            ></button>
-          {/each}
-        </div>
+        <BackgroundPicker value={st.background} active={!st.backgroundImage} onchange={(background) => save({ background, backgroundImage: null })} />
         <div class="line">
           <button class="btn" onclick={pickImage}><ImagePlus size={15} /> {st.backgroundImage ? "Trocar imagem" : "Usar uma imagem"}</button>
           {#if st.backgroundImage}
@@ -190,25 +155,6 @@
     gap: 0.4rem;
   }
 
-  .swatches {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-  }
-
-  .swatch {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 999px;
-    border: 1px solid var(--border-strong);
-    cursor: pointer;
-  }
-
-  .swatch.on {
-    box-shadow:
-      0 0 0 2px var(--bg),
-      0 0 0 4px var(--accent);
-  }
 
   @media (max-width: 760px) {
     .layout {

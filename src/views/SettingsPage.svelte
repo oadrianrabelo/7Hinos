@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ClipboardCopy, FileText, FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Trash2, X } from "@lucide/svelte";
+  import { ClipboardCopy, FileText, FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Sparkles, Trash2, X } from "@lucide/svelte";
+  import { nav } from "../lib/state/nav.svelte";
   import { ask } from "@tauri-apps/plugin-dialog";
   import DownloadButton from "../components/DownloadButton.svelte";
   import FontPicker from "../components/FontPicker.svelte";
@@ -198,9 +199,28 @@
         </div>
       </div>
     </div>
-    <div class="font-box card">
-      <span class="section-title">Letra dos slides</span>
-      <FontPicker value={s.slide.font} onchange={(font) => settings.saveSlide({ font })} />
+    <div class="group">
+      <div class="row font-row">
+        <span class="grow">Letra dos hinos</span>
+        <FontPicker label="Letra dos hinos" value={s.slide.font} onchange={(font) => settings.saveSlide({ font })} />
+      </div>
+      <div class="row font-row">
+        <span class="grow">
+          Letra da Bíblia
+          <span class="muted hint-line">Versículos costumam ficar melhores numa fonte com serifa.</span>
+        </span>
+        <span class="bible-font">
+          <FontPicker
+            label="Letra da Bíblia"
+            value={s.slide.bibleFont || s.slide.font}
+            onchange={(bibleFont) => settings.saveSlide({ bibleFont })}
+            sample="No princípio era o Verbo"
+          />
+          {#if s.slide.bibleFont}
+            <button class="link" onclick={() => settings.saveSlide({ bibleFont: "" })}>Usar a mesma dos hinos</button>
+          {/if}
+        </span>
+      </div>
     </div>
   </section>
 
@@ -303,6 +323,7 @@
     <div class="group">
       <div class="row">
         <span class="grow">7Hinos <span class="muted">versão {version}</span></span>
+        <button class="btn" onclick={() => nav.push({ name: "news" })}><Sparkles size={15} /> Novidades</button>
         {#if updater.ready}
           <button class="btn btn-primary" onclick={() => updater.installAndRestart()} disabled={updater.installing}>
             Instalar versão {updater.ready.version}
@@ -336,11 +357,20 @@
 </div>
 
 <style>
-  .font-box {
+  .font-row :global(.trigger) {
+    width: 17rem;
+  }
+
+  .bible-font {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-    padding: 0.9rem 1rem;
+    align-items: flex-end;
+    gap: 0.3rem;
+  }
+
+  .hint-line {
+    display: block;
+    font-size: 0.82rem;
   }
 
   .danger {

@@ -7,6 +7,7 @@ import { toasts } from "./state/toasts.svelte";
 import { outputs } from "./state/outputs.svelte";
 import { player } from "./state/player.svelte";
 import { settings } from "./state/settings.svelte";
+import { setlist } from "./state/setlist.svelte";
 import { video } from "./state/video.svelte";
 import type { SetItem, SongSummary, VideoItem } from "./types";
 import { resolveVideo } from "./videoTags";
@@ -17,12 +18,37 @@ export function selectSong(song: Pick<SongSummary, "id">) {
   else void player.open(song.id);
 }
 
-/** Toca direto com voz (duplo clique / Enter no modo completo). */
-export async function playSong(song: SongSummary) {
+/**
+ * Toca direto com voz (duplo clique / Enter no modo completo). Durante uma
+ * apresentação o primeiro duplo clique põe na fila, para um clique sem
+ * querer não interromper o culto; o segundo, na mesma música, troca já.
+ */
+export async function playSong(song: Pick<SongSummary, "id">) {
   if (settings.current.mode === "simple") return selectSong(song);
-  // Durante uma apresentação a música vai para a fila, nunca interrompe.
-  if (player.live) return void player.open(song.id);
+  if (player.live) {
+    if (player.queued?.id === song.id) return player.startQueued();
+    const queued = await player.open(song.id);
+    if (queued && player.queued?.id === song.id)
+      toasts.show(`“${queued.title}” é o próximo. Clique duplo de novo para trocar já.`, "info", {
+        label: "Começar já",
+        run: () => void player.startQueued(),
+      });
+    return;
+  }
   const loaded = await player.open(song.id);
+  if (loaded) await player.start(loaded.audio ? "voice" : "lyrics");
+}
+
+/** Começa agora, mesmo com outra música no ar (duplo clique na programação). */
+export async function playNow(item: SetItem) {
+  if (item.kind !== "song" || settings.current.mode === "simple") return openSetItem(item);
+  setlist.mark(item);
+  if (player.live) {
+    if (player.song?.id === item.id) return;
+    if (player.queued?.id !== item.id) await player.open(item.id);
+    return player.startQueued();
+  }
+  const loaded = await player.open(item.id);
   if (loaded) await player.start(loaded.audio ? "voice" : "lyrics");
 }
 
@@ -39,6 +65,8 @@ export async function playVideo(item: VideoItem, targets: string[] = []) {
 
 /** Abre um item da programação do culto. */
 export async function openSetItem(item: SetItem) {
+  setlist.mark(item);
+  if (item.kind === "part") return setlist.startPart(item);
   if (item.kind === "song") return selectSong({ id: item.id });
   if (item.kind === "deck") return openDeck(item.id);
   return playVideo(resolveVideo(item, settings.current.videos));

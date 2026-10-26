@@ -1,6 +1,8 @@
 <!-- Desenha qualquer cena do palco. O telão e a prévia usam o mesmo componente. -->
 <script lang="ts">
   import { clockText, countdownText } from "../lib/clock";
+  import { backgroundCss } from "../lib/colors";
+  import { drawFrame } from "../lib/draw";
   import { ensureFont, fontFamily } from "../lib/fonts";
   import { fileSrc, userMediaSrc } from "../lib/media";
   import { fitText } from "../lib/slides";
@@ -17,6 +19,17 @@
   // O relógio anda sozinho em cada tela, sem depender de mensagens.
   let now = $state(Date.now());
   $effect(() => {
+    if (scene.kind === "draw") {
+      // O sorteio troca de nome rápido: anima quadro a quadro até parar.
+      let frame = 0;
+      const end = scene.startedAt + scene.durationMs + 100;
+      const tick = () => {
+        now = Date.now();
+        if (now < end) frame = requestAnimationFrame(tick);
+      };
+      tick();
+      return () => cancelAnimationFrame(frame);
+    }
     if (scene.kind !== "clock" && !(scene.kind === "idle" && idle.showClock)) return;
     const timer = setInterval(() => (now = Date.now()), 250);
     return () => clearInterval(timer);
@@ -30,9 +43,7 @@
   const backdrop = $derived.by(() => {
     const image = userMediaSrc(screen.backgroundImage);
     if (image) return `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("${image}") center / cover`;
-    if (screen.background === "gradient")
-      return "radial-gradient(ellipse at 50% 35%, #1d4560 0%, #0b1d2b 70%, #050b11 100%)";
-    return screen.background;
+    return backgroundCss(screen.background);
   });
   const notice = $derived(scene.kind === "slide" && scene.slide.kind === "text" ? scene.slide : null);
   const noticeSize = $derived(notice ? fitText(notice.text, "text", style.textScale) : null);
@@ -77,6 +88,15 @@
     </p>
   {/snippet}
   {@render themed("clock", clockBody)}
+{:else if scene.kind === "draw"}
+  {@const frame = drawFrame(scene, now)}
+  {@const title = scene.title}
+  {@const size = Math.min(26, 150 / Math.max(4, frame.text.length))}
+  {#snippet drawBody()}
+    {#if title}<p class="label">{title}</p>{/if}
+    <p class="draw" class:done={frame.done} style:font-size="min({size}cqh, {size * 0.8}cqw)">{frame.text}</p>
+  {/snippet}
+  {@render themed("draw", drawBody)}
 {:else}
   <div class="screen"></div>
 {/if}
@@ -159,6 +179,31 @@
     line-height: 1;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
+  }
+
+  .draw {
+    max-width: 92cqw;
+    margin: 0;
+    font-weight: 700;
+    line-height: 1.05;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
+
+  /* O resultado chega com um salto e fica na cor dos títulos. */
+  .draw.done {
+    opacity: 1;
+    color: var(--accent, #ffc94a);
+    animation: land 0.7s cubic-bezier(0.2, 1.6, 0.4, 1);
+    text-shadow: 0 0 6cqh color-mix(in srgb, var(--accent, #ffc94a) 45%, transparent);
+  }
+
+  @keyframes land {
+    from {
+      transform: scale(0.6);
+      opacity: 0.3;
+    }
   }
 
   .time.done {

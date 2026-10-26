@@ -33,6 +33,8 @@ pub enum Theme {
 pub struct SlideStyle {
     /// Fonte da letra dos hinos (ver [`DEFAULT_FONT`]).
     pub font: String,
+    /// Fonte dos versículos; vazio = a mesma dos hinos.
+    pub bible_font: String,
     pub uppercase: bool,
     /// Multiplicador do tamanho da letra nos slides.
     pub text_scale: f32,
@@ -45,6 +47,7 @@ impl Default for SlideStyle {
     fn default() -> Self {
         Self {
             font: default_font(),
+            bible_font: String::new(),
             uppercase: true,
             text_scale: 1.0,
             show_images: true,
@@ -82,18 +85,23 @@ pub fn tag_video(videos: &mut [VideoItem], path: &str, tag: Option<String>) {
     }
 }
 
-/// Um item da programação do culto.
+/// Um item da programação do culto. Todos aceitam uma anotação (quem
+/// dirige, o que lembrar) que aparece na lista e no painel.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum SetItem {
     Song {
         id: u32,
         title: String,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        note: String,
     },
     /// Uma apresentação (PDF, imagens, lição).
     Deck {
         id: String,
         title: String,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        note: String,
     },
     Video {
         path: String,
@@ -102,6 +110,18 @@ pub enum SetItem {
         /// daquele tipo, mesmo que o culto tenha sido montado antes.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         tag: Option<String>,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        note: String,
+    },
+    /// Um momento da liturgia (oração, leitura, sermão…), com duração
+    /// opcional para o cronômetro do púlpito.
+    Part {
+        id: String,
+        title: String,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        note: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        minutes: Option<u32>,
     },
 }
 
@@ -163,6 +183,10 @@ pub struct MonitorOptions {
     /// A mesma imagem de fundo do telão, escurecida para a letra aparecer.
     pub show_background: bool,
     pub text_scale: f32,
+    /// Recado do púlpito: fonte (vazio = a da interface), cor do texto e da faixa.
+    pub message_font: String,
+    pub message_color: String,
+    pub message_background: String,
 }
 
 impl Default for MonitorOptions {
@@ -173,6 +197,9 @@ impl Default for MonitorOptions {
             show_title: true,
             show_background: false,
             text_scale: 1.0,
+            message_font: String::new(),
+            message_color: "#000000".into(),
+            message_background: "#ffd36b".into(),
         }
     }
 }
@@ -194,7 +221,8 @@ pub struct ScreenStyle {
     pub text_color: String,
     /// Títulos, frase da contagem e detalhes.
     pub accent_color: String,
-    /// "gradient" (o azul do app) ou uma cor (#rrggbb).
+    /// Cor lisa ("#rrggbb"), degradê ("radial:#centro,#borda") ou "gradient"
+    /// (o azul do app, de versões anteriores).
     pub background: String,
     /// Imagem de fundo em `user-media/`; tem prioridade sobre a cor.
     pub background_image: Option<String>,
@@ -445,6 +473,23 @@ mod tests {
     }
 
     #[test]
+    fn liturgy_parts_and_notes_round_trip() {
+        let json = r#"[{"kind":"part","id":"a1","title":"Sermão","note":"Pr. Silva","minutes":40},
+            {"kind":"song","id":3,"title":"Hino","note":"Coral"}]"#;
+        let items: Vec<SetItem> = serde_json::from_str(json).unwrap();
+        assert!(matches!(
+            &items[0],
+            SetItem::Part {
+                minutes: Some(40),
+                ..
+            }
+        ));
+        assert!(matches!(&items[1], SetItem::Song { note, .. } if note == "Coral"));
+        let back = serde_json::to_string(&items).unwrap();
+        assert_eq!(serde_json::from_str::<Vec<SetItem>>(&back).unwrap(), items);
+    }
+
+    #[test]
     fn old_videos_without_tag_still_read() {
         let v: VideoItem = serde_json::from_str(r#"{"path":"x.mp4","title":"X"}"#).unwrap();
         assert_eq!(v.tag, None);
@@ -486,7 +531,8 @@ mod tests {
             s.setlist[0],
             SetItem::Song {
                 id: 7,
-                title: "Hino".into()
+                title: "Hino".into(),
+                note: String::new(),
             }
         );
         assert_eq!(s.mode, UiMode::Full);

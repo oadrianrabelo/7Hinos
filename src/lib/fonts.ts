@@ -28,6 +28,15 @@ export const BUILTIN_FONTS: BuiltinFont[] = [
   { id: "merriweather", name: "Merriweather", family: "Merriweather, Georgia, serif", kind: "com serifa" },
   { id: "sourceserif", name: "Source Serif", family: '"Source Serif 4 Variable", Georgia, serif', kind: "com serifa" },
   { id: "robotoslab", name: "Roboto Slab", family: '"Roboto Slab Variable", Georgia, serif', kind: "com serifa" },
+  { id: "ebgaramond", name: "EB Garamond", family: '"EB Garamond Variable", Garamond, Georgia, serif', kind: "com serifa" },
+  { id: "cormorant", name: "Cormorant Garamond", family: '"Cormorant Garamond Variable", Garamond, Georgia, serif', kind: "com serifa" },
+  { id: "crimson", name: "Crimson Pro", family: '"Crimson Pro Variable", Georgia, serif', kind: "com serifa" },
+  { id: "baskerville", name: "Libre Baskerville", family: '"Libre Baskerville", Baskerville, Georgia, serif', kind: "com serifa" },
+  { id: "ptserif", name: "PT Serif", family: '"PT Serif", Georgia, serif', kind: "com serifa" },
+  { id: "notoserif", name: "Noto Serif", family: '"Noto Serif Variable", Georgia, serif', kind: "com serifa" },
+  { id: "alegreya", name: "Alegreya", family: '"Alegreya Variable", Georgia, serif', kind: "com serifa" },
+  { id: "cinzel", name: "Cinzel", family: '"Cinzel Variable", "Trajan Pro", Georgia, serif', kind: "títulos" },
+  { id: "dmserif", name: "DM Serif Display", family: '"DM Serif Display", Georgia, serif', kind: "títulos" },
 ];
 
 const FALLBACK = BUILTIN_FONTS[0].family;

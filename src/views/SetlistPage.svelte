@@ -1,10 +1,33 @@
 <!-- A programação do culto: monte antes, apresente na ordem. -->
 <script lang="ts">
-  import { ArrowDown, ArrowUp, CircleCheck, CloudOff, Film, ListMusic, Music, Play, Plus, Presentation, Trash2, X } from "@lucide/svelte";
+  import {
+    ArrowDown,
+    ArrowUp,
+    Check,
+    CircleCheck,
+    CloudOff,
+    Film,
+    LayoutTemplate,
+    ListMusic,
+    Megaphone,
+    Music,
+    NotebookPen,
+    Pencil,
+    Play,
+    Plus,
+    Presentation,
+    Timer,
+    Trash2,
+    X,
+  } from "@lucide/svelte";
+  import Popover from "../components/Popover.svelte";
+  import { COMMON_PARTS, TEMPLATES } from "../lib/liturgy";
+  import { itemKey } from "../lib/setlist";
+  import { screen } from "../lib/state/screen.svelte";
   import DownloadButton from "../components/DownloadButton.svelte";
   import { availability } from "../lib/state/availability.svelte";
   import PageHeader from "../components/PageHeader.svelte";
-  import { openSetItem } from "../lib/actions";
+  import { openSetItem, playNow } from "../lib/actions";
   import { player } from "../lib/state/player.svelte";
   import { setlist } from "../lib/state/setlist.svelte";
   import { video } from "../lib/state/video.svelte";
@@ -18,12 +41,62 @@
   const songIds = $derived(setlist.items.flatMap((i) => (i.kind === "song" ? [i.id] : [])));
 
   const videos = $derived(settings.current.videos);
-  const isCurrent = (item: SetItem) =>
-    item.kind === "song"
-      ? player.song?.id === item.id
-      : item.kind === "deck"
-        ? decks.live && decks.deck?.id === item.id
-        : video.state?.path === resolveVideo(item, videos).path;
+  const isCurrent = (item: SetItem) => {
+    switch (item.kind) {
+      case "song":
+        return player.song?.id === item.id;
+      case "deck":
+        return decks.live && decks.deck?.id === item.id;
+      case "video":
+        return video.state?.path === resolveVideo(item, videos).path;
+      case "part":
+        return setlist.current?.kind === "part" && setlist.current.id === item.id;
+    }
+  };
+
+  const kindLabel: Record<SetItem["kind"], string> = { song: "Hino", deck: "Apresentação", video: "Vídeo", part: "Momento" };
+
+  // Acrescentar momentos (oração, sermão…) e modelos de programa.
+  let partsOpen = $state(false);
+  let partsAnchor = $state<HTMLButtonElement>();
+  let templatesOpen = $state(false);
+  let templatesAnchor = $state<HTMLButtonElement>();
+  let customPart = $state("");
+
+  function addPart(title: string, minutes?: number) {
+    void setlist.addPart(title, minutes);
+    partsOpen = false;
+    customPart = "";
+  }
+
+  // Edição no lugar: anotação de qualquer item; nome e tempo de um momento.
+  let editing = $state<{ index: number; title: string; note: string; minutes: string } | null>(null);
+
+  function edit(item: SetItem, index: number) {
+    editing = {
+      index,
+      title: item.title,
+      note: item.note ?? "",
+      minutes: item.kind === "part" && item.minutes ? String(item.minutes) : "",
+    };
+  }
+
+  function saveEdit(item: SetItem) {
+    if (!editing) return;
+    const patch: Record<string, unknown> = { note: editing.note.trim() };
+    if (item.kind === "part") {
+      patch.title = editing.title.trim() || item.title;
+      const minutes = Number(editing.minutes.replace(",", "."));
+      patch.minutes = Number.isFinite(minutes) && minutes > 0 ? Math.round(minutes) : null;
+    }
+    void setlist.update(editing.index, patch as Partial<SetItem>);
+    editing = null;
+  }
+
+  /** Mostra o momento no telão como um aviso (nome em cima, anotação embaixo). */
+  function showPart(item: SetItem) {
+    screen.showNotice({ id: 0, title: item.title, body: item.note?.trim() || item.title });
+  }
 
   /** Lugares semanais que ainda não estão na lista: "Informativo de hoje" etc. */
   const weeklySlots = $derived(
@@ -44,10 +117,15 @@
   {/snippet}
 </PageHeader>
 
-{#if weeklySlots.length}
-  <div class="slots">
-    <span class="muted">Acrescentar:</span>
-    {#each weeklySlots as { tag, today } (tag.id)}
+<div class="slots">
+  <span class="muted">Acrescentar:</span>
+  <button class="chip plain" bind:this={partsAnchor} aria-expanded={partsOpen} onclick={() => (partsOpen = !partsOpen)}>
+    <Plus size={14} /> Momento
+  </button>
+  <button class="chip plain" bind:this={templatesAnchor} aria-expanded={templatesOpen} onclick={() => (templatesOpen = !templatesOpen)}>
+    <LayoutTemplate size={14} /> Modelo de programa
+  </button>
+  {#each weeklySlots as { tag, today } (tag.id)}
       <button
         class="chip"
         style:--tint={tag.tint}
@@ -55,25 +133,73 @@
         title={today ? `Toca o vídeo marcado como ${tag.label} de hoje` : `Marque um vídeo como ${tag.label} em Vídeos`}
         onclick={() => today && setlist.toggle({ kind: "video", path: today.path, title: tag.label, tag: tag.id })}
       >
-        <Plus size={14} /> {tag.short} de hoje
-      </button>
+      <Plus size={14} /> {tag.short} de hoje
+    </button>
+  {/each}
+</div>
+
+<Popover bind:open={partsOpen} anchor={partsAnchor} width={20}>
+  <form class="custom-part" onsubmit={(e) => (e.preventDefault(), customPart.trim() && addPart(customPart))}>
+    <input class="input" bind:value={customPart} placeholder="Outro momento…" aria-label="Nome do momento" />
+    <button class="btn btn-primary" type="submit" disabled={!customPart.trim()}>Pôr</button>
+  </form>
+  <ul class="menu">
+    {#each COMMON_PARTS as part (part.title)}
+      <li>
+        <button onclick={() => addPart(part.title, part.minutes)}>
+          <span class="grow">{part.title}</span>
+          {#if part.minutes}<span class="muted">{part.minutes} min</span>{/if}
+        </button>
+      </li>
     {/each}
-  </div>
-{/if}
+  </ul>
+</Popover>
+
+<Popover bind:open={templatesOpen} anchor={templatesAnchor} width={22}>
+  <p class="muted menu-hint">Acrescenta os momentos no fim da lista. Depois é só pôr os hinos entre eles e anotar quem dirige.</p>
+  <ul class="menu">
+    {#each TEMPLATES as template (template.name)}
+      <li>
+        <button onclick={() => (setlist.addTemplate(template.parts), (templatesOpen = false))}>
+          <span class="grow">
+            <strong>{template.name}</strong>
+            <span class="muted block">{template.parts.map((p) => p.title).join(" · ")}</span>
+          </span>
+        </button>
+      </li>
+    {/each}
+  </ul>
+</Popover>
 
 {#if setlist.items.length}
   <ol class="setlist">
-    {#each setlist.items as item, i (item.kind + (item.kind === "song" || item.kind === "deck" ? item.id : `${item.path}|${item.tag ?? ""}`))}
+    {#each setlist.items as item, i (itemKey(item))}
       {@const tag = item.kind === "video" ? itemTag(item, videos) : null}
-      <li class="entry" class:current={isCurrent(item)} class:simple>
+      <li class="entry" class:current={isCurrent(item)} class:simple ondblclick={(e) => !(e.target as HTMLElement).closest("button") && playNow(item)} title={item.kind === "song" ? "Clique duplo para começar já" : undefined}>
         <span class="n">{i + 1}</span>
-        <span class="icon" class:video={item.kind === "video"} class:deck={item.kind === "deck"}>
-          {#if item.kind === "song"}<Music size={18} />{:else if item.kind === "deck"}<Presentation size={18} />{:else}<Film size={18} />{/if}
+        <span class="icon" class:video={item.kind === "video"} class:deck={item.kind === "deck"} class:part={item.kind === "part"}>
+          {#if item.kind === "song"}<Music size={18} />{:else if item.kind === "deck"}<Presentation size={18} />{:else if item.kind === "part"}<NotebookPen size={17} />{:else}<Film size={18} />{/if}
         </span>
+        {#if editing?.index === i}
+          <form class="edit" onsubmit={(e) => (e.preventDefault(), saveEdit(item))}>
+            {#if item.kind === "part"}
+              <input class="input" bind:value={editing.title} aria-label="Nome do momento" />
+              <input class="input minutes" bind:value={editing.minutes} inputmode="numeric" placeholder="min" aria-label="Minutos (cronômetro)" title="Minutos: liga o cronômetro do púlpito ao começar" />
+            {/if}
+            <!-- svelte-ignore a11y_autofocus -->
+            <input class="input grow" bind:value={editing.note} placeholder="Anotação: quem dirige, o que lembrar…" aria-label="Anotação" autofocus />
+            <button class="btn btn-primary btn-icon" type="submit" aria-label="Salvar"><Check size={16} /></button>
+            <button class="btn btn-plain btn-icon" type="button" aria-label="Cancelar" onclick={() => (editing = null)}><X size={16} /></button>
+          </form>
+        {:else}
         <span class="info">
           <span class="title truncate">{item.title}</span>
+          {#if item.note}<span class="note truncate">{item.note}</span>{/if}
           <span class="kind">
-            {item.kind === "song" ? "Hino" : item.kind === "deck" ? "Apresentação" : "Vídeo"}
+            {kindLabel[item.kind]}
+            {#if item.kind === "part" && item.minutes}
+              <span class="ok-time"><Timer size={12} /> {item.minutes} min no cronômetro</span>
+            {/if}
             {#if tag}
               <span class="tag" style:--tint={tag.tint}>{tag.short}{tag.weekly ? " · de hoje" : ""}</span>
             {/if}
@@ -91,15 +217,24 @@
             {/if}
           </span>
         </span>
+        {/if}
         <span class="order">
+          <button class="btn btn-plain btn-icon" aria-label="Anotar" title={item.kind === "part" ? "Editar momento e anotação" : "Anotar (quem dirige, o que lembrar)"} onclick={() => edit(item, i)}><Pencil size={15} /></button>
           <button class="btn btn-plain btn-icon" aria-label="Subir" title="Subir" disabled={i === 0} onclick={() => setlist.move(i, -1)}><ArrowUp size={16} /></button>
           <button class="btn btn-plain btn-icon" aria-label="Descer" title="Descer" disabled={i === setlist.items.length - 1} onclick={() => setlist.move(i, 1)}><ArrowDown size={16} /></button>
           <button class="btn btn-plain btn-icon" aria-label="Tirar da lista" title="Tirar da lista" onclick={() => setlist.remove(i)}><X size={16} /></button>
         </span>
-        <button class="btn btn-primary" class:btn-lg={simple} onclick={() => openSetItem(item)}>
-          <Play size={15} fill="currentColor" />
-          {item.kind === "video" ? "Exibir" : "Abrir"}
-        </button>
+        {#if item.kind === "part"}
+          <button class="btn btn-icon" class:btn-lg={simple} aria-label="Mostrar no telão" title="Mostrar no telão (nome e anotação)" onclick={() => showPart(item)}><Megaphone size={15} /></button>
+          <button class="btn btn-primary" class:btn-lg={simple} title={item.minutes ? `Marca como agora e liga o cronômetro com ${item.minutes} min` : "Marca como agora"} onclick={() => openSetItem(item)}>
+            <Play size={15} fill="currentColor" /> Começar
+          </button>
+        {:else}
+          <button class="btn btn-primary" class:btn-lg={simple} onclick={() => openSetItem(item)}>
+            <Play size={15} fill="currentColor" />
+            {item.kind === "video" ? "Exibir" : "Abrir"}
+          </button>
+        {/if}
       </li>
     {/each}
   </ol>
@@ -108,8 +243,8 @@
     <ListMusic size={44} strokeWidth={1.4} />
     <h2>A lista está vazia</h2>
     <p>
-      Toque no ícone <ListMusic size={14} /> ao lado de um hino ou vídeo para colocá-lo aqui.<br />
-      Na hora do culto, é só seguir a ordem.
+      Toque no ícone <ListMusic size={14} /> ao lado de um hino ou vídeo para colocá-lo aqui,<br />
+      ou comece por um <strong>modelo de programa</strong> (acima). Na hora do culto, é só seguir a ordem.
     </p>
   </div>
 {/if}
@@ -205,6 +340,98 @@
 
   .icon.deck {
     background: linear-gradient(145deg, #ffb340, #ff8a00);
+  }
+
+  .icon.part {
+    background: linear-gradient(145deg, #a48bd6, #6b4fb0);
+  }
+
+  .chip.plain {
+    --tint: var(--border-strong);
+    background: var(--surface);
+  }
+
+  .note {
+    font-size: 0.86rem;
+    font-style: italic;
+    color: var(--text-2);
+  }
+
+  .ok-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    color: #6b4fb0;
+  }
+
+  .edit {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .edit .grow {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .edit .minutes {
+    width: 4.5rem;
+  }
+
+  .custom-part {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .custom-part .input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .menu button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.45rem 0.55rem;
+    border: 0;
+    border-radius: var(--radius-s);
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .menu button:hover {
+    background: var(--hover);
+  }
+
+  .menu .grow {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .menu .block {
+    display: block;
+    font-size: 0.8rem;
+  }
+
+  .menu-hint {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
   }
 
   .icon.video {

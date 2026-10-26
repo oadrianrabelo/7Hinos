@@ -110,6 +110,14 @@ class Player {
     this.#load(song);
   }
 
+  /** Troca já para a música da fila e começa a apresentar (cantado, se tiver). */
+  async startQueued() {
+    const song = this.queued;
+    if (!song) return;
+    this.openQueued();
+    await this.start(song.audio ? "voice" : "lyrics");
+  }
+
   /** Troca de música e já começa a apresentar (modo simples). */
   async present(song: Song, mode: PlayMode) {
     if (this.live) this.stop();

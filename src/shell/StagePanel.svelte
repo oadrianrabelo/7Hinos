@@ -16,14 +16,17 @@
     Square,
     SunMoon,
     Volume2,
+    X,
+    Dices,
   } from "@lucide/svelte";
   import Cover from "../components/Cover.svelte";
   import SceneView from "../components/SceneView.svelte";
   import SlideView from "../components/SlideView.svelte";
-  import { openSetItem } from "../lib/actions";
+  import { openSetItem, playNow } from "../lib/actions";
   import { formatTime } from "../lib/format";
   import { nextAfter } from "../lib/setlist";
   import { setlist } from "../lib/state/setlist.svelte";
+  import { draw } from "../lib/state/draw.svelte";
   import type { PlayMode } from "../lib/slides";
   import { bible } from "../lib/state/bible.svelte";
   import { live } from "../lib/state/live.svelte";
@@ -55,11 +58,12 @@
   const previewSlide = $derived(onBible ? bible.slide : player.slide);
   const isLive = $derived(onBible ? bible.live : player.live);
   const isBlack = $derived(onBible ? bible.blackout : player.blackout);
-  const onScreen = $derived(live.source === "text" || live.source === "clock" || live.source === "deck");
+  const onScreen = $derived(live.source === "text" || live.source === "clock" || live.source === "deck" || live.source === "draw");
   // Sem nada para mostrar, a prévia mostra o telão (tela de espera, preta...).
   const showStage = $derived(onScreen || (!previewSlide && !isLive));
+  // O próximo depois do que foi aberto pela programação; sem isso, depois do hino do painel.
   const nextInSetlist = $derived(
-    player.song ? nextAfter(setlist.items, { kind: "song", id: player.song.id, title: "" }) : null,
+    setlist.next ?? (player.song ? nextAfter(setlist.items, { kind: "song", id: player.song.id, title: "" }) : null),
   );
   const progress = $derived(player.duration ? (player.time / player.duration) * 100 : 0);
   const modes: [PlayMode, string][] = [["voice", "Cantado"], ["playback", "Playback"], ["lyrics", "Só letra"]];
@@ -68,7 +72,7 @@
 <aside class="stage">
   <header data-tauri-drag-region>
     {#if onScreen}
-      <span class="pill live">{live.source === "clock" ? "Relógio" : live.source === "deck" ? "Apresentação" : "Aviso"}</span>
+      <span class="pill live">{live.source === "clock" ? "Relógio" : live.source === "deck" ? "Apresentação" : live.source === "draw" ? "Sorteio" : "Aviso"}</span>
     {:else if isLive}
       <span class="pill live">{isBlack ? "Tela preta" : onBible ? "Bíblia ao vivo" : "Ao vivo"}</span>
     {:else}
@@ -114,9 +118,18 @@
         {#if live.source === "text"}
           <button class="btn btn-lg btn-icon" class:on={screen.blackout} aria-label="Tela preta" title="Tela preta (B)" onclick={() => screen.presenter.toggleBlackout()}><SunMoon size={18} /></button>
         {/if}
-        <button class="btn btn-lg btn-primary" onclick={() => screen.rest()}>Tirar do telão</button>
+        {#if live.source === "draw"}
+          <button class="btn btn-lg btn-live" disabled={draw.rolling} onclick={() => draw.run()}><Dices size={17} /> Outro</button>
+          <button class="btn btn-lg btn-primary" onclick={() => draw.rest()}>Tirar do telão</button>
+        {:else}
+          <button class="btn btn-lg btn-primary" onclick={() => screen.rest()}>Tirar do telão</button>
+        {/if}
       </div>
-      <button class="btn btn-plain" onclick={() => nav.reset({ name: "screen" })}>Avisos e relógio</button>
+      {#if live.source === "draw"}
+        <button class="btn btn-plain" onclick={() => nav.reset({ name: "draw" })}>Sorteio</button>
+      {:else}
+        <button class="btn btn-plain" onclick={() => nav.reset({ name: "screen" })}>Avisos e relógio</button>
+      {/if}
     </div>
   {/if}
 
@@ -164,13 +177,15 @@
   {/if}
 
   {#if player.queued && !onBible}
-    <div class="queued">
+    <!-- Clique duplo no cartão também troca já. -->
+    <div class="queued" ondblclick={() => player.startQueued()} role="presentation" title="Clique duplo para começar já">
       <span class="grow">
         <span class="section-title">Próximo</span>
         <span class="truncate block">{player.queued.title}</span>
       </span>
-      <button class="btn btn-plain" onclick={() => (player.queued = null)}>Descartar</button>
-      <button class="btn btn-primary" onclick={() => player.openQueued()}>Abrir</button>
+      <button class="btn btn-plain btn-icon" aria-label="Descartar" title="Descartar" onclick={() => (player.queued = null)}><X size={15} /></button>
+      <button class="btn btn-plain" title="Encerra o atual e abre no painel, sem projetar" onclick={() => player.openQueued()}>Abrir</button>
+      <button class="btn btn-live" title="Encerra o atual e já projeta este" onclick={() => player.startQueued()}><Play size={14} fill="currentColor" /> Já</button>
     </div>
   {/if}
 
@@ -318,13 +333,14 @@
   {/if}
 
   {#if nextInSetlist && !player.queued}
-    <div class="next-up">
+    <div class="next-up" ondblclick={() => nextInSetlist && playNow(nextInSetlist)} role="presentation" title="Clique duplo para começar já">
       <span class="grow">
         <span class="section-title">Próximo do culto</span>
         <span class="truncate block">{nextInSetlist.title}</span>
+        {#if nextInSetlist.note}<span class="truncate block subtle">{nextInSetlist.note}</span>{/if}
       </span>
       <button class="btn" onclick={() => nextInSetlist && openSetItem(nextInSetlist)}>
-        {nextInSetlist.kind === "song" ? "Abrir" : "Exibir"}
+        {nextInSetlist.kind === "song" || nextInSetlist.kind === "deck" ? "Abrir" : nextInSetlist.kind === "part" ? "Começar" : "Exibir"}
       </button>
     </div>
   {/if}
