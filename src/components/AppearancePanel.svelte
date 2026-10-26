@@ -1,13 +1,15 @@
 <!-- Aparência dos avisos, da tela de espera e do relógio no telão, com prévia. -->
 <script lang="ts">
-  import { ImagePlus, Palette, RotateCcw, X } from "@lucide/svelte";
+  import { ImagePlus, Palette, X } from "@lucide/svelte";
   import { open } from "@tauri-apps/plugin-dialog";
   import { api, errorMessage } from "../lib/api";
   import { settings } from "../lib/state/settings.svelte";
   import { toasts } from "../lib/state/toasts.svelte";
   import type { Scene, ScreenStyle } from "../lib/types";
   import { ACCENT_COLORS, TEXT_COLORS } from "../lib/colors";
+  import { SCREEN_DEFAULTS } from "../lib/defaults";
   import BackgroundPicker from "./BackgroundPicker.svelte";
+  import ResetButton from "./ResetButton.svelte";
   import ColorPicker from "./ColorPicker.svelte";
   import FontPicker from "./FontPicker.svelte";
   import SceneView from "./SceneView.svelte";
@@ -44,27 +46,12 @@
     }
   }
 
-  const isDefault = $derived(
-    st.font === "condensed" &&
-      st.textColor === "#ffffff" &&
-      st.accentColor === "#ffc94a" &&
-      st.background === "gradient" &&
-      !st.backgroundImage,
-  );
 </script>
 
 <section class="card panel">
   <header class="line">
     <h2 class="grow"><Palette size={18} /> Aparência no telão</h2>
-    {#if !isDefault}
-      <button
-        class="btn btn-plain"
-        onclick={() =>
-          save({ font: "condensed", textColor: "#ffffff", accentColor: "#ffc94a", background: "gradient", backgroundImage: null })}
-      >
-        <RotateCcw size={14} /> Voltar ao padrão
-      </button>
-    {/if}
+    <ResetButton current={st} defaults={SCREEN_DEFAULTS} onreset={() => save({ ...SCREEN_DEFAULTS })} />
   </header>
   <p class="muted">Vale para os avisos, a tela de espera, o relógio e a contagem. Os hinos seguem o estilo dos slides.</p>
 

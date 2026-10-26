@@ -108,6 +108,16 @@ experiência.
   hino troca na hora, mesmo com outro tocando.
 - **Novidades.** Depois de cada atualização, o app avisa e mostra o que mudou
   (também em **Ajustes → Sobre → Novidades**).
+- **Ajuda que entende a pergunta.** Na **Ajuda** (ou F1), escreva do seu
+  jeito ("como coloco a letra na TV?", "o telão travou") e o 7Hinos acha o
+  artigo certo, com os passos numerados e um botão **Me leve lá**. Tudo
+  local: sem internet e sem IA, tolera erros de digitação e sinônimos
+  ("projetor", "datashow", "TV") e diz quando não sabe, em vez de inventar.
+- **Passeio pelo programa.** Na primeira vez, um passeio de um minuto mostra
+  onde fica cada coisa (dá para pular, e rever na Ajuda). Cada página
+  importante tem uma dica curta que some com **Entendi**.
+- **Voltar ao padrão.** Slides, aparência do telão, tela de retorno e recado
+  do púlpito têm um botão para voltar ao jeito que o 7Hinos vem instalado.
 - **Sempre em dia com o LouvorJA.** O acervo é conferido ao abrir e a cada
   3 horas; sem internet, tenta de novo sozinho (1, 5, 15, 30 e 60 minutos) e
   confere na hora em que a conexão volta. O app também baixa novas versões

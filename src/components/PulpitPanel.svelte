@@ -1,5 +1,7 @@
 <!-- Recado e cronômetro que só quem está no púlpito vê (no monitor de retorno). -->
 <script lang="ts">
+  import ResetButton from "./ResetButton.svelte";
+  import { MESSAGE_DEFAULTS } from "../lib/defaults";
   import { Brush, MessageSquareText, Minus, MonitorSpeaker, Pause, Play, Plus, RotateCcw, Send, Timer, X } from "@lucide/svelte";
   import { fontFamily } from "../lib/fonts";
   import { nav } from "../lib/state/nav.svelte";
@@ -131,6 +133,7 @@
         >
           {message || draft || "Faltam 5 minutos"}
         </p>
+        <ResetButton current={mon} defaults={MESSAGE_DEFAULTS} onreset={() => setMon({ ...MESSAGE_DEFAULTS })} />
         <div class="style-grid">
           <span class="section-title">Letra</span>
           <span class="font-cell">
@@ -293,6 +296,10 @@
   .adjust-label {
     font-size: 0.8rem;
     color: var(--text-2);
+  }
+
+  .style-box > :global(.reset) {
+    align-self: flex-end;
   }
 
   .style-box {

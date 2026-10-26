@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { ClipboardCopy, FileText, FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Sparkles, Trash2, X } from "@lucide/svelte";
+  import { CircleHelp, ClipboardCopy, Compass, FileText, FolderOpen, FolderPlus, HardDrive, LayoutGrid, LoaderCircle, MousePointerClick, RefreshCw, Sparkles, Trash2, X } from "@lucide/svelte";
   import { nav } from "../lib/state/nav.svelte";
   import { ask } from "@tauri-apps/plugin-dialog";
   import DownloadButton from "../components/DownloadButton.svelte";
   import FontPicker from "../components/FontPicker.svelte";
   import RemotePanel from "../components/RemotePanel.svelte";
   import PageHeader from "../components/PageHeader.svelte";
+  import ResetButton from "../components/ResetButton.svelte";
+  import { SLIDE_DEFAULTS, UI_DEFAULTS } from "../lib/defaults";
   import TransferPanel from "../components/TransferPanel.svelte";
   import SlideView from "../components/SlideView.svelte";
   import { api } from "../lib/api";
@@ -27,6 +29,7 @@
   import { catalog } from "../lib/state/catalog.svelte";
   import { settings } from "../lib/state/settings.svelte";
   import { toasts } from "../lib/state/toasts.svelte";
+  import { tour } from "../lib/state/tour.svelte";
   import { updater } from "../lib/state/updater.svelte";
   import type { Lang, Slide, Theme, UiMode } from "../lib/types";
 
@@ -142,7 +145,10 @@
   </section>
 
   <section>
-    <h2>Aparência</h2>
+    <div class="section-head">
+      <h2>Aparência</h2>
+      <ResetButton current={s} defaults={UI_DEFAULTS} onreset={() => settings.save({ ...UI_DEFAULTS })} />
+    </div>
     <div class="group">
       <div class="row">
         <span class="grow">Tema</span>
@@ -164,7 +170,10 @@
   </section>
 
   <section>
-    <h2>Slides</h2>
+    <div class="section-head">
+      <h2>Slides</h2>
+      <ResetButton current={s.slide} defaults={SLIDE_DEFAULTS} onreset={() => settings.saveSlide({ ...SLIDE_DEFAULTS })} />
+    </div>
     <div class="slides">
       <div class="preview"><SlideView slide={sample} style={s.slide} /></div>
       <div class="group">
@@ -324,6 +333,8 @@
       <div class="row">
         <span class="grow">7Hinos <span class="muted">versão {version}</span></span>
         <button class="btn" onclick={() => nav.push({ name: "news" })}><Sparkles size={15} /> Novidades</button>
+        <button class="btn" onclick={() => nav.push({ name: "help" })}><CircleHelp size={15} /> Ajuda</button>
+        <button class="btn" onclick={() => tour.start()}><Compass size={15} /> Ver o passeio de novo</button>
         {#if updater.ready}
           <button class="btn btn-primary" onclick={() => updater.installAndRestart()} disabled={updater.installing}>
             Instalar versão {updater.ready.version}
@@ -390,6 +401,18 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2rem;
+  }
+
+  .section-head h2 {
+    margin: 0;
   }
 
   .modes {
