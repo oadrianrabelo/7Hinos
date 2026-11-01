@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BookMarked, BookOpen, Clock, Film, Heart, Library, ListMusic, Megaphone, Presentation } from "@lucide/svelte";
+  import { BookMarked, BookOpen, CalendarDays, Clock, Film, Heart, Library, ListMusic, Megaphone, Presentation } from "@lucide/svelte";
   import SearchField from "../components/SearchField.svelte";
   import SongList from "../components/SongList.svelte";
   import { api } from "../lib/api";
@@ -34,6 +34,7 @@
     { label: "Tocados por último", icon: Clock, route: { name: "recent" }, tint: "#ff9500" },
     { label: "Vídeos", icon: Film, route: { name: "videos" }, tint: "#30b0c7" },
     { label: "Apresentações e lição", icon: Presentation, route: { name: "decks" }, tint: "#ff8a00" },
+    { label: "Escala", icon: CalendarDays, route: { name: "roster" }, tint: "#5856d6" },
   ] satisfies { label: string; icon: unknown; route: Route; tint: string }[];
 </script>
 
@@ -50,7 +51,7 @@
   {:else}
     <div class="tiles" data-tour="simple-tiles">
       {#each tiles as t (t.label)}
-        <button class="tile card" class:wide={t.route.name === "setlist"} class:full={t.route.name === "decks"} data-tour={t.route.name === "setlist" ? "simple-setlist" : undefined} style:--tint={t.tint} onclick={() => nav.push(t.route)}>
+        <button class="tile card" class:wide={t.route.name === "setlist" || t.route.name === "decks"} data-tour={t.route.name === "setlist" ? "simple-setlist" : undefined} style:--tint={t.tint} onclick={() => nav.push(t.route)}>
           <span class="icon"><t.icon size={30} /></span>
           <span class="label">
             {t.label}
@@ -108,10 +109,6 @@
     transition:
       transform var(--fast) var(--ease),
       box-shadow var(--normal);
-  }
-
-  .tile.full {
-    grid-column: 1 / -1;
   }
 
   .tile.wide {

@@ -28,6 +28,7 @@
   import { availability } from "../lib/state/availability.svelte";
   import PageHeader from "../components/PageHeader.svelte";
   import Tip from "../components/Tip.svelte";
+  import TodayRoster from "../components/roster/TodayRoster.svelte";
   import { openSetItem, playNow } from "../lib/actions";
   import { player } from "../lib/state/player.svelte";
   import { setlist } from "../lib/state/setlist.svelte";
@@ -119,6 +120,8 @@
 </PageHeader>
 
 <Tip id="setlist" article="culto-de-hoje">Clique duas vezes num hino para ele entrar direto no telão. Os momentos (oração, sermão…) ajudam a seguir a ordem do culto.</Tip>
+
+<TodayRoster />
 
 <div class="slots">
   <span class="muted">Acrescentar:</span>

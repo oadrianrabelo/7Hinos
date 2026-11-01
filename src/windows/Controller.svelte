@@ -21,13 +21,14 @@
   import { video } from "../lib/state/video.svelte";
   import { toasts } from "../lib/state/toasts.svelte";
   import { tour } from "../lib/state/tour.svelte";
+  import { roster } from "../lib/state/roster.svelte";
   import { api } from "../lib/api";
 
   let ready = $state(false);
   let full = $state<FullShell>();
 
   onMount(async () => {
-    await Promise.all([settings.init(), catalog.init(), outputs.init(), video.init(), downloads.init()]);
+    await Promise.all([settings.init(), catalog.init(), outputs.init(), video.init(), downloads.init(), roster.init()]);
     await stage.init();
     await remote.init();
     ready = true;

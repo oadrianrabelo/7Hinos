@@ -612,10 +612,15 @@ pub async fn package_import(app: AppHandle, path: String) -> Result<package::Man
 
 /// Arquivos de dados que viajam no pacote além do catálogo e da mídia.
 fn package_extras(data_dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-    ["bible.db", "user-songs.json", crate::DECKS_DIR]
-        .iter()
-        .map(|n| data_dir.join(n))
-        .collect()
+    [
+        "bible.db",
+        "user-songs.json",
+        crate::roster::FILE,
+        crate::DECKS_DIR,
+    ]
+    .iter()
+    .map(|n| data_dir.join(n))
+    .collect()
 }
 
 /// Quanto de um escopo já está no computador.
@@ -888,6 +893,35 @@ fn chrono_like_today() -> (i32, u32) {
 #[tauri::command]
 pub fn stage_pulpit(app: AppHandle, state: State<AppState>, pulpit: Pulpit) {
     state.stage.set_pulpit(&app, pulpit);
+}
+
+/// A escala da igreja (documento montado pela interface).
+#[tauri::command]
+pub fn roster_load(state: State<AppState>) -> serde_json::Value {
+    state.roster.load()
+}
+
+#[tauri::command]
+pub fn roster_save(state: State<AppState>, doc: serde_json::Value) -> Result<()> {
+    state.roster.save(&doc)
+}
+
+/// Grava um texto no arquivo que a pessoa escolheu (exportar a escala em
+/// planilha). Só aceita os formatos de texto que o app gera.
+#[tauri::command]
+pub fn text_file_save(path: String, contents: String) -> Result<()> {
+    let path = std::path::PathBuf::from(path);
+    let allowed = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| matches!(e.to_ascii_lowercase().as_str(), "csv" | "txt"));
+    if !allowed {
+        return Err(crate::error::Error::other(
+            "Só dá para salvar planilha (.csv) ou texto (.txt).",
+        ));
+    }
+    std::fs::write(path, contents)?;
+    Ok(())
 }
 
 /// A projeção leve (mpv) está disponível neste computador.

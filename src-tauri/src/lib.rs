@@ -17,6 +17,7 @@ mod package;
 mod projection;
 mod remote;
 mod reset;
+mod roster;
 mod settings;
 mod stage;
 mod state;
@@ -148,6 +149,7 @@ pub fn run() {
                 decks: decks::Decks::new(data_dir.join(DECKS_DIR)),
                 remote: Default::default(),
                 native,
+                roster: roster::Roster::new(&data_dir),
             });
             commands::apply_local_sources(app.handle());
             commands::start_remote_if_enabled(app.handle());
@@ -238,6 +240,9 @@ pub fn run() {
             commands::video_tag,
             commands::displays_identify,
             commands::projection_available,
+            commands::roster_load,
+            commands::roster_save,
+            commands::text_file_save,
             commands::reset_all,
         ])
         .run(tauri::generate_context!())

@@ -3840,7 +3840,7 @@ dependencies = [
 
 [[package]]
 name = "sete-hinos"
-version = "1.5.0"
+version = "1.7.0"
 dependencies = [
  "chrono",
  "fontdb",
