@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.6.0...v1.7.0) (2026-11-01)
+
+
+### ✨ Novas Funcionalidades
+
+* busca com a letra ao lado e animações de volta na projeção leve ([#42](https://github.com/oadrianrabelo/7Hinos/issues/42)) ([bf84e90](https://github.com/oadrianrabelo/7Hinos/commit/bf84e90a0cbb9616eaabc45a5c368f50381dc42f))
+
 ## [1.6.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.5.0...v1.6.0) (2026-11-01)
 
 
