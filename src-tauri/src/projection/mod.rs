@@ -283,6 +283,7 @@ mod visual {
                     h: 1080.0,
                 },
                 image_size: &background::image_size,
+                message_since: 0.0,
             };
             let frame = render::frame(&ctx, &state, role, 1.0);
             let file = match &frame.background {
@@ -451,6 +452,45 @@ mod e2e {
             }));
             tokio::time::sleep(Duration::from_millis(1500)).await;
             shot(&out, "e2e-4-pagina");
+        }
+
+        // Sorteio: o resultado no meio do salto.
+        let started_at = output::now_ms() - 3_200.0;
+        tx.send_replace(snap(StageState {
+            scene: Scene::Draw {
+                title: "Sorteio".into(),
+                result: "Maria".into(),
+                candidates: vec!["João".into(), "Maria".into(), "Pedro".into()],
+                started_at,
+                duration_ms: 3_000,
+            },
+            ..Default::default()
+        }));
+        tokio::time::sleep(Duration::from_millis(120)).await;
+        shot(&out, "e2e-4b-sorteio");
+
+        if let Ok(page) = std::env::var("SEVENH_PAGE") {
+            // Retorno durante a apresentação: miniatura da próxima página e o
+            // recado chegando.
+            *handle.role.locked() = Role::Monitor;
+            tx.send_replace(snap(StageState {
+                scene: Scene::Image {
+                    src: page.clone(),
+                    title: "Sermão".into(),
+                    page: 1,
+                    total: 2,
+                    next: Some(page),
+                    overlay: serde_json::Value::Null,
+                },
+                pulpit: crate::stage::Pulpit {
+                    message: Some("Faltam 5 minutos".into()),
+                    timer: None,
+                },
+                ..Default::default()
+            }));
+            tokio::time::sleep(Duration::from_millis(1500)).await;
+            shot(&out, "e2e-4c-retorno-pagina");
+            *handle.role.locked() = Role::Audience;
         }
 
         if let Ok(video) = std::env::var("SEVENH_VIDEO") {

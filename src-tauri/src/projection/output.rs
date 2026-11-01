@@ -179,6 +179,9 @@ pub fn start(
             size,
             shown: Shown::default(),
             video: VideoTrack::default(),
+            anim: [0.0; 3],
+            message: None,
+            message_since: 0.0,
         };
         screen.run(updates, events).await;
         on_exit(label);
@@ -192,8 +195,10 @@ struct Shown {
     /// Arquivo carregado (fundo, página ou vídeo).
     file: Option<String>,
     events: String,
-    /// zoom, pan x, pan y e margens (esq, dir, cima, baixo).
-    view: [f32; 7],
+    /// zoom, pan x, pan y, margens (esq, dir, cima, baixo) e brilho.
+    view: [f32; 8],
+    /// Miniatura por cima (a próxima página no retorno).
+    image: Option<(String, Rect)>,
 }
 
 #[derive(Default)]
@@ -215,6 +220,11 @@ struct Screen {
     size: (f32, f32),
     shown: Shown,
     video: VideoTrack,
+    /// Ajuste da transição de página: zoom, deslocamento e brilho.
+    anim: [f32; 3],
+    /// O recado do púlpito e quando ele apareceu (para piscar ao chegar).
+    message: Option<String>,
+    message_since: f64,
 }
 
 /// Cena com letra (a que tem transição suave).
@@ -229,6 +239,7 @@ impl Screen {
         mut events: mpsc::UnboundedReceiver<Event>,
     ) {
         let mut snap = updates.borrow_and_update().clone();
+        self.warm_up(&snap);
         let mut tick = self.show(&snap, 1.0, None).await;
         loop {
             let wait = tick.map_or(Duration::from_secs(3600), Duration::from_millis);
@@ -271,8 +282,21 @@ impl Screen {
         new: &Snapshot,
         updates: &mut watch::Receiver<Arc<Snapshot>>,
     ) {
+        if let (
+            Scene::Image { src: a, .. },
+            Scene::Image {
+                src: b, overlay, ..
+            },
+        ) = (&old.state.scene, &new.state.scene)
+        {
+            if a != b && new.settings.slide.animations && self.video_for(&new.state).is_none() {
+                self.page_transition(new, overlay, updates).await;
+            }
+            return;
+        }
         let ms = new.settings.slide.transition_ms;
         if ms == 0
+            || !new.settings.slide.animations
             || self.role() != Role::Audience
             || old.state.scene == new.state.scene
             || !is_text_scene(&old.state.scene)
@@ -305,6 +329,113 @@ impl Screen {
         }
     }
 
+    /// Troca de página com movimento, sem passar pelo preto: a página nova
+    /// entra um pouco escurecida, deslocada ou menor e se ajeita no lugar.
+    async fn page_transition(
+        &mut self,
+        new: &Snapshot,
+        overlay: &serde_json::Value,
+        updates: &mut watch::Receiver<Arc<Snapshot>>,
+    ) {
+        let kind = overlay
+            .get("transition")
+            .and_then(|t| t.as_str())
+            .unwrap_or("fade");
+        if kind == "none" {
+            return;
+        }
+        let dir = overlay
+            .get("dir")
+            .and_then(|d| d.as_f64())
+            .unwrap_or(1.0)
+            .signum() as f32;
+        let at = |t: f32| -> [f32; 3] {
+            let rest = (1.0 - t).powi(3);
+            match kind {
+                "slide" => [0.0, 0.18 * dir * rest, -12.0 * rest],
+                "zoom" => [0.9f32.log2() * rest, 0.0, -20.0 * rest],
+                _ => [0.0, 0.0, -35.0 * rest],
+            }
+        };
+        self.anim = at(0.0);
+        self.show(new, 1.0, None).await;
+        let background = self.frame(new, 1.0).background;
+        let steps = 12;
+        for i in 1..=steps {
+            if updates.has_changed().unwrap_or(true) {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(30)).await;
+            self.anim = at(i as f32 / steps as f32);
+            self.page_view(&background);
+        }
+        self.anim = [0.0; 3];
+    }
+
+    /// Monta em segundo plano um fundo que ainda vai ser usado, para a troca
+    /// ser imediata quando chegar a hora (o fundo fica guardado em disco).
+    fn prepare(&self, frame: Frame) {
+        let Background::Composed(c) = frame.background else {
+            return;
+        };
+        if c.image.as_deref().is_some_and(|i| i.starts_with("http")) {
+            return;
+        }
+        let (w, h) = (self.size.0.round() as u32, self.size.1.round() as u32);
+        let cache = self.shared.cache.clone();
+        tokio::task::spawn_blocking(move || {
+            let _ = background::compose(&c, w, h, &cache);
+        });
+    }
+
+    /// Ao abrir: os fundos de avisos, espera, relógio e sorteio.
+    fn warm_up(&self, snap: &Snapshot) {
+        for scene in [
+            Scene::Idle,
+            Scene::Clock {
+                until: None,
+                label: String::new(),
+            },
+        ] {
+            let state = StageState {
+                scene,
+                ..Default::default()
+            };
+            let warm = Snapshot {
+                state,
+                settings: snap.settings.clone(),
+                identify_until: 0.0,
+            };
+            self.prepare(self.frame(&warm, 1.0));
+        }
+    }
+
+    /// Durante um hino: o fundo do próximo slide, se for outra foto.
+    fn prefetch_next(&self, snap: &Snapshot) {
+        let Scene::Slide {
+            next: Some(next),
+            title,
+            ..
+        } = &snap.state.scene
+        else {
+            return;
+        };
+        let state = StageState {
+            scene: Scene::Slide {
+                slide: (**next).clone(),
+                title: title.clone(),
+                next: None,
+            },
+            ..Default::default()
+        };
+        let ahead = Snapshot {
+            state,
+            settings: snap.settings.clone(),
+            identify_until: 0.0,
+        };
+        self.prepare(self.frame(&ahead, 1.0));
+    }
+
     fn frame(&self, snap: &Snapshot, opacity: f32) -> Frame {
         let (w, h) = self.size;
         let ctx = Ctx {
@@ -320,6 +451,7 @@ impl Screen {
                 h,
             },
             image_size: &background::image_size,
+            message_since: self.message_since,
         };
         render::frame(&ctx, &snap.state, self.role(), opacity)
     }
@@ -341,9 +473,15 @@ impl Screen {
     ) -> Option<u64> {
         let (w, h) = self.size;
         let now = now_ms();
+        if snap.state.pulpit.message != self.message {
+            self.message = snap.state.pulpit.message.clone();
+            self.message_since = now;
+        }
         if let Some(video) = self.video_for(&snap.state).cloned() {
             self.play_video(&video).await;
+            self.images(&[]).await;
             let mut events = Vec::new();
+            let mut top_tick = None;
             if self.role() == Role::Monitor {
                 let ctx = Ctx {
                     fonts: &self.shared.fonts,
@@ -358,12 +496,13 @@ impl Screen {
                         h,
                     },
                     image_size: &background::image_size,
+                    message_since: self.message_since,
                 };
-                render::monitor_top(&ctx, &snap.state, true, &mut events);
+                render::monitor_top(&ctx, &snap.state, true, &mut events, &mut top_tick);
             }
             let tick = self.identify(snap, &mut events);
             self.overlay(&events);
-            return Some(tick.unwrap_or(500));
+            return Some(tick.unwrap_or(500).min(top_tick.unwrap_or(500)));
         }
         self.video.path = None;
 
@@ -376,7 +515,11 @@ impl Screen {
             Background::Black => None,
             Background::Page(p) => Some(p.path.clone()),
             Background::Composed(c) => {
-                let (c, cache) = (c.clone(), self.shared.cache.clone());
+                let mut c = c.clone();
+                if let Some(url) = c.image.clone().filter(|i| i.starts_with("http")) {
+                    c.image = background::fetch(&url, &self.shared.cache).await;
+                }
+                let cache = self.shared.cache.clone();
                 let (cw, ch) = (w.round() as u32, h.round() as u32);
                 tokio::task::spawn_blocking(move || background::compose(&c, cw, ch, &cache))
                     .await
@@ -399,6 +542,8 @@ impl Screen {
             self.shown.file = file;
         }
         self.page_view(&frame.background);
+        self.images(&frame.images).await;
+        self.prefetch_next(snap);
         let tick = self.identify(snap, &mut frame.events);
         self.overlay(&frame.events);
         match (frame.tick, tick) {
@@ -410,7 +555,7 @@ impl Screen {
     /// Zoom e margens da página (o retorno mostra a página só no meio).
     fn page_view(&mut self, bg: &Background) {
         let (w, h) = self.size;
-        let mut view = [0.0f32; 7];
+        let mut view = [0.0f32; 8];
         if let Background::Page(p) = bg {
             let aspect = background::image_size(&p.path)
                 .map_or(16.0 / 9.0, |(iw, ih)| iw as f32 / ih.max(1) as f32);
@@ -424,22 +569,71 @@ impl Screen {
             view[4] = (w - p.area.x - p.area.w) / w;
             view[5] = p.area.y / h;
             view[6] = (h - p.area.y - p.area.h) / h;
+            // A transição de página mexe no zoom, no deslocamento e no brilho.
+            view[0] += self.anim[0];
+            view[1] += self.anim[1];
+            view[7] = self.anim[2];
         }
-        if view != self.shown.view {
-            let names = [
-                "video-zoom",
-                "video-pan-x",
-                "video-pan-y",
-                "video-margin-ratio-left",
-                "video-margin-ratio-right",
-                "video-margin-ratio-top",
-                "video-margin-ratio-bottom",
-            ];
-            for (name, value) in names.iter().zip(view) {
-                self.mpv.set(name, json!(value.clamp(-10.0, 10.0)));
+        let names = [
+            "video-zoom",
+            "video-pan-x",
+            "video-pan-y",
+            "video-margin-ratio-left",
+            "video-margin-ratio-right",
+            "video-margin-ratio-top",
+            "video-margin-ratio-bottom",
+            "brightness",
+        ];
+        for (i, name) in names.iter().enumerate() {
+            if (view[i] - self.shown.view[i]).abs() > 1e-4 {
+                let value = if i == 7 {
+                    json!(view[i].round() as i64)
+                } else {
+                    json!(view[i].clamp(-10.0, 10.0))
+                };
+                self.mpv.set(name, value);
             }
-            self.shown.view = view;
         }
+        self.shown.view = view;
+    }
+
+    /// A miniatura da próxima página (retorno), por cima do mpv.
+    async fn images(&mut self, images: &[(String, Rect)]) {
+        let want = images.first().cloned();
+        if want == self.shown.image {
+            return;
+        }
+        match &want {
+            Some((path, rect)) => {
+                let (w, h) = (
+                    rect.w.round().max(1.0) as u32,
+                    rect.h.round().max(1.0) as u32,
+                );
+                let (path, cache) = (path.clone(), self.shared.cache.clone());
+                let file =
+                    tokio::task::spawn_blocking(move || background::thumbnail(&path, w, h, &cache))
+                        .await
+                        .ok()
+                        .and_then(Result::ok);
+                match file {
+                    Some(f) => self.mpv.command(json!([
+                        "overlay-add",
+                        2,
+                        rect.x.round() as i64,
+                        rect.y.round() as i64,
+                        f.to_string_lossy(),
+                        0,
+                        "bgra",
+                        w,
+                        h,
+                        w * 4
+                    ])),
+                    None => self.mpv.command(json!(["overlay-remove", 2])),
+                }
+            }
+            None => self.mpv.command(json!(["overlay-remove", 2])),
+        }
+        self.shown.image = want;
     }
 
     fn overlay(&mut self, events: &[String]) {
@@ -488,6 +682,8 @@ impl Screen {
                 opacity: 1.0,
                 spacing: 0.0,
                 shadow: 0.0,
+                scale: 1.0,
+                glow: None,
             }
             .event(),
         );

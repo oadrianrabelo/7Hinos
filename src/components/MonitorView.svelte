@@ -68,7 +68,7 @@
       {#if scene.kind === "image"}{options.showTitle ? `${scene.title} · ${scene.page}/${scene.total}` : ""}{:else if scene.kind !== "slide"}{status}{:else if mirrored}Aviso{:else if options.showTitle}{scene.title}{/if}
     </span>
     {#if timer}
-      <span class="timer" class:limited={timer.limited} class:warn={timer.warn} class:over={timer.over}>
+      <span class="timer" class:limited={timer.limited} class:warn={timer.warn} class:over={timer.over} class:still={prefs.slide.animations === false}>
         <span class="timer-label">{timer.label}</span>
         <span class="timer-value">{timer.text}</span>
       </span>
@@ -85,6 +85,7 @@
     {#key message}
       <p
         class="message"
+        class:still={prefs.slide.animations === false}
         style:color={options.messageColor || null}
         style:--message-bg={options.messageBackground || null}
         style:font-family={options.messageFont ? fontFamily(options.messageFont) : null}
@@ -213,6 +214,12 @@
     background: #d93025;
     box-shadow: none;
     animation: pulse 1s ease-in-out infinite;
+  }
+
+  /* "Animações na projeção" desligado: nada pisca. */
+  .timer.still,
+  .message.still {
+    animation: none;
   }
 
   @keyframes pulse {

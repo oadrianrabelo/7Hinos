@@ -198,11 +198,18 @@
             aria-label="Tamanho da letra"
           />
         </div>
+        <label class="row">
+          <span class="grow">
+            Animações na projeção
+            <span class="muted hint-line">Transições, sorteio, cronômetro e recado. Desligue se o computador for muito fraco.</span>
+          </span>
+          <input type="checkbox" class="switch" checked={s.slide.animations !== false} onchange={(e) => settings.saveSlide({ animations: e.currentTarget.checked })} />
+        </label>
         <div class="row">
           <span class="grow">Transição</span>
           <div class="segmented">
             {#each transitions as [value, label] (value)}
-              <button aria-pressed={s.slide.transitionMs === value} onclick={() => settings.saveSlide({ transitionMs: value })}>{label}</button>
+              <button aria-pressed={s.slide.transitionMs === value} disabled={s.slide.animations === false} onclick={() => settings.saveSlide({ transitionMs: value })}>{label}</button>
             {/each}
           </div>
         </div>
