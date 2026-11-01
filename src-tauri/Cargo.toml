@@ -1,6 +1,6 @@
 [package]
 name = "sete-hinos"
-version = "1.6.0"
+version = "1.7.0"
 description = "Hinos e louvores para a igreja, com projeção de slides e vídeos"
 authors = ["Adrian Rabelo"]
 license = "GPL-3.0-or-later"
