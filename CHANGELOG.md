@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.7.0...v1.8.0) (2026-11-01)
+
+
+### ✨ Novas Funcionalidades
+
+* **escala:** escala da igreja com sugestão de nomes, impressão e WhatsApp ([#44](https://github.com/oadrianrabelo/7Hinos/issues/44)) ([eb2e2ec](https://github.com/oadrianrabelo/7Hinos/commit/eb2e2ec0bb82227a64280ad2de3ea045c9974964))
+
 ## [1.7.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.6.0...v1.7.0) (2026-11-01)
 
 
