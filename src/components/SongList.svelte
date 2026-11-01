@@ -14,12 +14,15 @@
     onplay,
     numbered = true,
     showSubtitle = true,
+    selected = null,
   }: {
     songs: SongSummary[];
     onselect: (song: SongSummary) => void;
     onplay?: (song: SongSummary) => void;
     numbered?: boolean;
     showSubtitle?: boolean;
+    /** Música escolhida (a da prévia da letra, na busca). */
+    selected?: number | null;
   } = $props();
 </script>
 
@@ -34,6 +37,8 @@
         class="item"
         class:unavailable
         class:current
+        class:selected={selected === song.id}
+        data-song={song.id}
         role="button"
         tabindex="0"
         onclick={() => onselect(song)}
@@ -126,6 +131,11 @@
 
   .item.current {
     background: var(--accent-soft);
+  }
+
+  .item.selected {
+    background: var(--active);
+    box-shadow: inset 3px 0 0 var(--accent);
   }
 
   .item.current .title,
