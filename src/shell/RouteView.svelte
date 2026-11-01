@@ -17,6 +17,7 @@
   import SearchPage from "../views/SearchPage.svelte";
   import SetlistPage from "../views/SetlistPage.svelte";
   import SettingsPage from "../views/SettingsPage.svelte";
+  import RosterPage from "../views/RosterPage.svelte";
   import SongsPage from "../views/SongsPage.svelte";
   import VideosPage from "../views/VideosPage.svelte";
   import ErrorBoundary from "../components/ErrorBoundary.svelte";
@@ -46,6 +47,8 @@
   <DrawPage />
 {:else if route.name === "news"}
   <NewsPage />
+{:else if route.name === "roster"}
+  <RosterPage />
 {:else if route.name === "setlist"}
   <SetlistPage {simple} />
 {:else if route.name === "hymnal"}

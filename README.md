@@ -114,6 +114,15 @@ experiência.
   anotação ("Pr. Silva"); um momento com tempo liga o cronômetro do púlpito
   ao começar. Na hora, o painel mostra sempre o próximo; clique duplo num
   hino troca na hora, mesmo com outro tocando.
+- **Escala da igreja.** Quem faz o quê em cada culto: pregação, plataforma,
+  oração, louvor, Escola Sabatina, recepção, diaconato e o que mais a igreja
+  precisar (dá para desligar funções, como sonoplastia, e criar outras).
+  **Montar o mês** cria os cultos fixos (sábado 9h, quarta 19h30, domingo
+  18h, ajustáveis) e **Programação especial** acrescenta um culto de um dia
+  só. **Sugerir nomes** preenche as vagas de forma justa, sem pôr quem avisou
+  que não pode, e avisa conflitos (duas funções iguais no culto, pregar duas
+  vezes na semana). Sai em folha para imprimir (ou PDF), texto para o
+  WhatsApp e planilha. No **Culto de hoje** aparece quem está escalado.
 - **Novidades.** Depois de cada atualização, o app avisa e mostra o que mudou
   (também em **Ajustes → Sobre → Novidades**).
 - **Ajuda que entende a pergunta.** Na **Ajuda** (ou F1), escreva do seu

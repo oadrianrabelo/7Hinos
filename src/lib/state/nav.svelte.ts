@@ -3,6 +3,8 @@ export type Route =
   | { name: "search"; query: string }
   | { name: "hymnal" }
   | { name: "setlist" }
+  /** Escala da igreja (pregação, plataforma, recepção…). */
+  | { name: "roster" }
   | { name: "bible" }
   | { name: "screen" }
   | { name: "draw" }

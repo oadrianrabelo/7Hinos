@@ -229,6 +229,24 @@ export function install() {
     pendingFavorites: [],
     projection: (params.get("projection") as Settings["projection"]) ?? "auto",
   };
+  // ?roster=1: escala com algumas pessoas para testar.
+  let rosterDoc: unknown =
+    params.get("roster") === "1"
+      ? {
+          version: 1,
+          church: "IASD Central",
+          people: [
+            { id: "p1", name: "Pr. Marcos", phone: "", roles: ["pregacao", "plataforma"], away: [] },
+            { id: "p2", name: "Ana Souza", phone: "", roles: ["pregacao", "oracao", "es-licao"], away: [] },
+            { id: "p3", name: "Carlos Lima", phone: "", roles: ["plataforma", "recepcao", "diaconato"], away: [] },
+            { id: "p4", name: "Joana Reis", phone: "", roles: ["recepcao", "especial", "es-missao"], away: [] },
+            { id: "p5", name: "Pedro Alves", phone: "", roles: ["louvor", "especial", "projecao"], away: [] },
+            { id: "p6", name: "Rita Melo", phone: "", roles: ["es-direcao", "oracao", "leitura", "recepcao"], away: [] },
+            { id: "p7", name: "Tiago Rocha", phone: "", roles: ["diaconato", "sonoplastia", "ofertorio", "leitura"], away: [] },
+            { id: "p8", name: "Lia Santos", phone: "", roles: ["infantil", "recepcao", "es-licao"], away: [] },
+          ],
+        }
+      : null;
   let installed = params.get("installed") !== "0";
   // ?scene=slide: as telas já abrem com um hino no ar (para ver telão e retorno).
   const sample = song(1);
@@ -453,6 +471,13 @@ export function install() {
               { number: "04", title: "A fé de Abraão", src: "" },
             ],
           };
+        case "roster_load":
+          return rosterDoc;
+        case "roster_save":
+          rosterDoc = a.doc;
+          return null;
+        case "text_file_save":
+          return null;
         case "remote_info":
           return { running: settings.remote.enabled, port: settings.remote.enabled ? 7788 : null, addresses: ["192.168.0.15"] };
         case "remote_enable":
