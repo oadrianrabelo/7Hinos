@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.5.0...v1.6.0) (2026-11-01)
+
+
+### ✨ Novas Funcionalidades
+
+* **projecao:** projeção leve com o mpv, para computador fraco ([#40](https://github.com/oadrianrabelo/7Hinos/issues/40)) ([ef145e8](https://github.com/oadrianrabelo/7Hinos/commit/ef145e801afa4a55c8af3269f6f3f14a02faa9a8))
+
 ## [1.5.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.4.2...v1.5.0) (2026-10-26)
 
 
