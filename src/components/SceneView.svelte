@@ -16,6 +16,7 @@
     idle,
     screen,
     plain = false,
+    animate = true,
   }: {
     scene: Scene;
     style: SlideStyle;
@@ -23,6 +24,8 @@
     screen: ScreenStyle;
     /** Fundo preto e letra branca, sem a imagem ou a cor (retorno sem fundo). */
     plain?: boolean;
+    /** Transições (desligadas nas prévias da projeção leve, para pesar menos). */
+    animate?: boolean;
   } = $props();
 
   // O relógio anda sozinho em cada tela, sem depender de mensagens.
@@ -78,9 +81,9 @@
   {/snippet}
   {@render themed("notice", noticeBody)}
 {:else if scene.kind === "slide"}
-  <SlideView slide={scene.slide} {style} />
+  <SlideView slide={scene.slide} {style} {animate} />
 {:else if scene.kind === "image"}
-  <div class="screen page"><PageView src={fileSrc(scene.src)} overlay={scene.overlay} /></div>
+  <div class="screen page"><PageView src={fileSrc(scene.src)} overlay={scene.overlay} {animate} /></div>
 {:else if scene.kind === "idle"}
   {#snippet idleBody()}
     {#if logo}<img src={logo} alt="" />{/if}

@@ -9,7 +9,8 @@ import type { VideoItem, VideoState } from "../types";
 
 class VideoControl {
   state = $state<VideoState | null>(null);
-  /** Preenchidos pela prévia na janela de controle. */
+  /** Preenchidos pela prévia na janela de controle ou, na projeção leve,
+   *  pelo próprio mpv (`video://position`). */
   duration = $state(0);
   position = $state(0);
 
@@ -20,6 +21,10 @@ class VideoControl {
 
   async init() {
     await on("video://failed", ({ path, title }) => this.failed(path, title));
+    await on("video://position", ({ position, duration }) => {
+      this.position = position;
+      if (duration > 0) this.duration = duration;
+    });
     await on("video://ended", ({ path }) => {
       if (this.state?.path === path) this.ended();
     });

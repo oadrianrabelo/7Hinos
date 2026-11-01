@@ -80,6 +80,23 @@ jobs:
             echo "::warning::TAURI_SIGNING_PRIVATE_KEY não configurada: release sem atualização automática."
           fi
 
+      # Projeção leve: o mpv vai junto no Windows. Build "x86_64" (sem o
+      # "-v3"), que não exige AVX2 e roda em processadores antigos (Pentium,
+      # Celeron). No Linux e no macOS a projeção usa o mpv do sistema.
+      - name: mpv (Windows)
+        if: startsWith(matrix.platform, 'windows')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download --repo shinchiro/mpv-winbuild-cmake --pattern 'mpv-x86_64-2*.7z' --dir mpv-dl
+          sha256sum mpv-dl/*.7z
+          7z x -ompv-dl/x mpv-dl/*.7z > /dev/null
+          mkdir -p src-tauri/mpv
+          cp mpv-dl/x/mpv.exe src-tauri/mpv/
+          cp mpv-dl/x/*.dll src-tauri/mpv/ 2>/dev/null || true
+          ls -la src-tauri/mpv
+
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

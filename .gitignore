@@ -18,3 +18,6 @@ Thumbs.db
 .env
 .env.local
 *.key
+
+# mpv do Windows, baixado na CI para ir no instalador
+src-tauri/mpv/

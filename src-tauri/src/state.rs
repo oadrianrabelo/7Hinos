@@ -19,4 +19,5 @@ pub struct AppState {
     pub bible: Bible,
     pub decks: crate::decks::Decks,
     pub remote: crate::remote::Remote,
+    pub native: crate::projection::Native,
 }

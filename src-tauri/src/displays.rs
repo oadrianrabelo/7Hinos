@@ -21,6 +21,7 @@ use tauri::{
 };
 
 use crate::error::{Error, Result};
+use crate::settings::Projection;
 use crate::state::AppState;
 use crate::sync::LockExt;
 
@@ -66,6 +67,8 @@ pub struct Output {
     pub display_id: Option<String>,
     pub name: String,
     pub role: Role,
+    /// Desenhada pelo mpv (projeção leve), não por uma janela do WebView.
+    pub native: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -144,6 +147,7 @@ pub fn outputs(app: &AppHandle) -> Vec<Output> {
                 .map(|d| d.name.clone())
                 .unwrap_or_else(|| "Janela".to_owned());
             Output {
+                native: state.native.is_native(&label),
                 label,
                 display_id: placement.display_id,
                 name,
@@ -167,6 +171,7 @@ pub fn open(app: &AppHandle, display_id: Option<String>, role: Role) -> Result<S
             if placement.role != role {
                 placement.role = role;
                 drop(open);
+                state.native.set_role(&label, role);
                 let _ = app.emit(DISPLAYS_EVENT, ());
             }
             return Ok(label);
@@ -188,6 +193,10 @@ pub fn open(app: &AppHandle, display_id: Option<String>, role: Role) -> Result<S
         *next += 1;
         format!("{OUTPUT_PREFIX}{next}")
     };
+
+    if use_native(app) {
+        return open_native(app, label, monitor, display_id, role);
+    }
 
     let title = match role {
         Role::Audience => "7Hinos — Projeção",
@@ -222,17 +231,96 @@ pub fn close(app: &AppHandle, label: &str) -> Result<()> {
             "Só telas de projeção podem ser fechadas assim.",
         ));
     }
-    if let Some(window) = app.get_webview_window(label) {
-        window.destroy()?;
-    }
+    destroy_output(app, label);
     Ok(())
 }
 
 pub fn close_all(app: &AppHandle) {
+    app.state::<AppState>().native.close_all();
     for (label, window) in app.webview_windows() {
         if is_output(&label) {
             let _ = window.destroy();
         }
+    }
+}
+
+/// Fecha uma projeção, seja janela do WebView ou tela nativa (mpv).
+fn destroy_output(app: &AppHandle, label: &str) {
+    let state = app.state::<AppState>();
+    if state.native.is_native(label) {
+        state.native.close(label);
+    } else if let Some(window) = app.get_webview_window(label) {
+        let _ = window.destroy();
+    }
+}
+
+/// A projeção leve vale para esta abertura?
+fn use_native(app: &AppHandle) -> bool {
+    let state = app.state::<AppState>();
+    match state.settings.get().projection {
+        Projection::Web => false,
+        Projection::Auto | Projection::Light => state.native.available(),
+    }
+}
+
+/// Abre a tela com o mpv (projeção leve).
+fn open_native(
+    app: &AppHandle,
+    label: String,
+    monitor: Option<Monitor>,
+    display_id: Option<String>,
+    role: Role,
+) -> Result<String> {
+    let state = app.state::<AppState>();
+    let name = display_id
+        .as_ref()
+        .and_then(|id| list(app).ok()?.into_iter().find(|d| &d.id == id))
+        .map_or_else(|| "Janela".to_owned(), |d| d.name);
+    let placement = crate::projection::Placement {
+        monitor: monitor.as_ref().map(|m| {
+            (
+                m.position().x,
+                m.position().y,
+                m.size().width,
+                m.size().height,
+                m.name().cloned().unwrap_or_default(),
+            )
+        }),
+        role,
+        name,
+    };
+    state
+        .outputs
+        .open
+        .locked()
+        .insert(label.clone(), Placement { display_id, role });
+    state
+        .native
+        .open(app, &label, placement, {
+            let app = app.clone();
+            move |label| output_gone(&app, &label)
+        })
+        .map_err(Error::other)?;
+    let _ = app.emit(DISPLAYS_EVENT, ());
+    // O mpv pode pegar o foco ao abrir; devolve para quem está operando.
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        for ms in [400, 1200] {
+            tokio::time::sleep(Duration::from_millis(ms)).await;
+            refocus_controller(&app);
+        }
+    });
+    Ok(label)
+}
+
+/// Uma tela nativa fechou (pela pessoa, por erro ou de propósito).
+fn output_gone(app: &AppHandle, label: &str) {
+    let state = app.state::<AppState>();
+    state.native.forget(label);
+    let removed = state.outputs.open.locked().remove(label).is_some();
+    if removed {
+        state.stage.forget_output(app, label);
+        let _ = app.emit(DISPLAYS_EVENT, ());
     }
 }
 
@@ -344,9 +432,7 @@ pub fn reopen_all(app: &AppHandle) -> Result<()> {
         }
     }
     for (label, _) in &placements {
-        if let Some(window) = app.get_webview_window(label) {
-            let _ = window.destroy();
-        }
+        destroy_output(app, label);
     }
     let _ = app.emit(DISPLAYS_EVENT, ());
     first_error.map_or(Ok(()), Err)
@@ -368,9 +454,7 @@ fn on_monitors_changed(app: &AppHandle, before: &BTreeSet<String>, now: &BTreeSe
             continue;
         };
         log::warn!("tela {id} desconectada; fechando a projeção {label}");
-        if let Some(window) = app.get_webview_window(&label) {
-            let _ = window.destroy();
-        }
+        destroy_output(app, &label);
         state.outputs.lost.locked().push((id, placement.role));
         let _ = app.emit(DISPLAY_LOST_EVENT, ());
     }

@@ -47,6 +47,8 @@ describe("Pergunte ao 7Hinos", () => {
     ["como atualizar o programa", ["atualizar"]],
     ["achar hino pelo numero", ["buscar-numero"]],
     ["voltar as cores ao padrão", ["aparencia"]],
+    ["o vídeo está travando", ["travando"]],
+    ["a letra demora pra trocar, computador fraco", ["travando"]],
   ])("%s", (question, expected) => {
     const found = top(question);
     expect(found.length).toBeGreaterThan(0);

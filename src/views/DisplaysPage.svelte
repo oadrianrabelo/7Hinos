@@ -18,6 +18,20 @@
   });
 
   const windowed = $derived(outputs.outputs.filter((o) => o.displayId === null));
+
+  // Projeção leve (mpv) ou compatível (WebView).
+  let lightAvailable = $state<boolean | null>(null);
+  void api
+    .projectionAvailable()
+    .then((v) => (lightAvailable = v))
+    .catch(() => (lightAvailable = false));
+  const engine = $derived(settings.current.projection === "web" ? "web" : "light");
+
+  async function setEngine(value: "light" | "web") {
+    await settings.save({ projection: value === "web" ? "web" : "auto" });
+    // As telas abertas passam a usar o jeito novo.
+    if (outputs.outputs.length) await outputs.reopen();
+  }
   const roleOf = (label: string | null) => outputs.outputs.find((o) => o.label === label)?.role ?? "audience";
 </script>
 
@@ -136,6 +150,34 @@
   {/each}
 </section>
 
+<section class="engine">
+  <div>
+    <h2>Desenho das telas</h2>
+    <p class="muted">Em computador fraco ou antigo, a projeção leve evita que vídeos e troca de letra travem.</p>
+  </div>
+  <div class="group">
+    <div class="row">
+      <span class="grow">
+        Projeção
+        <span class="muted block">
+          {#if lightAvailable === false}
+            A projeção leve precisa do mpv, que não foi encontrado neste computador. No Linux e no macOS, instale o mpv
+            pelo sistema.
+          {:else if engine === "light"}
+            Leve: o telão e o retorno são desenhados pelo mpv, que usa a placa de vídeo e pesa bem menos.
+          {:else}
+            Compatível: o jeito antigo, com as telas desenhadas como páginas da internet. Pesa mais.
+          {/if}
+        </span>
+      </span>
+      <div class="segmented">
+        <button aria-pressed={engine === "light"} disabled={lightAvailable === false} onclick={() => setEngine("light")}>Leve</button>
+        <button aria-pressed={engine === "web"} onclick={() => setEngine("web")}>Compatível</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <style>
   .displays {
     display: grid;
@@ -190,7 +232,8 @@
     font-size: 0.82rem;
   }
 
-  .windowed {
+  .windowed,
+  .engine {
     margin-top: 2rem;
     display: flex;
     flex-direction: column;
@@ -204,7 +247,8 @@
     gap: 0.75rem;
   }
 
-  .monitor-options h2 {
+  .monitor-options h2,
+  .engine h2 {
     margin: 0;
   }
 

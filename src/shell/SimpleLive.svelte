@@ -45,7 +45,7 @@
     </div>
 
     <div class="preview" class:dim={player.blackout}>
-      <SlideView slide={player.slide} style={settings.current.slide} />
+      <SlideView slide={player.slide} style={settings.current.slide} animate={settings.current.projection === "web"} />
     </div>
 
     <div class="counter muted">

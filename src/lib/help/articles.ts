@@ -398,6 +398,20 @@ export const ARTICLES: Article[] = [
 
   // Problemas
   {
+    id: "travando",
+    title: "O vídeo ou a troca de letra está travando",
+    summary: "Em computador fraco, use a projeção leve: ela pesa bem menos.",
+    steps: [
+      "Abra Telas e desça até Desenho das telas.",
+      "Escolha Leve. As telas abertas fecham e abrem de novo sozinhas.",
+      "Se ainda pesar, em Ajustes → Slides escolha a transição Nenhuma.",
+      "Feche outros programas abertos (navegador, WhatsApp) durante o culto.",
+    ],
+    keywords: ["travando", "travou", "lento", "lerdo", "pesado", "engasgando", "congelando", "computador fraco", "computador velho", "demora", "projecao leve", "mpv"],
+    category: "Problemas",
+    route: { name: "displays" },
+  },
+  {
     id: "sem-som",
     title: "O hino não tem som",
     summary: "Confira o volume, a internet e a saída de som.",

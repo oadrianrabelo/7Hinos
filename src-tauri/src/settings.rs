@@ -28,6 +28,19 @@ pub enum Theme {
     Dark,
 }
 
+/// Quem desenha as telas de projeção.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Projection {
+    /// Leve (mpv) quando houver; senão, compatível.
+    #[default]
+    Auto,
+    /// Sempre o mpv.
+    Light,
+    /// Sempre o WebView (o jeito de antes).
+    Web,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct SlideStyle {
@@ -303,6 +316,8 @@ pub struct Settings {
     /// A versão antiga (Avalonia) já foi migrada.
     pub legacy_migrated: bool,
     pub pending_favorites: Vec<LegacyFavorite>,
+    /// Projeção leve (mpv) ou compatível (WebView).
+    pub projection: Projection,
 }
 
 impl Default for Settings {
@@ -332,6 +347,7 @@ impl Default for Settings {
             local_sources: Vec::new(),
             legacy_migrated: false,
             pending_favorites: Vec::new(),
+            projection: Projection::Auto,
         }
     }
 }

@@ -1,0 +1,8 @@
+{
+  "bundle": {
+    "resources": {
+      "fonts/*": "fonts/",
+      "mpv/*": "mpv/"
+    }
+  }
+}
