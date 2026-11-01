@@ -10,6 +10,7 @@ export const SLIDE_DEFAULTS: SlideStyle = {
   textScale: 1,
   showImages: true,
   transitionMs: 450,
+  animations: true,
 };
 
 export const SCREEN_DEFAULTS: ScreenStyle = {

@@ -51,6 +51,10 @@ pub struct Line<'a> {
     pub spacing: f32,
     /// Sombra suave atrás do texto (a do telão), de 0 a 1.
     pub shadow: f32,
+    /// Tamanho relativo (1 = normal), para animar a entrada.
+    pub scale: f32,
+    /// Brilho colorido em volta (cor e opacidade), como o do resultado do sorteio.
+    pub glow: Option<(&'a str, f32)>,
 }
 
 impl Line<'_> {
@@ -68,7 +72,21 @@ impl Line<'_> {
             color(self.color),
             alpha(self.opacity),
         );
-        if self.shadow > 0.0 {
+        if (self.scale - 1.0).abs() > 0.001 {
+            let pct = (self.scale * 100.0).max(1.0);
+            let _ = write!(out, "\\fscx{pct:.1}\\fscy{pct:.1}");
+        }
+        if let Some((glow_color, glow_opacity)) = self.glow {
+            let glow = (self.px * 0.12).max(2.0);
+            let _ = write!(
+                out,
+                "\\bord{:.1}\\3c{}\\3a{}\\blur{:.1}\\shad0",
+                glow,
+                color(glow_color),
+                alpha(glow_opacity * self.opacity),
+                glow * 2.5,
+            );
+        } else if self.shadow > 0.0 {
             // Contorno escuro desfocado = o brilho do text-shadow; com
             // contorno, o desfoque não pega a letra, que fica nítida.
             let glow = (self.px * 0.06).max(1.0);

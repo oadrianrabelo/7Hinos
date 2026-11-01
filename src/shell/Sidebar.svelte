@@ -5,6 +5,7 @@
   import { api } from "../lib/api";
   import { nav, type Route } from "../lib/state/nav.svelte";
   import { outputs } from "../lib/state/outputs.svelte";
+  import { searchSelection } from "../lib/state/search.svelte";
   import { setlist } from "../lib/state/setlist.svelte";
 
   let query = $state("");
@@ -18,9 +19,10 @@
     search?.focus(false);
   }
 
-  /** Enter na busca: toca o primeiro resultado. */
+  /** Enter na busca: toca a música escolhida na lista (de início, a primeira). */
   async function onSubmit(value: string) {
     if (!value.trim()) return;
+    if (searchSelection.selected) return playSong(searchSelection.selected);
     const [first] = await api.search(value);
     if (first) await playSong(first);
   }

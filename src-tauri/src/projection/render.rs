@@ -98,6 +98,8 @@ pub struct Frame {
     pub events: Vec<String>,
     /// De quanto em quanto tempo redesenhar (relógio, sorteio), em ms.
     pub tick: Option<u64>,
+    /// Imagens pequenas por cima (a próxima página no rodapé do retorno).
+    pub images: Vec<(String, Rect)>,
 }
 
 pub struct Ctx<'a> {
@@ -112,6 +114,8 @@ pub struct Ctx<'a> {
     /// Medidas (largura, altura) de uma imagem local, para o logo e as
     /// páginas. Nas provas, uma função de mentira.
     pub image_size: &'a dyn Fn(&str) -> Option<(u32, u32)>,
+    /// Quando o recado atual apareceu (ms desde 1970), para piscar ao chegar.
+    pub message_since: f64,
 }
 
 impl Ctx<'_> {
@@ -140,6 +144,7 @@ fn audience(ctx: &Ctx, scene: &Scene, opacity: f32) -> Frame {
         background: Background::Black,
         events: Vec::new(),
         tick: None,
+        images: Vec::new(),
     };
     match scene {
         Scene::Black => {}
@@ -237,6 +242,8 @@ struct Block {
     spacing: f32,
     color: String,
     opacity: f32,
+    scale: f32,
+    glow: Option<(String, f32)>,
 }
 
 impl Block {
@@ -250,6 +257,8 @@ impl Block {
             spacing,
             color: "#ffffff".into(),
             opacity: 1.0,
+            scale: 1.0,
+            glow: None,
         }
     }
 
@@ -260,6 +269,16 @@ impl Block {
 
     fn opacity(mut self, o: f32) -> Block {
         self.opacity = o;
+        self
+    }
+
+    fn scale(mut self, s: f32) -> Block {
+        self.scale = s;
+        self
+    }
+
+    fn glow(mut self, color: &str, opacity: f32) -> Block {
+        self.glow = Some((color.to_owned(), opacity));
         self
     }
 
@@ -312,6 +331,8 @@ fn stack(
                     opacity: opacity * b.opacity,
                     spacing: b.spacing,
                     shadow,
+                    scale: b.scale,
+                    glow: b.glow.as_ref().map(|(c, o)| (c.as_str(), *o)),
                 }
                 .event(),
             );
@@ -566,6 +587,8 @@ fn idle(ctx: &Ctx, area: Rect, opacity: f32, plain: bool, f: &mut Frame) {
                 opacity: opacity * 0.8,
                 spacing: 0.0,
                 shadow: 0.6,
+                scale: 1.0,
+                glow: None,
             }
             .event(),
         );
@@ -673,20 +696,65 @@ fn draw(
         );
     }
     let size = 26f32.min(150.0 / (text.chars().count().max(4) as f32));
-    blocks.push(
-        Block::new(
-            &text,
-            ctx.fonts.get(t.font, 700),
-            area.min(size, size * 0.8),
-            1.05,
-            0.0,
-            area.cqw(92.0),
-        )
-        .color(if done { t.accent } else { t.text })
-        .opacity(if done { 1.0 } else { 0.85 }),
-    );
+    let mut result_block = Block::new(
+        &text,
+        ctx.fonts.get(t.font, 700),
+        area.min(size, size * 0.8),
+        1.05,
+        0.0,
+        area.cqw(92.0),
+    )
+    .color(if done { t.accent } else { t.text })
+    .opacity(if done { 1.0 } else { 0.85 });
+    // O resultado chega com um salto (cresce passando um pouco do tamanho e
+    // volta) e fica com um brilho da cor dos títulos.
+    let mut landing = false;
+    if done {
+        result_block = result_block.glow(t.accent, 0.45);
+        if ctx.settings.slide.animations {
+            let land =
+                ((ctx.now - started_at - f64::from(*duration_ms)) / 700.0).clamp(0.0, 1.0) as f32;
+            landing = land < 1.0;
+            result_block = result_block
+                .scale(0.6 + 0.4 * ease_out_back(land))
+                .opacity(0.3 + 0.7 * land.min(1.0).sqrt());
+        }
+    }
+    blocks.push(result_block);
     stack(&blocks, area.cqh(4.0), area, 5, opacity, 0.6, out);
-    (!done).then_some(40)
+    if !done || landing {
+        Some(if landing { 30 } else { 40 })
+    } else {
+        None
+    }
+}
+
+/// Passa um pouco do fim e volta (o "salto" do CSS cubic-bezier(.2,1.6,.4,1)).
+fn ease_out_back(t: f32) -> f32 {
+    let (c1, c3) = (1.70158f32, 2.70158f32);
+    let u = t - 1.0;
+    1.0 + c3 * u * u * u + c1 * u * u
+}
+
+/// Clareia uma cor "#rrggbb" (1 = igual, 1.6 = bem mais clara).
+fn brighten(hex: &str, factor: f32) -> String {
+    let (r, g, b) = ass::rgb(hex).unwrap_or((255, 211, 107));
+    let f = |c: u8| (f32::from(c) * factor).min(255.0) as u8;
+    format!("#{:02x}{:02x}{:02x}", f(r), f(g), f(b))
+}
+
+fn hex(c: (u8, u8, u8)) -> String {
+    format!("#{:02x}{:02x}{:02x}", c.0, c.1, c.2)
+}
+
+/// Mistura duas cores "#rrggbb" (`t` = quanto da segunda).
+fn mix(a: &str, b: &str, t: f32) -> String {
+    let (a, b) = (
+        ass::rgb(a).unwrap_or((0, 0, 0)),
+        ass::rgb(b).unwrap_or((0, 0, 0)),
+    );
+    let m = |x: u8, y: u8| (f32::from(x) + (f32::from(y) - f32::from(x)) * t) as u8;
+    format!("#{:02x}{:02x}{:02x}", m(a.0, b.0), m(a.1, b.1), m(a.2, b.2))
 }
 
 pub fn draw_frame(
@@ -904,8 +972,9 @@ fn monitor(ctx: &Ctx, state: &StageState, opacity: f32) -> Frame {
         background: Background::Black,
         events: Vec::new(),
         tick: Some(500),
+        images: Vec::new(),
     };
-    let top = monitor_top(ctx, state, false, &mut f.events);
+    let top = monitor_top(ctx, state, false, &mut f.events, &mut f.tick);
 
     // Rodapé: o que vem a seguir.
     let footer_h = if opts.show_next && !mirrored(scene) {
@@ -927,14 +996,22 @@ fn monitor(ctx: &Ctx, state: &StageState, opacity: f32) -> Frame {
             }),
             _ => Some("—".into()),
         };
-        footer(
+        // Na apresentação, a miniatura da próxima página vai junto.
+        let thumb = match scene {
+            Scene::Image { next: Some(n), .. } => Some(n.as_str()),
+            _ => None,
+        };
+        if let Some(image) = footer(
             ctx,
             ui,
             next.as_deref().unwrap_or(""),
+            thumb,
             bottom,
             footer_h,
             &mut f.events,
-        );
+        ) {
+            f.images.push(image);
+        }
     }
 
     let main = Rect {
@@ -959,6 +1036,7 @@ fn monitor(ctx: &Ctx, state: &StageState, opacity: f32) -> Frame {
                 background: Background::Black,
                 events: Vec::new(),
                 tick: None,
+                images: Vec::new(),
             };
             match scene {
                 Scene::Slide { slide, .. } => notice(
@@ -989,6 +1067,29 @@ fn monitor(ctx: &Ctx, state: &StageState, opacity: f32) -> Frame {
                         &mut inner.events,
                     );
                 }
+            }
+            // Com o fundo do telão ligado, a miniatura tem a cor dele e cantos
+            // arredondados, como no modo compatível.
+            if opts.show_background {
+                let st = &ctx.settings.screen_style;
+                let fill = if st.background_image.is_some() {
+                    "#111111".to_owned()
+                } else {
+                    match screen_shade(&st.background) {
+                        Shade::Radial([c, m, _]) => mix(&hex(c), &hex(m), 0.5),
+                        Shade::Solid(c) => hex(c),
+                        _ => "#000000".to_owned(),
+                    }
+                };
+                f.events.push(ass::rect(
+                    mini.x,
+                    mini.y,
+                    mini.w,
+                    mini.h,
+                    &fill,
+                    1.0,
+                    mini.h * 0.012,
+                ));
             }
             f.events.extend(inner.events);
             if let Some(t) = inner.tick {
@@ -1045,6 +1146,8 @@ fn monitor(ctx: &Ctx, state: &StageState, opacity: f32) -> Frame {
                     opacity: 0.45,
                     spacing: 0.0,
                     shadow: 0.0,
+                    scale: 1.0,
+                    glow: None,
                 }
                 .event(),
             );
@@ -1055,7 +1158,15 @@ fn monitor(ctx: &Ctx, state: &StageState, opacity: f32) -> Frame {
 
 /// Cabeçalho do retorno (título, cronômetro e horas) e o recado do púlpito.
 /// Também vai por cima do vídeo. Devolve onde o resto da tela começa.
-pub fn monitor_top(ctx: &Ctx, state: &StageState, video: bool, out: &mut Vec<String>) -> f32 {
+pub fn monitor_top(
+    ctx: &Ctx,
+    state: &StageState,
+    video: bool,
+    out: &mut Vec<String>,
+    tick: &mut Option<u64>,
+) -> f32 {
+    let animate = ctx.settings.slide.animations;
+    let mut want = |ms: u64| *tick = Some(tick.map_or(ms, |t| t.min(ms)));
     let screen = ctx.screen;
     let opts = &ctx.settings.monitor;
     let scene = &state.scene;
@@ -1086,7 +1197,15 @@ pub fn monitor_top(ctx: &Ctx, state: &StageState, video: bool, out: &mut Vec<Str
     }
     if let Some(timer) = &state.pulpit.timer {
         let view = super::timer::display(timer, ctx.now);
-        let (fg, bg, bg_opacity) = if view.over || view.warn {
+        // Estourou: pulsa entre o vermelho e um vermelho escuro, a cada segundo.
+        let pulse;
+        let (fg, bg, bg_opacity) = if view.over && animate {
+            let phase = (ctx.now % 1000.0) / 1000.0;
+            let k = 0.5 - 0.5 * (std::f64::consts::TAU * phase).cos();
+            pulse = mix("#d93025", "#7f1d1d", k as f32);
+            want(100);
+            ("#ffffff", pulse.as_str(), 1.0)
+        } else if view.over || view.warn {
             (
                 "#ffffff",
                 if view.over { "#d93025" } else { "#c62828" },
@@ -1125,6 +1244,8 @@ pub fn monitor_top(ctx: &Ctx, state: &StageState, video: bool, out: &mut Vec<Str
             opacity: 0.7,
             spacing: 0.0,
             shadow: 0.0,
+            scale: 1.0,
+            glow: None,
         }
         .event(),
     );
@@ -1157,15 +1278,19 @@ pub fn monitor_top(ctx: &Ctx, state: &StageState, video: bool, out: &mut Vec<Str
         let block = Block::new(message, font, px, 1.15, 0.0, screen.w - screen.cqw(5.0))
             .color(&opts.message_color);
         let h = block.height() + pad * 2.0;
-        out.push(ass::rect(
-            screen.x,
-            top,
-            screen.w,
-            h,
-            &opts.message_background,
-            1.0,
-            0.0,
-        ));
+        // Ao chegar, a faixa clareia e volta três vezes, para chamar atenção.
+        let age = ctx.now - ctx.message_since;
+        let band_color = if animate && ctx.message_since > 0.0 && (0.0..1800.0).contains(&age) {
+            want(40);
+            let cycle = (age % 600.0) / 600.0;
+            brighten(
+                &opts.message_background,
+                1.0 + 0.6 * (std::f64::consts::PI * cycle).sin() as f32,
+            )
+        } else {
+            opts.message_background.clone()
+        };
+        out.push(ass::rect(screen.x, top, screen.w, h, &band_color, 1.0, 0.0));
         let band = Rect {
             x: screen.x,
             y: top,
@@ -1322,6 +1447,8 @@ fn clock_badge(
             opacity: 0.85,
             spacing: 0.12,
             shadow: 0.0,
+            scale: 1.0,
+            glow: None,
         }
         .event(),
     );
@@ -1337,13 +1464,23 @@ fn clock_badge(
             opacity: 1.0,
             spacing: 0.0,
             shadow: 0.0,
+            scale: 1.0,
+            glow: None,
         }
         .event(),
     );
     right - w
 }
 
-fn footer(ctx: &Ctx, ui: &str, next: &str, top: f32, h: f32, out: &mut Vec<String>) {
+fn footer(
+    ctx: &Ctx,
+    ui: &str,
+    next: &str,
+    thumb: Option<&str>,
+    top: f32,
+    h: f32,
+    out: &mut Vec<String>,
+) -> Option<(String, Rect)> {
     let s = ctx.screen;
     out.push(ass::rect(s.x, top, s.w, h, "#111111", 1.0, 0.0));
     out.push(ass::rect(s.x, top, s.w, 1.0, "#ffffff", 0.12, 0.0));
@@ -1376,12 +1513,39 @@ fn footer(ctx: &Ctx, ui: &str, next: &str, top: f32, h: f32, out: &mut Vec<Strin
             opacity: 1.0,
             spacing: 0.05,
             shadow: 0.0,
+            scale: 1.0,
+            glow: None,
         }
         .event(),
     );
     let next_font = ctx.fonts.get(ui, 500);
     let next_px = s.cqh(4.2);
-    let x = left + tag_w + s.cqw(2.0);
+    let mut x = left + tag_w + s.cqw(2.0);
+    let mut image = None;
+    if let Some(path) = thumb {
+        if let Some((iw, ih)) = (ctx.image_size)(path) {
+            let th = (s.cqh(8.0)).min(h * 0.86);
+            let tw = th * iw as f32 / ih.max(1) as f32;
+            let rect = Rect {
+                x,
+                y: mid - th / 2.0,
+                w: tw,
+                h: th,
+            };
+            // Fundo branco atrás, como a folha de papel.
+            out.push(ass::rect(
+                rect.x - 2.0,
+                rect.y - 2.0,
+                tw + 4.0,
+                th + 4.0,
+                "#ffffff",
+                1.0,
+                s.cqh(0.6),
+            ));
+            image = Some((path.to_owned(), rect));
+            x += tw + s.cqw(1.5);
+        }
+    }
     let text = truncate(next, &next_font, next_px, s.x + s.w - s.cqw(2.5) - x);
     out.push(
         Line {
@@ -1395,9 +1559,12 @@ fn footer(ctx: &Ctx, ui: &str, next: &str, top: f32, h: f32, out: &mut Vec<Strin
             opacity: 0.75,
             spacing: 0.0,
             shadow: 0.0,
+            scale: 1.0,
+            glow: None,
         }
         .event(),
     );
+    image
 }
 
 /// Corta com reticências para caber em `max` pixels.
@@ -1442,6 +1609,7 @@ mod tests {
                 h: 1080.0,
             },
             image_size: &|_| Some((1600, 900)),
+            message_since: 0.0,
         }
     }
 
@@ -1642,6 +1810,62 @@ mod tests {
         assert_eq!(page.zoom, Some((0.3, 0.4, 2.0)));
         assert!(f.events.iter().any(|e| e.contains("\\iclip(")));
         assert!(f.events.len() >= 4);
+    }
+
+    #[test]
+    fn draw_lands_with_a_jump_unless_animations_are_off() {
+        let (fonts, mut settings) = (fonts(), Settings::default());
+        let c = ctx(&fonts, &settings);
+        let scene = Scene::Draw {
+            title: String::new(),
+            result: "Maria".into(),
+            candidates: vec!["João".into(), "Maria".into()],
+            started_at: c.now - 3_200.0,
+            duration_ms: 3_000,
+        };
+        let state = StageState {
+            scene,
+            ..Default::default()
+        };
+        let f = frame(&c, &state, Role::Audience, 1.0);
+        assert!(
+            f.events.iter().any(|e| e.contains("\\fscx")),
+            "{:?}",
+            f.events
+        );
+        assert_eq!(f.tick, Some(30));
+        settings.slide.animations = false;
+        let f = frame(&ctx(&fonts, &settings), &state, Role::Audience, 1.0);
+        assert!(!f.events.iter().any(|e| e.contains("\\fscx")));
+        assert_eq!(f.tick, None);
+    }
+
+    #[test]
+    fn message_flashes_when_it_arrives_and_timer_pulses_when_over() {
+        let (fonts, mut settings) = (fonts(), Settings::default());
+        // Cor que não aparece em mais nada do retorno.
+        settings.monitor.message_background = "#336699".into();
+        let mut c = ctx(&fonts, &settings);
+        let mut state = slide_state(lyric("Castelo forte"));
+        state.pulpit = Pulpit {
+            message: Some("Pode encerrar".into()),
+            timer: Some(Timer {
+                elapsed_ms: 31.0 * 60_000.0,
+                started_at: None,
+                limit_ms: Some(30.0 * 60_000.0),
+            }),
+        };
+        let band = ass::color(&settings.monitor.message_background);
+        c.message_since = c.now - 300.0;
+        let arriving = frame(&c, &state, Role::Monitor, 1.0);
+        assert!(
+            !arriving.events.iter().any(|e| e.contains(&band)),
+            "a faixa deveria estar mais clara"
+        );
+        assert!(arriving.tick.unwrap() <= 100);
+        c.message_since = c.now - 5_000.0;
+        let settled = frame(&c, &state, Role::Monitor, 1.0);
+        assert!(settled.events.iter().any(|e| e.contains(&band)));
     }
 
     #[test]

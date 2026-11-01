@@ -74,6 +74,8 @@ export interface SlideStyle {
   textScale: number;
   showImages: boolean;
   transitionMs: number;
+  /** Animações na projeção (sorteio, cronômetro, recado, troca de página). */
+  animations: boolean;
 }
 
 /** Um item da programação do culto. */

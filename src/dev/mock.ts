@@ -185,7 +185,7 @@ export function install() {
     theme: (params.get("theme") as Settings["theme"]) ?? "system",
     language: "pt",
     uiScale: 1,
-    slide: { font: "condensed", bibleFont: "", uppercase: true, textScale: 1, showImages: true, transitionMs: 450 },
+    slide: { font: "condensed", bibleFont: "", uppercase: true, textScale: 1, showImages: true, transitionMs: 450, animations: params.get("anim") !== "0" },
     favorites: [18],
     recent: [101, 1, 18],
     videos: [

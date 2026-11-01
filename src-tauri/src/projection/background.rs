@@ -35,11 +35,16 @@ pub fn compose(c: &Compose, w: u32, h: u32, cache: &Path) -> std::io::Result<Pat
     }
     std::fs::create_dir_all(cache)?;
 
-    let mut canvas = match local.and_then(|p| cover(p, c.position, w, h)) {
-        Some(photo) => photo,
-        None => RgbImage::from_pixel(w, h, Rgb([0, 0, 0])),
+    let photo = local.and_then(|p| cover(p, c.position, w, h));
+    // Foto que não abriu: o degradê azul padrão dos slides, nunca preto.
+    let fallback = Shade::Radial([(0x1d, 0x45, 0x60), (0x0b, 0x1d, 0x2b), (0x05, 0x0b, 0x11)]);
+    let chosen = match (&c.shade, &photo) {
+        (Shade::Slide, None) => &fallback,
+        (s, _) => s,
     };
-    shade(&mut canvas, &c.shade, local.is_some());
+    let has_photo = photo.is_some();
+    let mut canvas = photo.unwrap_or_else(|| RgbImage::from_pixel(w, h, Rgb([0, 0, 0])));
+    shade(&mut canvas, chosen, has_photo);
     if let Some((path, rect)) = &c.logo {
         paste_logo(&mut canvas, path, rect.x, rect.y, rect.w, rect.h);
     }
@@ -169,6 +174,76 @@ fn paste_logo(canvas: &mut RgbImage, path: &str, x: f32, y: f32, w: f32, h: f32)
             dst.0[i] = (f32::from(p.0[i]) * a + f32::from(dst.0[i]) * (1.0 - a)) as u8;
         }
     }
+}
+
+/// Miniatura em BGRA cru (o formato do `overlay-add` do mpv), guardada.
+pub fn thumbnail(path: &str, w: u32, h: u32, cache: &Path) -> std::io::Result<PathBuf> {
+    let (w, h) = (w.max(1), h.max(1));
+    let mut hasher = DefaultHasher::new();
+    format!("{path}|{w}x{h}|thumb1").hash(&mut hasher);
+    if let Ok(modified) = std::fs::metadata(path).and_then(|m| m.modified()) {
+        modified.hash(&mut hasher);
+    }
+    let out = cache.join(format!("{:016x}.bgra", hasher.finish()));
+    if out.is_file() {
+        return Ok(out);
+    }
+    std::fs::create_dir_all(cache)?;
+    let img = ImageReader::open(path)?
+        .with_guessed_format()?
+        .decode()
+        .map_err(|e| std::io::Error::other(e.to_string()))?;
+    let small = imageops::resize(&img.to_rgba8(), w, h, imageops::FilterType::Triangle);
+    let mut raw = Vec::with_capacity((w * h * 4) as usize);
+    for p in small.pixels() {
+        // Pré-multiplicado, como o mpv espera.
+        let a = u16::from(p.0[3]);
+        let m = |c: u8| ((u16::from(c) * a) / 255) as u8;
+        raw.extend_from_slice(&[m(p.0[2]), m(p.0[1]), m(p.0[0]), p.0[3]]);
+    }
+    let tmp = out.with_extension("tmp");
+    std::fs::write(&tmp, raw)?;
+    std::fs::rename(&tmp, &out)?;
+    Ok(out)
+}
+
+/// Fundo que só existe na internet (hino ainda não baixado): baixa uma vez
+/// para a pasta da projeção e devolve o arquivo. Sem internet, `None` (e o
+/// fundo vira o degradê padrão).
+pub async fn fetch(url: &str, cache: &Path) -> Option<String> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return None;
+    }
+    let mut hasher = DefaultHasher::new();
+    url.hash(&mut hasher);
+    let out = cache
+        .join("baixados")
+        .join(format!("{:016x}.img", hasher.finish()));
+    if out.is_file() {
+        return Some(out.to_string_lossy().into_owned());
+    }
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    let client = CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(6))
+            .build()
+            .unwrap_or_default()
+    });
+    let bytes = client
+        .get(url)
+        .send()
+        .await
+        .ok()?
+        .error_for_status()
+        .ok()?
+        .bytes()
+        .await
+        .ok()?;
+    std::fs::create_dir_all(out.parent()?).ok()?;
+    let tmp = out.with_extension("tmp");
+    std::fs::write(&tmp, &bytes).ok()?;
+    std::fs::rename(&tmp, &out).ok()?;
+    Some(out.to_string_lossy().into_owned())
 }
 
 /// Largura e altura de uma imagem, lendo só o cabeçalho.

@@ -54,6 +54,8 @@ pub struct SlideStyle {
     pub show_images: bool,
     /// Duração da transição entre slides, em milissegundos.
     pub transition_ms: u32,
+    /// Animações na projeção (sorteio, cronômetro, recado, troca de página).
+    pub animations: bool,
 }
 
 impl Default for SlideStyle {
@@ -65,6 +67,7 @@ impl Default for SlideStyle {
             text_scale: 1.0,
             show_images: true,
             transition_ms: 450,
+            animations: true,
         }
     }
 }

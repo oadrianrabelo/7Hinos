@@ -83,7 +83,7 @@
 {:else if scene.kind === "slide"}
   <SlideView slide={scene.slide} {style} {animate} />
 {:else if scene.kind === "image"}
-  <div class="screen page"><PageView src={fileSrc(scene.src)} overlay={scene.overlay} {animate} /></div>
+  <div class="screen page"><PageView src={fileSrc(scene.src)} overlay={scene.overlay} animate={animate && style.animations !== false} /></div>
 {:else if scene.kind === "idle"}
   {#snippet idleBody()}
     {#if logo}<img src={logo} alt="" />{/if}
@@ -107,7 +107,7 @@
   {@const size = Math.min(26, 150 / Math.max(4, frame.text.length))}
   {#snippet drawBody()}
     {#if title}<p class="label">{title}</p>{/if}
-    <p class="draw" class:done={frame.done} style:font-size="min({size}cqh, {size * 0.8}cqw)">{frame.text}</p>
+    <p class="draw" class:done={frame.done} class:still={style.animations === false} style:font-size="min({size}cqh, {size * 0.8}cqw)">{frame.text}</p>
   {/snippet}
   {@render themed("draw", drawBody)}
 {:else}
@@ -202,6 +202,10 @@
     color: var(--accent, #ffc94a);
     animation: land 0.7s cubic-bezier(0.2, 1.6, 0.4, 1);
     text-shadow: 0 0 6cqh color-mix(in srgb, var(--accent, #ffc94a) 45%, transparent);
+  }
+
+  .draw.still {
+    animation: none;
   }
 
   @keyframes land {

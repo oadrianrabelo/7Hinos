@@ -25,7 +25,8 @@
   $effect(() => ensureFont(font));
   const image = $derived(style.showImages ? mediaSrc(slide?.image) : null);
   const size = $derived(slide ? fitText(slide.text, slide.kind, style.textScale) : null);
-  const duration = $derived(animate ? style.transitionMs : 0);
+  // "Animações na projeção" desligado em Ajustes também tira a transição.
+  const duration = $derived(animate && style.animations !== false ? style.transitionMs : 0);
 </script>
 
 <div class="frame" style:--font-slide={family}>
