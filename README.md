@@ -32,6 +32,14 @@ experiência.
   ligados, a projeção abre sozinha ao começar um hino. Se o cabo soltar ou o
   projetor desligar, a projeção sai do caminho e volta sozinha quando a tela
   reaparece.
+- **Projeção leve, para computador fraco.** O telão e o retorno são
+  desenhados pelo [mpv](https://mpv.io), sem navegador: o vídeo é
+  decodificado pela placa de vídeo (como no OBS), a letra é desenhada com as
+  mesmas fontes e tamanhos, e o fundo de cada hino é montado uma vez e
+  guardado. Num Pentium antigo com 4 GB, vídeo e troca de letra não travam.
+  O mpv vai junto no instalador do Windows; no Linux, vem do sistema (o
+  pacote `.deb` já pede). Dá para voltar ao jeito antigo em **Telas →
+  Desenho das telas → Compatível**.
 - **Monitor de retorno.** Qualquer tela pode virar o retorno de quem canta ou
   prega: letra grande sem fundo, o próximo slide e as horas. Só ali aparecem
   o **recado do operador** ("Faltam 5 minutos") e o **cronômetro do
@@ -229,6 +237,16 @@ Decisões que valem lembrar:
   existe ou não. Downloads gravam em `.part` e renomeiam no fim.
 - **Instalação atômica do catálogo.** O pacote é extraído ao lado e só troca
   o atual se estiver completo — um download ruim nunca estraga o que funciona.
+- **Projeção leve (`src-tauri/src/projection`).** Cada tela é um processo
+  do mpv controlado pelo canal JSON dele. `render.rs` transforma o estado do
+  palco em fundo + eventos ASS (o formato de legenda que o libass desenha),
+  repetindo os tamanhos do CSS e medindo o texto com a própria fonte
+  (`text.rs`), já que o libass não quebra linha como o navegador.
+  `background.rs` monta a foto com o escurecido num JPG, guardado pela
+  descrição. As fontes embutidas vão em TTF (`src-tauri/fonts`, geradas por
+  `scripts/fonts-ttf.py`). Transições são passos de opacidade; vídeo, posição
+  e fim vêm dos eventos do mpv. Sem mpv, as telas voltam a ser janelas do
+  WebView (`Output.svelte`).
 - **O retorno desenha o mesmo palco.** Cada cena de slide leva também o
   slide seguinte; o telão o ignora, o retorno mostra embaixo.
 - **Telas que somem.** Um vigia confere os monitores a cada 2 segundos. Se um

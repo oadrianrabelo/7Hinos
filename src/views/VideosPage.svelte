@@ -25,6 +25,11 @@
       : outputs.forVideo.map((o) => o.label),
   );
 
+  /** O vídeo toca em telas nativas (mpv): a prévia não precisa tocar também. */
+  const lightweight = $derived(
+    !!video.state?.targets.length && video.state.targets.every((l) => outputs.outputs.find((o) => o.label === l)?.native),
+  );
+
   async function addVideos() {
     const picked = await open({
       multiple: true,
@@ -87,14 +92,24 @@
 {#if live}
   <section class="player card">
     <div class="preview">
-      <VideoLayer
-        state={live}
-        muted
-        bind:duration={video.duration}
-        bind:position={video.position}
-        onended={() => video.ended()}
-        onerror={() => video.failed(live.path, live.title)}
-      />
+      {#if lightweight}
+        <!-- Projeção leve: o mpv toca nas telas; aqui não se decodifica o vídeo
+             de novo (era o que travava computador fraco). -->
+        <div class="native">
+          <Film size={34} strokeWidth={1.5} />
+          <span>{live.playing ? "Tocando nas telas" : "Pausado"}</span>
+          <span class="muted small">{formatTime(video.position)} de {formatTime(video.duration)}</span>
+        </div>
+      {:else}
+        <VideoLayer
+          state={live}
+          muted
+          bind:duration={video.duration}
+          bind:position={video.position}
+          onended={() => video.ended()}
+          onerror={() => video.failed(live.path, live.title)}
+        />
+      {/if}
     </div>
     <div class="controls">
       <div class="title-row">
@@ -298,6 +313,23 @@
     border-radius: var(--radius);
     overflow: hidden;
     background: #000;
+  }
+
+  .native {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+  }
+
+  .native .small {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
   }
 
   .controls {

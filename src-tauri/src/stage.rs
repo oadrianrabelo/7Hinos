@@ -170,6 +170,7 @@ impl Stage {
             state.clone()
         };
         let _ = app.emit(STAGE_EVENT, snapshot);
+        crate::projection::notify(app);
     }
 }
 

@@ -78,6 +78,10 @@
   });
   const pulpitTimer = $derived(pulpit.current.timer ? timerDisplay(pulpit.current.timer, pulpitNow) : null);
   const modes: [PlayMode, string][] = [["voice", "Cantado"], ["playback", "Playback"], ["lyrics", "Só letra"]];
+
+  // Na projeção leve a prévia troca sem transição: num computador fraco,
+  // cada efeito no controle disputa o processador com o telão.
+  const previewAnimates = $derived(settings.current.projection === "web");
 </script>
 
 <aside class="stage" data-tour="stage">
@@ -106,9 +110,9 @@
 
   <div class="preview" class:dim={!onScreen && isLive && isBlack}>
     {#if showStage}
-      <SceneView scene={stage.current.scene} style={settings.current.slide} idle={settings.current.idle} screen={settings.current.screenStyle} />
+      <SceneView scene={stage.current.scene} style={settings.current.slide} idle={settings.current.idle} screen={settings.current.screenStyle} animate={previewAnimates} />
     {:else}
-      <SlideView slide={previewSlide} style={settings.current.slide} />
+      <SlideView slide={previewSlide} style={settings.current.slide} animate={previewAnimates} />
     {/if}
   </div>
 

@@ -178,6 +178,8 @@ export interface Settings {
   localSources: string[];
   legacyMigrated: boolean;
   pendingFavorites: { title: string; album: string }[];
+  /** Quem desenha as telas: leve (mpv), compatível (WebView) ou automático. */
+  projection: "auto" | "light" | "web";
 }
 
 /** Uma instalação do LouvorJA desktop encontrada no disco. */
@@ -345,6 +347,8 @@ export interface Output {
   displayId: string | null;
   name: string;
   role: OutputRole;
+  /** Desenhada pelo mpv (projeção leve). */
+  native?: boolean;
 }
 
 /** O que um pacote de pendrive contém. */

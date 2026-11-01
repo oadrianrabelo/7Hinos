@@ -114,6 +114,7 @@ export const api = {
 
   displays: () => invoke<Display[]>("displays_list"),
   outputs: () => invoke<Output[]>("outputs_list"),
+  projectionAvailable: () => invoke<boolean>("projection_available"),
   openOutput: (displayId: string | null, role: OutputRole = "audience") => invoke<string>("output_open", { displayId, role }),
   closeOutput: (label: string) => invoke<void>("output_close", { label }),
   closeOutputs: () => invoke<void>("outputs_close_all"),
@@ -135,6 +136,8 @@ export interface Events {
   "video://failed": { path: string; title: string };
   /** O vídeo chegou ao fim (avisado pela tela que toca o som). */
   "video://ended": { path: string };
+  /** Projeção leve: onde o vídeo está, contado pelo mpv. */
+  "video://position": { position: number; duration: number };
   /** Um comando do celular (próximo, anterior, tela preta, hino pelo número…). */
   "remote://command": { action: string; index?: number; query?: string };
   "package://progress": { done: number; total: number };

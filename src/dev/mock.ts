@@ -227,6 +227,7 @@ export function install() {
     localSources: params.get("local") === "1" ? ["C:\\Program Files (x86)\\Louvor JA"] : [],
     legacyMigrated: true,
     pendingFavorites: [],
+    projection: (params.get("projection") as Settings["projection"]) ?? "auto",
   };
   let installed = params.get("installed") !== "0";
   // ?scene=slide: as telas já abrem com um hino no ar (para ver telão e retorno).
@@ -486,6 +487,8 @@ export function install() {
             { id: "tv", name: "Tela 2", width: 1920, height: 1080, primary: false, hostsController: false, output: outputs.find((o) => o.displayId === "tv")?.label ?? null },
             { id: "stage", name: "Tela 3", width: 1920, height: 1080, primary: false, hostsController: false, output: outputs.find((o) => o.displayId === "stage")?.label ?? null },
           ];
+        case "projection_available":
+          return params.get("native") === "1";
         case "outputs_list":
           return outputs;
         case "output_open":

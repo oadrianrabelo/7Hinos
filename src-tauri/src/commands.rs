@@ -113,6 +113,7 @@ pub fn settings_update(
     let saved = state
         .settings
         .try_update(|s| settings::apply_patch(s, &patch))?;
+    crate::projection::notify(&app);
     if saved.language != previous.language {
         state.library.load(saved.language)?;
         emit_catalog(&app, false);
@@ -889,10 +890,17 @@ pub fn stage_pulpit(app: AppHandle, state: State<AppState>, pulpit: Pulpit) {
     state.stage.set_pulpit(&app, pulpit);
 }
 
+/// A projeção leve (mpv) está disponível neste computador.
+#[tauri::command]
+pub fn projection_available(state: State<AppState>) -> bool {
+    state.native.available()
+}
+
 /// Cada tela aberta mostra o próprio nome por alguns segundos.
 #[tauri::command]
 pub fn displays_identify(app: AppHandle) {
     let _ = app.emit(displays::IDENTIFY_EVENT, ());
+    app.state::<AppState>().native.identify(&app);
 }
 
 /// Marca os dados para apagar e reinicia; a limpeza acontece na abertura.

@@ -74,6 +74,21 @@
     "macOS": {
       "signingIdentity": "-",
       "minimumSystemVersion": "10.15"
+    },
+    "resources": {
+      "fonts/*": "fonts/"
+    },
+    "linux": {
+      "deb": {
+        "depends": [
+          "mpv"
+        ]
+      },
+      "rpm": {
+        "depends": [
+          "mpv"
+        ]
+      }
     }
   },
   "plugins": {

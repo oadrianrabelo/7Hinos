@@ -14,6 +14,7 @@ mod library;
 mod media;
 mod media_server;
 mod package;
+mod projection;
 mod remote;
 mod reset;
 mod settings;
@@ -127,6 +128,14 @@ pub fn run() {
                 media_server.allow_file(std::path::Path::new(&video.path));
             }
 
+            let native = projection::Native::new(
+                app.path().resource_dir().ok().as_deref(),
+                &data_dir,
+                &app.path()
+                    .app_cache_dir()
+                    .unwrap_or_else(|_| data_dir.join("cache")),
+                library.user().media_dir().to_path_buf(),
+            );
             app.manage(AppState {
                 settings,
                 library,
@@ -138,6 +147,7 @@ pub fn run() {
                 bible: bible::Bible::new(data_dir.join("bible.db")),
                 decks: decks::Decks::new(data_dir.join(DECKS_DIR)),
                 remote: Default::default(),
+                native,
             });
             commands::apply_local_sources(app.handle());
             commands::start_remote_if_enabled(app.handle());
@@ -227,6 +237,7 @@ pub fn run() {
             commands::remote_publish,
             commands::video_tag,
             commands::displays_identify,
+            commands::projection_available,
             commands::reset_all,
         ])
         .run(tauri::generate_context!())
