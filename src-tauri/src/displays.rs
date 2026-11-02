@@ -35,6 +35,8 @@ pub const IDENTIFY_EVENT: &str = "displays://identify";
 const WATCH_EVERY: Duration = Duration::from_secs(2);
 pub const MAIN_WINDOW: &str = "main";
 const OUTPUT_PREFIX: &str = "output-";
+/// Janelinhas de "Identificar telas" (não são projeções).
+const IDENTIFY_PREFIX: &str = "identify-";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -411,6 +413,71 @@ fn refit(app: &AppHandle, display_id: &str) {
             let _ = window.set_fullscreen(true);
         }
     }
+}
+
+/// "Identificar telas" também nas telas sem projeção aberta: uma janelinha
+/// com o nome ("Tela 2") no meio de cada monitor, por alguns segundos. As
+/// telas com projeção mostram o nome nelas mesmas.
+pub fn identify_monitors(app: &AppHandle) -> Result<()> {
+    for (label, window) in app.webview_windows() {
+        if label.starts_with(IDENTIFY_PREFIX) {
+            let _ = window.destroy();
+        }
+    }
+    let displays = list(app)?;
+    let monitors = app.available_monitors()?;
+    for (i, d) in displays.iter().enumerate() {
+        if d.output.is_some() {
+            continue;
+        }
+        let Some(monitor) = monitors.iter().find(|m| monitor_id(m) == d.id) else {
+            continue;
+        };
+        let mut detail = format!("{} × {}", d.width, d.height);
+        if d.primary {
+            detail.push_str(" · Principal");
+        }
+        if d.hosts_controller {
+            detail.push_str(" · Este controle está aqui");
+        }
+        // O nome vai direto para a página, antes de ela carregar.
+        let script = format!(
+            "window.__SEVENH_IDENTIFY__ = {};",
+            serde_json::json!({ "name": d.name, "detail": detail })
+        );
+        let scale = monitor.scale_factor();
+        let (w, h) = (520.0, 260.0);
+        let size = monitor.size().to_logical::<f64>(scale);
+        let pos = monitor.position().to_logical::<f64>(scale);
+        let label = format!("{IDENTIFY_PREFIX}{i}");
+        let window = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("index.html".into()))
+            .initialization_script(&script)
+            .title("7Hinos — Identificar telas")
+            .decorations(false)
+            .resizable(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .focused(false)
+            .visible(false)
+            .inner_size(w, h)
+            .position(
+                pos.x + (size.width - w) / 2.0,
+                pos.y + (size.height - h) / 2.0,
+            )
+            .build()?;
+        window.show()?;
+    }
+    refocus_controller(app);
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(Duration::from_secs(4)).await;
+        for (label, window) in app.webview_windows() {
+            if label.starts_with(IDENTIFY_PREFIX) {
+                let _ = window.destroy();
+            }
+        }
+    });
+    Ok(())
 }
 
 /// Fecha e abre de novo todas as projeções, nas mesmas telas e papéis.

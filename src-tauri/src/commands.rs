@@ -935,6 +935,9 @@ pub fn projection_available(state: State<AppState>) -> bool {
 pub fn displays_identify(app: AppHandle) {
     let _ = app.emit(displays::IDENTIFY_EVENT, ());
     app.state::<AppState>().native.identify(&app);
+    if let Err(e) = displays::identify_monitors(&app) {
+        log::warn!("não deu para identificar as telas: {e}");
+    }
 }
 
 /// Marca os dados para apagar e reinicia; a limpeza acontece na abertura.
