@@ -31,6 +31,8 @@ pub enum Event {
 }
 
 pub struct Mpv {
+    /// Processo do mpv (para achar a janela dele no Windows).
+    pub pid: Option<u32>,
     commands: mpsc::UnboundedSender<String>,
     child: tokio::sync::Mutex<Option<Child>>,
 }
@@ -171,6 +173,7 @@ pub async fn spawn(
     let mut cmd = Command::from(std_cmd);
     cmd.kill_on_drop(true);
     let child = cmd.spawn()?;
+    let pid = child.id();
 
     let (reader, mut writer) = connect(ipc).await?;
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
@@ -197,6 +200,7 @@ pub async fn spawn(
     });
 
     let mpv = Mpv {
+        pid,
         commands: tx,
         child: tokio::sync::Mutex::new(Some(child)),
     };
