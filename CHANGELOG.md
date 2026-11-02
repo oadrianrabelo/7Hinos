@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.8.0...v1.9.0) (2026-11-02)
+
+
+### ✨ Novas Funcionalidades
+
+* **telas:** identificar os monitores mesmo sem projeção aberta ([#48](https://github.com/oadrianrabelo/7Hinos/issues/48)) ([eb29d59](https://github.com/oadrianrabelo/7Hinos/commit/eb29d59ea9440482f6a41547b8eee70f725062d5))
+
+
+### 🐛 Correções
+
+* **projecao:** telão e retorno no monitor escolhido e sem o ícone do mpv ([#46](https://github.com/oadrianrabelo/7Hinos/issues/46)) ([f95205d](https://github.com/oadrianrabelo/7Hinos/commit/f95205d197c2fc768ad7387bb987b323bba3f0d5))
+
 ## [1.8.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.7.0...v1.8.0) (2026-11-01)
 
 
