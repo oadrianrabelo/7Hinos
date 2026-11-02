@@ -3840,7 +3840,7 @@ dependencies = [
 
 [[package]]
 name = "sete-hinos"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "chrono",
  "fontdb",
@@ -3866,6 +3866,7 @@ dependencies = [
  "tokio",
  "ttf-parser",
  "url",
+ "windows-sys 0.61.2",
  "zip 9.1.2",
 ]
 

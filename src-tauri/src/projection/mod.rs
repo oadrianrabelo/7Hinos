@@ -15,6 +15,7 @@ mod output;
 mod render;
 mod text;
 mod timer;
+mod win;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

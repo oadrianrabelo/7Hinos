@@ -22,6 +22,7 @@ use super::background;
 use super::mpv::{self, Event, Mpv};
 use super::render::{self, Background, Ctx, Frame, Rect};
 use super::text::Fonts;
+use super::win;
 
 /// O que todas as telas precisam saber.
 #[derive(Clone)]
@@ -112,13 +113,22 @@ fn args(shared: &Shared, placement: &Placement) -> Vec<String> {
     a.push(format!("--osd-fonts-dir={}", shared.fonts.dir().display()));
     match &placement.monitor {
         Some((x, y, w, h, name)) => {
-            a.push("--fs".into());
             a.push("--no-border".into());
             a.push("--no-window-dragging".into());
-            a.push(format!("--geometry={w}x{h}+{x}+{y}"));
-            if !name.is_empty() {
-                a.push(format!("--screen-name={name}"));
-                a.push(format!("--fs-screen-name={name}"));
+            // A janela não muda de tamanho sozinha ao abrir outro arquivo.
+            a.push("--auto-window-resize=no".into());
+            if cfg!(windows) {
+                // No Windows o 7Hinos põe a janela no monitor (win.rs) e só
+                // depois liga a tela cheia, que fica no monitor onde ela está.
+                a.push(format!("--geometry={w}x{h}"));
+                a.push("--fs-screen=current".into());
+            } else {
+                a.push("--fs".into());
+                a.push(format!("--geometry={w}x{h}+{x}+{y}"));
+                if !name.is_empty() {
+                    a.push(format!("--screen-name={name}"));
+                    a.push(format!("--fs-screen-name={name}"));
+                }
             }
         }
         None => a.push("--geometry=960x540".into()),
@@ -163,6 +173,20 @@ pub fn start(
         }
         // Em janela, dois cliques ocupam a tela inteira (como antes).
         mpv.command(json!(["keybind", "MBTN_LEFT_DBL", "cycle fullscreen"]));
+        if cfg!(windows) {
+            if let Some(pid) = mpv.pid {
+                let rect = placement.monitor.as_ref().map(|m| (m.0, m.1, m.2, m.3));
+                let found = tokio::task::spawn_blocking(move || win::place(pid, rect))
+                    .await
+                    .unwrap_or(false);
+                if !found {
+                    log::warn!("não achei a janela do mpv da projeção {label}");
+                }
+                if rect.is_some() {
+                    mpv.set("fullscreen", json!(true));
+                }
+            }
+        }
         mpv.command(json!(["observe_property", 10, "osd-width"]));
         mpv.command(json!(["observe_property", 11, "osd-height"]));
         let size = placement
