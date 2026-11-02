@@ -38,7 +38,7 @@
 <PageHeader title="Telas" subtitle="Escolha onde a letra aparece para a igreja e, se quiser, um retorno para quem está à frente">
   {#snippet actions()}
     {#if outputs.outputs.length}
-      <button class="btn" onclick={() => api.identifyDisplays()} title="Cada tela aberta mostra o próprio nome"><ScanEye size={15} /> Identificar telas</button>
+      <button class="btn" onclick={() => api.identifyDisplays()} title="Cada monitor mostra o próprio nome por alguns segundos, com ou sem projeção aberta"><ScanEye size={15} /> Identificar telas</button>
       <button class="btn" onclick={() => outputs.reopen()} title="Fecha e abre de novo todas as telas, nos mesmos lugares. Use se alguma travar.">
         <RotateCw size={15} /> Reabrir telas
       </button>

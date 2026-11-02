@@ -43,8 +43,15 @@ if (import.meta.env.VITE_MOCK) (await import("./dev/mock")).install();
 document.documentElement.dataset.platform = navigator.userAgent.includes("Mac") ? "mac" : "other";
 
 // Uma única página para todas as janelas: o rótulo decide o papel.
-const isOutput = getCurrentWebviewWindow().label.startsWith("output-");
+const label = getCurrentWebviewWindow().label;
+const isOutput = label.startsWith("output-");
 
-installErrorHandlers();
-await initMedia();
-mount(isOutput ? Output : Controller, { target: document.getElementById("app")! });
+if (label.startsWith("identify-")) {
+  // "Identificar telas": só o nome do monitor, sem falar com o app.
+  const Identify = (await import("./windows/Identify.svelte")).default;
+  mount(Identify, { target: document.getElementById("app")! });
+} else {
+  installErrorHandlers();
+  await initMedia();
+  mount(isOutput ? Output : Controller, { target: document.getElementById("app")! });
+}
