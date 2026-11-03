@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/oadrianrabelo/7Hinos/compare/v1.10.0...v1.10.1) (2026-11-03)
+
+
+### 🐛 Correções
+
+* **projecao:** mpv dentro de janela do 7Hinos, encerrado junto com o app ([#55](https://github.com/oadrianrabelo/7Hinos/issues/55)) ([d141932](https://github.com/oadrianrabelo/7Hinos/commit/d141932303d768e28d55145077840574514710db))
+
 ## [1.10.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.9.0...v1.10.0) (2026-11-03)
 
 
