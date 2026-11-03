@@ -5,6 +5,7 @@ import {
   emptyRoster,
   generateMonth,
   normalizeRoster,
+  printList,
   printTables,
   serviceRoles,
   shortDate,
@@ -139,6 +140,27 @@ describe("exportar", () => {
       "Culto de domingo · Domingo 18h",
       "Programações especiais",
     ]);
+  });
+
+  it("lista por data, como a folha de pregação da igreja", () => {
+    const doc = church();
+    doc.services = generateMonth(doc, 2026, 11);
+    doc.services[0].assigned = { pregacao: ["ana"] };
+    const special = doc.services.find((s) => s.date === "2026-11-11")!;
+    special.name = "Culto Jovem";
+    const sab = doc.services.find((s) => s.date === "2026-11-14")!;
+    sab.note = "Dia do Pastor";
+    const sheet = printList(doc, doc.services, ["pregacao"]);
+    expect(sheet.title).toBe("Escala de Pregação");
+    expect(sheet.roles.map((r) => r.name)).toEqual(["Pregação"]);
+    expect(sheet.rows).toHaveLength(13);
+    expect(sheet.rows[0]).toMatchObject({ date: "01/11/2026", weekday: "Domingo", kind: "-", time: "18:00", note: "-" });
+    expect(sheet.rows[0].cells[0]).toEqual({ name: "Ana", pending: false });
+    expect(sheet.rows[1].cells[0]).toEqual({ name: "(A definir)", pending: true });
+    expect(sheet.rows.find((r) => r.date === "11/11/2026")!.kind).toBe("Culto Jovem");
+    expect(sheet.rows.find((r) => r.date === "14/11/2026")!.note).toBe("Dia do Pastor");
+    // Sem escolher: todas as funções do mês.
+    expect(printList(doc, doc.services, []).title).toBe("Escala");
   });
 
   it("datas e horas curtas", () => {

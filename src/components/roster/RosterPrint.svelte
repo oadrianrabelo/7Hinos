@@ -3,11 +3,18 @@
   sistema). Fica fora da tela e só aparece na impressão: o resto do app some.
 -->
 <script lang="ts">
-  import { assignedNames, printTables, shortDate, shortTime, type RosterDoc, type Service } from "../../lib/roster";
+  import { assignedNames, printList, printTables, shortDate, shortTime, type RosterDoc, type Service } from "../../lib/roster";
 
   let { doc, services, title }: { doc: RosterDoc; services: Service[]; title: string } = $props();
 
-  const tables = $derived(printTables(doc, services));
+  const list = $derived(doc.print.layout === "list");
+  const sheet = $derived(printList(doc, services, doc.print.roles));
+  // No modelo por tipo de culto também valem as funções escolhidas.
+  const tables = $derived(
+    printTables(doc, services)
+      .map((t) => ({ ...t, roles: doc.print.roles.length ? t.roles.filter((r) => doc.print.roles.includes(r.id)) : t.roles }))
+      .filter((t) => t.roles.length),
+  );
 
   /** Leva a folha para o fim do <body>, fora das áreas com rolagem. */
   function portal(node: HTMLElement) {
@@ -23,6 +30,37 @@
 </script>
 
 <div class="print-sheet" use:portal>
+  {#if list}
+    <!-- Lista por data: uma linha por culto, fácil de ler no mural. -->
+    <header class="centered">
+      <h1>{sheet.title.toUpperCase()} - {title.replace(" de ", " ")}</h1>
+      {#if doc.church}<p>{doc.church}</p>{/if}
+    </header>
+    <table class="list">
+      <thead>
+        <tr>
+          <th class="c-date">Data</th>
+          <th>Dia da semana</th>
+          <th>Tipo de culto</th>
+          <th class="c-time">Horário</th>
+          {#each sheet.roles as r (r.id)}<th>{sheet.roles.length === 1 && r.id === "pregacao" ? "Pregador" : r.name}</th>{/each}
+          <th><em>Observações</em></th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each sheet.rows as row (row.id)}
+          <tr>
+            <td class="c-date"><strong>{row.date}</strong></td>
+            <td>{row.weekday}</td>
+            <td>{row.kind}</td>
+            <td class="c-time">{row.time}</td>
+            {#each row.cells as c, i (i)}<td class="who" class:pending={c.pending}>{c.name}</td>{/each}
+            <td class="note">{row.note}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  {:else}
   <header>
     <h1>Escala de {title}</h1>
     {#if doc.church}<p>{doc.church}</p>{/if}
@@ -54,6 +92,7 @@
       </table>
     </section>
   {/each}
+  {/if}
   <footer>Feito no 7Hinos</footer>
 </div>
 
@@ -151,6 +190,65 @@
       display: block;
       font-size: 8pt;
       color: #444;
+    }
+
+    header.centered {
+      flex-direction: column;
+      align-items: center;
+      border-bottom: 0;
+      gap: 1mm;
+    }
+
+    header.centered h1 {
+      color: #2563eb;
+      font-size: 17pt;
+    }
+
+    header.centered p {
+      font-size: 9.5pt;
+      font-weight: 400;
+      color: #2563eb;
+    }
+
+    table.list {
+      font-size: 9.5pt;
+    }
+
+    table.list th {
+      background: #2563eb;
+      color: #fff;
+      font-size: 10pt;
+      border-color: #1d4ed8;
+    }
+
+    table.list td {
+      padding: 1.6mm 1.8mm;
+      border-color: #cfd8e3;
+    }
+
+    table.list tbody tr:nth-child(odd) td {
+      background: #eef4ff;
+    }
+
+    table.list tbody tr:nth-child(even) td {
+      background: #fff;
+    }
+
+    .c-date {
+      width: 24mm;
+    }
+
+    .c-time {
+      width: 18mm;
+      text-align: center;
+    }
+
+    .who {
+      font-weight: 700;
+    }
+
+    .note {
+      font-style: italic;
     }
 
     footer {
