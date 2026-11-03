@@ -54,6 +54,15 @@ export interface RosterDoc {
   people: Person[];
   templates: ServiceTemplate[];
   services: Service[];
+  /** Como imprimir (lembrado entre um mês e outro). */
+  print: PrintOptions;
+}
+
+export interface PrintOptions {
+  /** "list": uma linha por culto, por data. "grouped": uma tabela por tipo de culto. */
+  layout: "list" | "grouped";
+  /** Funções na folha (vazio = todas as que aparecem no mês). */
+  roles: string[];
 }
 
 const role = (id: string, name: string, group: RosterRole["group"], slots = 1, active = true): RosterRole => ({
@@ -112,6 +121,7 @@ export function emptyRoster(): RosterDoc {
   return {
     version: 1,
     church: "",
+    print: { layout: "list", roles: [] },
     roles: DEFAULT_ROLES.map((r) => ({ ...r })),
     people: [],
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t, roles: [...t.roles] })),
@@ -127,6 +137,10 @@ export function normalizeRoster(raw: unknown): RosterDoc {
   return {
     version: 1,
     church: typeof doc.church === "string" ? doc.church : "",
+    print: {
+      layout: doc.print?.layout === "grouped" ? "grouped" : "list",
+      roles: Array.isArray(doc.print?.roles) ? doc.print.roles : [],
+    },
     roles: Array.isArray(doc.roles) && doc.roles.length ? doc.roles : base.roles,
     people: Array.isArray(doc.people)
       ? doc.people.map((p: Partial<Person>) => ({
@@ -173,6 +187,15 @@ export const monthKey = (iso: string) => iso.slice(0, 7);
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const WEEKDAYS_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const WEEKDAYS_LONG = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+
+/** "03/11/2026" */
+export function fullDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+export const weekdayLong = (iso: string) => WEEKDAYS_LONG[parseDate(iso).getDay()] ?? "";
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 export const weekdayName = (n: number) => WEEKDAYS[n] ?? "";
@@ -371,6 +394,46 @@ export function csv(doc: RosterDoc, services: Service[]): string {
  * Para imprimir: uma tabela por tipo de culto (datas nas linhas, funções nas
  * colunas) e as programações especiais juntas no fim.
  */
+export interface PrintRow {
+  id: string;
+  date: string;
+  weekday: string;
+  /** Nome do culto quando ele é especial ("Culto Jovem"); "-" num culto comum. */
+  kind: string;
+  time: string;
+  cells: { name: string; pending: boolean }[];
+  note: string;
+}
+
+/**
+ * Para imprimir em lista (o modelo que os irmãos entendem de primeira): uma
+ * linha por culto, em ordem de data, com as funções escolhidas.
+ */
+export function printList(doc: RosterDoc, services: Service[], roleIds: string[]): { title: string; roles: RosterRole[]; rows: PrintRow[] } {
+  const sorted = sortServices(services);
+  const used = doc.roles.filter((r) => r.active && sorted.some((s) => s.roles.includes(r.id)));
+  const roles = roleIds.length ? used.filter((r) => roleIds.includes(r.id)) : used;
+  const title = roles.length === 1 ? `Escala de ${roles[0].name}` : "Escala";
+  const rows = sorted.map((s) => {
+    const template = doc.templates.find((t) => t.id === s.templateId);
+    const special = !template || s.name !== template.name;
+    return {
+      id: s.id,
+      date: fullDate(s.date),
+      weekday: weekdayLong(s.date),
+      kind: special ? s.name : "-",
+      time: s.time,
+      cells: roles.map((r) => {
+        if (!s.roles.includes(r.id)) return { name: "-", pending: false };
+        const who = names(doc, s.assigned[r.id]);
+        return who ? { name: who, pending: false } : { name: "(A definir)", pending: true };
+      }),
+      note: s.note.trim() || "-",
+    };
+  });
+  return { title, roles, rows };
+}
+
 export function printTables(doc: RosterDoc, services: Service[]): { title: string; roles: RosterRole[]; services: Service[] }[] {
   const sorted = sortServices(services);
   const groups: { title: string; roles: RosterRole[]; services: Service[] }[] = [];

@@ -261,11 +261,11 @@ export const ARTICLES: Article[] = [
     title: "Montar a escala do mês (pregação, plataforma, recepção…)",
     summary: "Quem faz o quê em cada culto, com sugestão de nomes e folha para imprimir.",
     steps: [
-      "Abra Escala e, em Pessoas, cadastre quem participa e marque o que cada um faz.",
+      "Abra Escala e, em Pessoas, escolha a função (ex.: Pregação) e digite o nome de quem faz.",
       "Em Funções e cultos, desligue o que sua igreja não escala e confira os cultos de toda semana.",
       "Na aba Escala, clique em Montar o mês e depois em Sugerir nomes. Troque o que quiser.",
       "Programação especial acrescenta um culto de um dia só (sexta, semana de oração).",
-      "Imprimir gera a folha (dá para salvar em PDF); WhatsApp copia o texto para o grupo.",
+      "Imprimir: escolha Lista por data (uma linha por culto) e as funções; dá para salvar em PDF. WhatsApp copia o texto para o grupo.",
     ],
     keywords: ["escala", "pregacao", "pregador", "plataforma", "recepcao", "diaconos", "escola sabatina", "imprimir", "pdf", "whatsapp", "mes", "quem prega", "sonoplastia", "planilha"],
     category: "Culto",

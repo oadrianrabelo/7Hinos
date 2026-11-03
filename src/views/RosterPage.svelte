@@ -21,10 +21,22 @@
   let year = $state(now.getDate() > 20 && now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear());
   let month = $state(now.getDate() > 20 ? (now.getMonth() + 1) % 12 + 1 : now.getMonth() + 1);
   let tab = $state<"escala" | "pessoas" | "funcoes">("escala");
+  let printing = $state(false);
+
+
+  function togglePrintRole(id: string) {
+    roster.update((d) => {
+      const on = d.print.roles.includes(id);
+      d.print.roles = on ? d.print.roles.filter((r) => r !== id) : [...d.print.roles, id];
+    });
+  }
 
   const doc = $derived(roster.doc);
   const services = $derived(servicesOfMonth(doc, year, month));
   const title = $derived(monthTitle(year, month));
+  /** Funções que aparecem nos cultos deste mês (para escolher o que imprimir). */
+  const monthRoles = $derived(doc.roles.filter((r) => r.active && services.some((s) => s.roles.includes(r.id))));
+
   const missing = $derived(generateMonth(doc, year, month).length);
   const empty = $derived(services.reduce((n, s) => n + doc.roles.filter((r) => r.active && s.roles.includes(r.id)).reduce((m, r) => m + Math.max(1, r.slots) - (s.assigned[r.id] ?? []).filter(Boolean).length, 0), 0));
 
@@ -136,12 +148,40 @@
       <button class="btn" onclick={openExtra}><CalendarPlus size={15} /> Programação especial</button>
       {#if services.length}
         <button class="btn" onclick={fill} disabled={!empty} title={empty ? `${empty} vagas sem ninguém` : "Todas as vagas preenchidas"}><Sparkles size={15} /> Sugerir nomes</button>
-        <button class="btn" onclick={() => window.print()}><Printer size={15} /> Imprimir</button>
+        <button class="btn" class:on={printing} aria-expanded={printing} onclick={() => (printing = !printing)}><Printer size={15} /> Imprimir</button>
         <button class="btn" onclick={copyWhatsapp}><ClipboardCopy size={15} /> WhatsApp</button>
         <button class="btn btn-plain" onclick={exportCsv} title="Planilha para Excel ou LibreOffice"><FileSpreadsheet size={15} /> Planilha</button>
       {/if}
     </div>
   </div>
+
+  {#if printing && services.length}
+    <div class="card print-panel">
+      <div class="print-row">
+        <span class="section-title">Modelo</span>
+        <div class="segmented">
+          <button aria-pressed={doc.print.layout === "list"} onclick={() => roster.update((d) => (d.print.layout = "list"))}>Lista por data</button>
+          <button aria-pressed={doc.print.layout === "grouped"} onclick={() => roster.update((d) => (d.print.layout = "grouped"))}>Por tipo de culto</button>
+        </div>
+        <span class="muted hint">
+          {doc.print.layout === "list" ? "Uma linha por culto, em ordem de data. O mais fácil de ler no mural." : "Uma tabela para cada culto da semana (sábado, quarta, domingo)."}
+        </span>
+      </div>
+      <div class="print-row">
+        <span class="section-title">Funções na folha</span>
+        <div class="chips">
+          <button class="chip" class:on={!doc.print.roles.length} onclick={() => roster.update((d) => (d.print.roles = []))}>Todas</button>
+          {#each monthRoles as r (r.id)}
+            <button class="chip" class:on={doc.print.roles.includes(r.id)} aria-pressed={doc.print.roles.includes(r.id)} onclick={() => togglePrintRole(r.id)}>{r.name}</button>
+          {/each}
+        </div>
+      </div>
+      <div class="print-actions">
+        <button class="btn btn-primary" onclick={() => window.print()}><Printer size={15} /> Imprimir agora</button>
+        <span class="muted hint">Para PDF, escolha "Microsoft Print to PDF" (ou "Salvar como PDF") na janela da impressora.</span>
+      </div>
+    </div>
+  {/if}
 
   {#if adding}
     <form class="card extra" onsubmit={(e) => { e.preventDefault(); addExtra(); }}>
@@ -209,6 +249,62 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
+  }
+
+  .on {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .print-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .print-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .print-row .section-title {
+    min-width: 9rem;
+  }
+
+  .print-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .hint {
+    font-size: 0.85rem;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .chip {
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+
+  .chip.on {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
   }
 
   .extra {
