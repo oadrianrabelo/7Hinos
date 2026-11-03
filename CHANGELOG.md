@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.10.2](https://github.com/oadrianrabelo/7Hinos/compare/v1.10.1...v1.10.2) (2026-11-03)
+
+
+### 🐛 Correções
+
+* **deps:** bump @lucide/svelte ([#51](https://github.com/oadrianrabelo/7Hinos/issues/51)) ([f222983](https://github.com/oadrianrabelo/7Hinos/commit/f22298353558e2d152642dab2dcf7ae45250f814))
+* **deps:** bump the cargo-menores group across 1 directory with 3 updates ([#57](https://github.com/oadrianrabelo/7Hinos/issues/57)) ([005c659](https://github.com/oadrianrabelo/7Hinos/commit/005c6593bc36f26735cf5990821d9f7f1532e44b))
+* **deps:** bump the tauri group across 1 directory with 3 updates ([#50](https://github.com/oadrianrabelo/7Hinos/issues/50)) ([a1b6182](https://github.com/oadrianrabelo/7Hinos/commit/a1b61826e46140bc448e722bd4884ba48a1ee9f7))
+* **deps:** bump the tauri group with 2 updates ([#49](https://github.com/oadrianrabelo/7Hinos/issues/49)) ([babdeb6](https://github.com/oadrianrabelo/7Hinos/commit/babdeb66f060f4573639d6007abec74c4b760618))
+
 ## [1.10.1](https://github.com/oadrianrabelo/7Hinos/compare/v1.10.0...v1.10.1) (2026-11-03)
 
 
