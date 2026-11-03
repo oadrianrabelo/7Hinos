@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.9.0...v1.10.0) (2026-11-03)
+
+
+### ✨ Novas Funcionalidades
+
+* **escala:** folha em lista por data e pessoas organizadas por função ([#53](https://github.com/oadrianrabelo/7Hinos/issues/53)) ([79aa028](https://github.com/oadrianrabelo/7Hinos/commit/79aa0281e7fd8565e9e7bbe6264d287d332f0305))
+
 ## [1.9.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.8.0...v1.9.0) (2026-11-02)
 
 
