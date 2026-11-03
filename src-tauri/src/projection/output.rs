@@ -48,6 +48,10 @@ pub struct Placement {
     pub role: Role,
     /// "Tela 2", para "Identificar telas".
     pub name: String,
+    /// Janela do 7Hinos onde o mpv desenha (`--wid`). Com ela, quem cuida do
+    /// monitor, da tela cheia e da barra de tarefas é o 7Hinos, como nas
+    /// telas de antes; o mpv vira só o desenho dentro.
+    pub wid: Option<i64>,
 }
 
 pub struct Handle {
@@ -62,6 +66,14 @@ impl Handle {
         self.closed.store(true, Ordering::SeqCst);
         if let Some(mpv) = self.mpv.locked().clone() {
             tokio::spawn(async move { mpv.quit().await });
+        }
+    }
+
+    /// Encerra o mpv na hora (o 7Hinos está fechando).
+    pub fn kill_now(&self) {
+        self.closed.store(true, Ordering::SeqCst);
+        if let Some(mpv) = self.mpv.locked().clone() {
+            mpv.kill_now();
         }
     }
 }
@@ -111,6 +123,10 @@ fn args(shared: &Shared, placement: &Placement) -> Vec<String> {
     .to_vec();
     a.push(format!("--title={title}"));
     a.push(format!("--osd-fonts-dir={}", shared.fonts.dir().display()));
+    if let Some(wid) = placement.wid {
+        a.push(format!("--wid={wid}"));
+        return a;
+    }
     match &placement.monitor {
         Some((x, y, w, h, name)) => {
             a.push("--no-border".into());
@@ -173,7 +189,7 @@ pub fn start(
         }
         // Em janela, dois cliques ocupam a tela inteira (como antes).
         mpv.command(json!(["keybind", "MBTN_LEFT_DBL", "cycle fullscreen"]));
-        if cfg!(windows) {
+        if cfg!(windows) && placement.wid.is_none() {
             if let Some(pid) = mpv.pid {
                 let rect = placement.monitor.as_ref().map(|m| (m.0, m.1, m.2, m.3));
                 let found = tokio::task::spawn_blocking(move || win::place(pid, rect))

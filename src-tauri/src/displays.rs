@@ -278,7 +278,21 @@ fn open_native(
         .as_ref()
         .and_then(|id| list(app).ok()?.into_iter().find(|d| &d.id == id))
         .map_or_else(|| "Janela".to_owned(), |d| d.name);
+    // No Windows o mpv desenha dentro de uma janela do 7Hinos (sem WebView):
+    // ela abre no monitor certo e fica fora da barra de tarefas, como as
+    // telas de antes.
+    #[cfg(windows)]
+    let wid = match host_window(app, &label, monitor.as_ref(), role) {
+        Ok(wid) => Some(wid),
+        Err(e) => {
+            log::warn!("janela da projeção leve: {e}; o mpv abre sozinho");
+            None
+        }
+    };
+    #[cfg(not(windows))]
+    let wid = None;
     let placement = crate::projection::Placement {
+        wid,
         monitor: monitor.as_ref().map(|m| {
             (
                 m.position().x,
@@ -300,7 +314,13 @@ fn open_native(
         .native
         .open(app, &label, placement, {
             let app = app.clone();
-            move |label| output_gone(&app, &label)
+            move |label| {
+                // O mpv fechou: a janela dele vai junto.
+                if let Some(host) = app.get_window(&host_label(&label)) {
+                    let _ = host.destroy();
+                }
+                output_gone(&app, &label);
+            }
         })
         .map_err(Error::other)?;
     let _ = app.emit(DISPLAYS_EVENT, ());
@@ -313,6 +333,47 @@ fn open_native(
         }
     });
     Ok(label)
+}
+
+fn host_label(label: &str) -> String {
+    format!("{label}-tela")
+}
+
+/// Cria a janela (sem WebView) onde o mpv desenha e devolve o identificador
+/// dela para o `--wid`. No monitor: sem bordas, fora da barra de tarefas e
+/// em tela cheia nele, do mesmo jeito que as telas de antes.
+#[cfg(windows)]
+fn host_window(app: &AppHandle, label: &str, monitor: Option<&Monitor>, role: Role) -> Result<i64> {
+    let title = match role {
+        Role::Audience => "7Hinos — Projeção",
+        Role::Monitor => "7Hinos — Retorno",
+    };
+    let builder = tauri::window::WindowBuilder::new(app, host_label(label))
+        .title(title)
+        .visible(false)
+        .focused(false)
+        .background_color(tauri::window::Color(0, 0, 0, 255));
+    let window = match monitor {
+        Some(_) => builder.decorations(false).skip_taskbar(true).build()?,
+        None => builder
+            .inner_size(960.0, 540.0)
+            .min_inner_size(320.0, 180.0)
+            .build()?,
+    };
+    if let Some(m) = monitor {
+        window.set_position(*m.position())?;
+        window.set_size(*m.size())?;
+        window.set_fullscreen(true)?;
+    }
+    window.show()?;
+    // Fechar a janela (Alt+F4) fecha a projeção.
+    let (app2, output) = (app.clone(), label.to_owned());
+    window.on_window_event(move |event| {
+        if matches!(event, tauri::WindowEvent::Destroyed) {
+            app2.state::<AppState>().native.close(&output);
+        }
+    });
+    Ok(window.hwnd()?.0 as isize as i64)
 }
 
 /// Uma tela nativa fechou (pela pessoa, por erro ou de propósito).
@@ -406,6 +467,13 @@ fn refit(app: &AppHandle, display_id: &str) {
         .collect();
     for label in labels {
         if let Some(window) = app.get_webview_window(&label) {
+            log::info!("tela {display_id} mudou de resolução; reajustando {label}");
+            let _ = window.set_fullscreen(false);
+            let _ = window.set_position(*monitor.position());
+            let _ = window.set_size(*monitor.size());
+            let _ = window.set_fullscreen(true);
+        } else if let Some(window) = app.get_window(&host_label(&label)) {
+            // Projeção leve: a janela onde o mpv desenha.
             log::info!("tela {display_id} mudou de resolução; reajustando {label}");
             let _ = window.set_fullscreen(false);
             let _ = window.set_position(*monitor.position());

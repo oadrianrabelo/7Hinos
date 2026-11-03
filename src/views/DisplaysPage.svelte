@@ -37,8 +37,8 @@
 
 <PageHeader title="Telas" subtitle="Escolha onde a letra aparece para a igreja e, se quiser, um retorno para quem está à frente">
   {#snippet actions()}
+    <button class="btn" onclick={() => api.identifyDisplays()} title="Cada monitor mostra o próprio nome por alguns segundos, com ou sem projeção aberta"><ScanEye size={15} /> Identificar telas</button>
     {#if outputs.outputs.length}
-      <button class="btn" onclick={() => api.identifyDisplays()} title="Cada monitor mostra o próprio nome por alguns segundos, com ou sem projeção aberta"><ScanEye size={15} /> Identificar telas</button>
       <button class="btn" onclick={() => outputs.reopen()} title="Fecha e abre de novo todas as telas, nos mesmos lugares. Use se alguma travar.">
         <RotateCw size={15} /> Reabrir telas
       </button>
@@ -133,7 +133,7 @@
       <h2>Em uma janela</h2>
       <p class="muted">
         Para conferir os slides, ou para uma tela que não aparece acima (alguns adaptadores USB para HDMI): abra a janela,
-        arraste para a tela e dê dois cliques para ocupar a tela inteira.
+        arraste para a tela e maximize a janela (no modo compatível, dois cliques também ocupam a tela inteira).
       </p>
     </div>
     <div class="window-buttons">

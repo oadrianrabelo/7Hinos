@@ -17,13 +17,17 @@
 
   let { simple = false }: { simple?: boolean } = $props();
 
-  /** Telas escolhidas para o próximo vídeo. Vazio = todas as abertas. */
-  let chosen = $state<string[]>([]);
-  const targets = $derived(
-    chosen.filter((l) => outputs.outputs.some((o) => o.label === l)).length
-      ? chosen.filter((l) => outputs.outputs.some((o) => o.label === l))
-      : outputs.forVideo.map((o) => o.label),
-  );
+  /**
+   * Telas escolhidas para o vídeo. `null` = todas as abertas. Com um vídeo
+   * tocando, vale onde ele está tocando de verdade.
+   */
+  let chosen = $state<string[] | null>(null);
+  const stillOpen = (labels: string[]) => labels.filter((l) => outputs.outputs.some((o) => o.label === l));
+  const targets = $derived.by(() => {
+    if (video.state?.targets.length) return stillOpen(video.state.targets);
+    const picked = chosen ? stillOpen(chosen) : [];
+    return picked.length ? picked : outputs.forVideo.map((o) => o.label);
+  });
 
   /** O vídeo toca em telas nativas (mpv): a prévia não precisa tocar também. */
   const lightweight = $derived(
@@ -62,8 +66,16 @@
   function toggleTarget(label: string) {
     const current = targets;
     const next = current.includes(label) ? current.filter((l) => l !== label) : [...current, label];
-    chosen = next;
-    if (video.state) video.setTargets(next);
+    // Desmarcar a última não pode: o vídeo precisa de pelo menos uma tela
+    // (antes, a lista vazia virava "todas" e a outra tela voltava sozinha).
+    if (!next.length) {
+      toasts.show("Deixe pelo menos uma tela marcada para o vídeo.", "info");
+      return;
+    }
+    // Na ordem das telas (o telão primeiro, que é quem toca o som).
+    const ordered = outputs.forVideo.map((o) => o.label).filter((l) => next.includes(l));
+    chosen = ordered;
+    if (video.state) video.setTargets(ordered);
   }
 
   async function setTag(path: string, tag: string | null) {
