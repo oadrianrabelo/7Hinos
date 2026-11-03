@@ -133,6 +133,15 @@ impl Native {
         }
     }
 
+    /// O 7Hinos vai fechar ou reiniciar: encerra todos os mpv agora, sem
+    /// esperar (senão o telão do mpv ficava aberto sozinho).
+    pub fn kill_all(&self) {
+        let all: Vec<Arc<Handle>> = self.outputs.locked().drain().map(|(_, h)| h).collect();
+        for h in all {
+            h.kill_now();
+        }
+    }
+
     /// Uma tela fechou sozinha: só esquece.
     pub fn forget(&self, label: &str) {
         self.outputs.locked().remove(label);
@@ -420,6 +429,7 @@ mod e2e {
             monitor: Some((0, 0, 1920, 1080, String::new())),
             role: Role::Audience,
             name: "Tela 2".into(),
+            wid: None,
         };
         let handle = output::start(emit, "output-1".into(), placement, shared, rx, move |_| {
             flag.store(true, std::sync::atomic::Ordering::SeqCst)

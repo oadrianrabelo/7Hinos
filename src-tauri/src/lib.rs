@@ -163,8 +163,10 @@ pub fn run() {
             // Fechar a janela de controle encerra o app, projeções inclusive.
             if window.label() == displays::MAIN_WINDOW {
                 if let tauri::WindowEvent::CloseRequested { .. } = event {
-                    displays::close_all(window.app_handle());
-                    window.app_handle().exit(0);
+                    let app = window.app_handle();
+                    app.state::<AppState>().native.kill_all();
+                    displays::close_all(app);
+                    app.exit(0);
                 }
             }
         })

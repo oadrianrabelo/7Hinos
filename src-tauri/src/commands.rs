@@ -946,6 +946,7 @@ pub fn reset_all(app: AppHandle) -> Result<()> {
     let config_dir = app.path().app_config_dir()?;
     crate::reset::request(&config_dir)?;
     displays::forget_lost(&app);
+    app.state::<AppState>().native.kill_all();
     displays::close_all(&app);
     app.restart();
 }

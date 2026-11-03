@@ -49,6 +49,15 @@ impl Mpv {
         self.command(json!(["set_property", property, value]));
     }
 
+    /// Encerra o mpv na hora, sem esperar (o 7Hinos está fechando).
+    pub fn kill_now(&self) {
+        if let Ok(mut child) = self.child.try_lock() {
+            if let Some(c) = child.as_mut() {
+                let _ = c.start_kill();
+            }
+        }
+    }
+
     pub async fn quit(&self) {
         self.command(json!(["quit"]));
         let mut child = self.child.lock().await;
@@ -139,6 +148,34 @@ fn hide_console(cmd: &mut std::process::Command) {
     let _ = cmd;
 }
 
+/// Prende o mpv ao 7Hinos: um "job" do Windows que encerra os processos dele
+/// quando o 7Hinos termina, do jeito que for (fechado, travado, reiniciado
+/// pela atualização). Sem isso, um telão do mpv podia ficar aberto sozinho.
+#[cfg(windows)]
+fn tie_to_app(process: std::os::windows::io::RawHandle) {
+    use windows_sys::Win32::System::JobObjects::*;
+    static JOB: OnceLock<usize> = OnceLock::new();
+    let job = *JOB.get_or_init(|| unsafe {
+        let job = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+        if job.is_null() {
+            return 0;
+        }
+        let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+        info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        SetInformationJobObject(
+            job,
+            JobObjectExtendedLimitInformation,
+            &info as *const _ as *const std::ffi::c_void,
+            std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+        );
+        // O identificador fica aberto até o 7Hinos terminar, de propósito.
+        job as usize
+    });
+    if job != 0 {
+        unsafe { AssignProcessToJobObject(job as _, process as _) };
+    }
+}
+
 /// Nome do canal de controle de uma tela.
 pub fn ipc_name(tag: &str) -> String {
     let pid = std::process::id();
@@ -174,6 +211,10 @@ pub async fn spawn(
     cmd.kill_on_drop(true);
     let child = cmd.spawn()?;
     let pid = child.id();
+    #[cfg(windows)]
+    if let Some(handle) = child.raw_handle() {
+        tie_to_app(handle);
+    }
 
     let (reader, mut writer) = connect(ipc).await?;
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
