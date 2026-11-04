@@ -259,6 +259,14 @@ export function serviceRoles(doc: RosterDoc, service: Service): RosterRole[] {
   return doc.roles.filter((r) => r.active && service.roles.includes(r.id));
 }
 
+/** Vagas vazias de um culto (cada função conta as vagas que pede). */
+export function openSlots(doc: RosterDoc, service: Service): number {
+  return serviceRoles(doc, service).reduce((n, r) => {
+    const filled = (service.assigned[r.id] ?? []).filter(Boolean).length;
+    return n + Math.max(0, Math.max(1, r.slots) - filled);
+  }, 0);
+}
+
 // --- Conflitos -------------------------------------------------------------
 
 export interface Conflict {
@@ -293,8 +301,30 @@ export function conflicts(doc: RosterDoc, service: Service, roleId: string, pers
         Math.abs(daysBetween(s.date, service.date)) < 7,
     );
     if (recent) out.push({ kind: "recent", message: `${person.name} também prega em ${shortDate(recent.date)}.` });
+  } else {
+    // A mesma função no culto do mesmo tipo logo antes ou logo depois
+    // (recepção dois sábados seguidos, por exemplo).
+    // Só avisa se houver mais gente para revezar; senão não tem jeito.
+    const role = doc.roles.find((r) => r.id === roleId);
+    // (quem já está em outra função deste culto não conta como alternativa).
+    const busy = new Set(Object.entries(service.assigned).flatMap(([r, ids]) => (r === roleId ? [] : ids)));
+    const able = doc.people.filter((p) => p.roles.includes(roleId) && !p.away.includes(service.date) && !busy.has(p.id)).length;
+    const hit = able > Math.max(1, role?.slots ?? 1) ? neighbor(doc, service, roleId, personId) : null;
+    if (hit) {
+      out.push({ kind: "recent", message: `${person.name} também está em ${role?.name ?? roleId} no culto ${hit.date < service.date ? "anterior" : "seguinte"} (${shortDate(hit.date)}).` });
+    }
   }
   return out;
+}
+
+/** O culto do mesmo tipo logo antes ou logo depois em que a pessoa faz a mesma função. */
+function neighbor(doc: RosterDoc, service: Service, roleId: string, personId: string, services = doc.services): Service | null {
+  const same = sortServices(
+    services.filter((s) => s.id !== service.id && (service.templateId ? s.templateId === service.templateId : s.name === service.name)),
+  );
+  const before = [...same].reverse().find((s) => s.date < service.date);
+  const after = same.find((s) => s.date > service.date);
+  return [before, after].find((s) => s?.assigned[roleId]?.includes(personId)) ?? null;
 }
 
 // --- Sugestão -------------------------------------------------------------
@@ -341,12 +371,14 @@ export function suggest(doc: RosterDoc, services: Service[]): Service[] {
             .map((s) => s.date)
             .sort()
             .pop();
-          return { count: times.length, gap: last ? daysBetween(last, service.date) : 9_999 };
+          // Evita a mesma função em dois cultos do mesmo tipo seguidos.
+          const row = neighbor(doc, service, r.id, p.id, all()) ? 1 : 0;
+          return { count: times.length, row, gap: last ? daysBetween(last, service.date) : 9_999 };
         };
         candidates.sort((a, b) => {
           const sa = stats(a);
           const sb = stats(b);
-          return sa.count - sb.count || sb.gap - sa.gap || a.name.localeCompare(b.name, "pt-BR");
+          return sa.count - sb.count || sa.row - sb.row || sb.gap - sa.gap || a.name.localeCompare(b.name, "pt-BR");
         });
         filled.push(candidates[0].id);
         service.assigned[r.id] = [...filled];
