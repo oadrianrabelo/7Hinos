@@ -3822,6 +3822,7 @@ dependencies = [
  "fontdb",
  "futures-util",
  "image",
+ "libc",
  "local-ip-address",
  "log",
  "percent-encoding",
