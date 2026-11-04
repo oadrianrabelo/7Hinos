@@ -16,6 +16,8 @@
     Play,
     Plus,
     Presentation,
+    Printer,
+    ScrollText,
     Timer,
     Trash2,
     X,
@@ -29,6 +31,11 @@
   import PageHeader from "../components/PageHeader.svelte";
   import Tip from "../components/Tip.svelte";
   import TodayRoster from "../components/roster/TodayRoster.svelte";
+  import ProgramPrint from "../components/ProgramPrint.svelte";
+  import { programRows, programText, programTitle, rosterWho } from "../lib/program";
+  import { isoDate, todayServices } from "../lib/roster";
+  import { roster } from "../lib/state/roster.svelte";
+  import { toasts } from "../lib/state/toasts.svelte";
   import { openSetItem, playNow } from "../lib/actions";
   import { player } from "../lib/state/player.svelte";
   import { setlist } from "../lib/state/setlist.svelte";
@@ -55,6 +62,24 @@
         return setlist.current?.kind === "part" && setlist.current.id === item.id;
     }
   };
+
+  // Programa do culto (com a escala de hoje)
+  const services = $derived(todayServices(roster.doc));
+  let serviceId = $state<string | null>(null);
+  const service = $derived(services.find((x) => x.id === serviceId) ?? services[0] ?? null);
+  const program = $derived(programRows(setlist.items, roster.doc, service));
+  const programHead = $derived(programTitle(service, isoDate(new Date())));
+  let programOpen = $state(false);
+  let programAnchor = $state<HTMLButtonElement>();
+
+  async function copyProgram() {
+    try {
+      await navigator.clipboard.writeText(programText(program, programHead, roster.doc.church));
+      toasts.show("Programa copiado. É só colar no grupo do WhatsApp.", "success");
+    } catch {
+      toasts.error("Não deu para copiar.");
+    }
+  }
 
   const kindLabel: Record<SetItem["kind"], string> = { song: "Hino", deck: "Apresentação", video: "Vídeo", part: "Momento" };
 
@@ -114,6 +139,7 @@
       <DownloadButton key="setlist" scope={{ kind: "songs", ids: songIds }} label="Culto de hoje" text="Preparar para sem internet" large={simple} />
     {/if}
     {#if setlist.items.length}
+      <button class="btn" class:btn-lg={simple} bind:this={programAnchor} aria-expanded={programOpen} onclick={() => (programOpen = !programOpen)}><ScrollText size={15} /> Programa</button>
       <button class="btn" class:btn-lg={simple} onclick={() => setlist.clear()}><Trash2 size={15} /> Limpar lista</button>
     {/if}
   {/snippet}
@@ -161,6 +187,28 @@
   </ul>
 </Popover>
 
+<Popover bind:open={programOpen} anchor={programAnchor} width={24}>
+  <div class="program">
+    <strong>{programHead.title}</strong>
+    <span class="muted">{programHead.subtitle}</span>
+    {#if services.length > 1}
+      <select class="input" value={service?.id} onchange={(e) => (serviceId = e.currentTarget.value)} aria-label="Culto da escala">
+        {#each services as x (x.id)}<option value={x.id}>{x.name} · {x.time}</option>{/each}
+      </select>
+    {/if}
+    <p class="muted menu-hint">
+      {#if service}Quem faz cada momento vem da escala de hoje; a anotação do item vale mais.{:else}Sem culto na escala de hoje: aparece só o que estiver anotado em cada item.{/if}
+    </p>
+    <div class="line">
+      <button class="btn" onclick={copyProgram}>Copiar para o WhatsApp</button>
+      <button class="btn btn-primary" onclick={() => window.print()}><Printer size={15} /> Imprimir</button>
+    </div>
+  </div>
+</Popover>
+{#if programOpen}
+  <ProgramPrint rows={program} title={programHead.title} subtitle={programHead.subtitle} church={roster.doc.church} />
+{/if}
+
 <Popover bind:open={templatesOpen} anchor={templatesAnchor} width={22}>
   <p class="muted menu-hint">Acrescenta os momentos no fim da lista. Depois é só pôr os hinos entre eles e anotar quem dirige.</p>
   <ul class="menu">
@@ -200,7 +248,10 @@
         {:else}
         <span class="info">
           <span class="title truncate">{item.title}</span>
-          {#if item.note}<span class="note truncate">{item.note}</span>{/if}
+          {#if item.note}<span class="note truncate">{item.note}</span>
+          {:else if item.kind === "part" && rosterWho(roster.doc, service, item.title)}
+            <span class="note truncate" title="Da escala de hoje">{rosterWho(roster.doc, service, item.title)} · escala</span>
+          {/if}
           <span class="kind">
             {kindLabel[item.kind]}
             {#if item.kind === "part" && item.minutes}
@@ -385,6 +436,20 @@
 
   .edit .minutes {
     width: 4.5rem;
+  }
+
+  .program {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.75rem;
+  }
+
+  .program .line {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 
   .custom-part {
