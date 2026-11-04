@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.10.2...v1.11.0) (2026-11-04)
+
+
+### ✨ Novas Funcionalidades
+
+* cópia de segurança, aniversariantes na tela de espera, programa do culto e melhorias na escala e no celular ([#59](https://github.com/oadrianrabelo/7Hinos/issues/59)) ([300d8ad](https://github.com/oadrianrabelo/7Hinos/commit/300d8adb6b78af768a2696bc8049544c941837d3))
+
 ## [1.10.2](https://github.com/oadrianrabelo/7Hinos/compare/v1.10.1...v1.10.2) (2026-11-03)
 
 
