@@ -1,13 +1,14 @@
 <!-- Um culto da escala: cada função com a(s) pessoa(s), avisando conflitos. -->
 <script lang="ts">
   import { CircleAlert, Settings2, Trash2 } from "@lucide/svelte";
-  import { conflicts, serviceRoles, shortDate, shortTime, type Service } from "../../lib/roster";
+  import { conflicts, openSlots, serviceRoles, shortDate, shortTime, type Service } from "../../lib/roster";
   import { roster } from "../../lib/state/roster.svelte";
 
   let { service }: { service: Service } = $props();
 
   const doc = $derived(roster.doc);
   const roles = $derived(serviceRoles(doc, service));
+  const open = $derived(openSlots(doc, service));
   let editing = $state(false);
 
   function find() {
@@ -70,6 +71,11 @@
         onchange={(e) => roster.update(() => { const s = find(); if (s) s.note = e.currentTarget.value; })}
       />
     </div>
+    {#if roles.length}
+      <span class="fill" class:done={open === 0} title={open ? "Vagas ainda sem ninguém" : "Todas as funções preenchidas"}>
+        {open ? `${open} ${open === 1 ? "vaga" : "vagas"}` : "Completo"}
+      </span>
+    {/if}
     <button class="btn btn-plain btn-icon" class:on={editing} title="Funções e horário deste culto" aria-label="Ajustar este culto" aria-pressed={editing} onclick={() => (editing = !editing)}>
       <Settings2 size={16} />
     </button>
@@ -113,6 +119,9 @@
             </span>
           {/each}
         </div>
+        {#each (service.assigned[r.id] ?? []).filter(Boolean).flatMap((id) => conflicts(doc, service, r.id, id)) as p (p.message)}
+          <span class="problem"><CircleAlert size={12} /> {p.message}</span>
+        {/each}
       </div>
     {:else}
       <p class="muted empty">Nenhuma função neste culto. Use o botão de ajuste para escolher.</p>
@@ -121,6 +130,31 @@
 </article>
 
 <style>
+  .fill {
+    align-self: center;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--warning) 18%, transparent);
+    color: var(--warning);
+  }
+
+  .fill.done {
+    background: color-mix(in srgb, var(--success, #1e8e3e) 15%, transparent);
+    color: var(--success, #1e8e3e);
+  }
+
+  .problem {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    color: var(--warning);
+  }
+
   .service {
     display: flex;
     flex-direction: column;

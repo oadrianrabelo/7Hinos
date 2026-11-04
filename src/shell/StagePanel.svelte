@@ -110,7 +110,7 @@
 
   <div class="preview" class:dim={!onScreen && isLive && isBlack}>
     {#if showStage}
-      <SceneView scene={stage.current.scene} style={settings.current.slide} idle={settings.current.idle} screen={settings.current.screenStyle} animate={previewAnimates} />
+      <SceneView scene={stage.current.scene} style={settings.current.slide} idle={settings.current.idle} notices={settings.current.notices} birthdays={settings.current.birthdays} screen={settings.current.screenStyle} animate={previewAnimates} />
     {:else}
       <SlideView slide={previewSlide} style={settings.current.slide} animate={previewAnimates} />
     {/if}

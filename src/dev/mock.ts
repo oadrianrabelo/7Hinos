@@ -201,7 +201,7 @@ export function install() {
             { kind: "video", path: "/Users/igreja/Videos/Informativo Mundial das Missões.mp4", title: "Informativo Mundial das Missões" },
             { kind: "song", id: 18, title: "Castelo Forte" },
           ],
-    idle: { image: null, text: "Bem-vindos!", showClock: true },
+    idle: { image: null, text: "Bem-vindos!", showClock: true, birthdays: params.get("bday") === "1", rotateSecs: 8 },
     monitor: { showNext: params.get("next") !== "0", showClock: true, showTitle: true, showBackground: params.get("bg") === "1", textScale: 1, messageFont: "", messageColor: "#000000", messageBackground: "#ffd36b" },
     screenProfiles: [
       {
@@ -218,7 +218,12 @@ export function install() {
     remote: { enabled: params.get("remote") === "1", port: 7788, token: "k7m2p9qa" },
     screenStyle: { font: "condensed", textColor: "#ffffff", accentColor: "#ffc94a", background: "gradient", backgroundImage: null },
     notices: [
-      { id: 1, title: "Santa Ceia", body: "Neste sábado, às 10h30. Prepare o coração." },
+      { id: 1, title: "Santa Ceia", body: "Neste sábado, às 10h30. Prepare o coração.", idle: params.get("bday") === "1" },
+    ],
+    birthdays: [
+      { id: 1, name: "Ana Souza", day: new Date().getDate(), month: new Date().getMonth() + 1 },
+      { id: 2, name: "Pr. Marcos", day: 15, month: 3 },
+      { id: 3, name: "Joana Lima", day: 2, month: 12 },
     ],
     bibleVersion: null,
     keepPlayed: true,
@@ -228,7 +233,12 @@ export function install() {
     legacyMigrated: true,
     pendingFavorites: [],
     projection: (params.get("projection") as Settings["projection"]) ?? "auto",
+    backup: { auto: true, folder: null, keep: 8, last: Date.now() / 1000 - 3 * 86400 },
   };
+  const backups = [
+    { path: "/copias/7Hinos-copia-2026-11-01-093000.zip", name: "7Hinos-copia-2026-11-01-093000.zip", createdAt: Date.now() / 1000 - 3 * 86400, bytes: 2_400_000 },
+    { path: "/copias/7Hinos-copia-2026-10-25-091500.zip", name: "7Hinos-copia-2026-10-25-091500.zip", createdAt: Date.now() / 1000 - 10 * 86400, bytes: 2_310_000 },
+  ];
   // ?roster=1: escala com algumas pessoas para testar.
   let rosterDoc: unknown =
     params.get("roster") === "1"
@@ -471,6 +481,18 @@ export function install() {
               { number: "04", title: "A fé de Abraão", src: "" },
             ],
           };
+        case "backup_list":
+          return backups;
+        case "backup_now": {
+          const now = Date.now() / 1000;
+          const made = { path: `/copias/nova-${now}.zip`, name: `7Hinos-copia-agora.zip`, createdAt: now, bytes: 2_500_000 };
+          backups.unshift(made);
+          settings.backup.last = now;
+          return made;
+        }
+        case "backup_restore":
+        case "backup_open_folder":
+          return null;
         case "roster_load":
           return rosterDoc;
         case "roster_save":

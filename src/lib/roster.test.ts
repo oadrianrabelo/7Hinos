@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  openSlots,
   conflicts,
   csv,
   emptyRoster,
@@ -76,6 +77,31 @@ describe("conflitos", () => {
     // Duas semanas depois já não é "recente".
     const qua25 = doc.services.find((s) => s.date === "2026-11-25")!;
     expect(conflicts(doc, qua25, "pregacao", "bia")).toEqual([]);
+  });
+});
+
+describe("escala seguida e vagas", () => {
+  it("avisa a mesma função dois cultos do mesmo tipo seguidos", () => {
+    const doc = church();
+    doc.services = generateMonth(doc, 2026, 11);
+    const sab7 = doc.services.find((s) => s.date === "2026-11-07")!;
+    const sab14 = doc.services.find((s) => s.date === "2026-11-14")!;
+    const sab21 = doc.services.find((s) => s.date === "2026-11-21")!;
+    sab7.assigned = { recepcao: ["ana"] };
+    const kinds = (s: typeof sab7) => conflicts(doc, s, "recepcao", "ana").map((c) => c.message);
+    expect(kinds(sab14)[0]).toContain("culto anterior (Sáb 07/11)");
+    expect(kinds(sab21)).toEqual([]);
+    // A quarta no meio não conta: é outro tipo de culto.
+    const qua11 = doc.services.find((s) => s.date === "2026-11-11")!;
+    expect(conflicts(doc, qua11, "recepcao", "ana")).toEqual([]);
+  });
+
+  it("conta as vagas vazias", () => {
+    const doc = church();
+    const s = generateMonth(doc, 2026, 11).find((x) => x.templateId === "quarta")!;
+    const total = openSlots(doc, s);
+    s.assigned = { recepcao: ["ana"] };
+    expect(openSlots(doc, s)).toBe(total - 1);
   });
 });
 

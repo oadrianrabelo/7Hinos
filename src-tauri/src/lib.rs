@@ -1,3 +1,4 @@
+mod backup;
 mod bible;
 mod catalog;
 mod commands;
@@ -114,7 +115,9 @@ pub fn run() {
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             let config_dir = app.path().app_config_dir()?;
-            reset::apply_pending(&config_dir, &[&config_dir, &data_dir]);
+            if !reset::apply_pending(&config_dir, &[&config_dir, &data_dir]) {
+                backup::apply_pending(&config_dir, &backup::items(&config_dir, &data_dir));
+            }
 
             let settings = SettingsStore::load(config_dir.join("settings.json"));
             migrate_legacy(app, &settings);
@@ -156,6 +159,7 @@ pub fn run() {
             commands::resolve_pending_favorites(app.handle());
 
             tauri::async_runtime::spawn(updates::run(app.handle().clone()));
+            tauri::async_runtime::spawn(commands::backup_schedule(app.handle().clone()));
             displays::watch(app.handle().clone());
             Ok(())
         })
@@ -245,6 +249,10 @@ pub fn run() {
             commands::roster_load,
             commands::roster_save,
             commands::text_file_save,
+            commands::backup_list,
+            commands::backup_now,
+            commands::backup_restore,
+            commands::backup_open_folder,
             commands::reset_all,
         ])
         .run(tauri::generate_context!())

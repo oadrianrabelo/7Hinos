@@ -176,6 +176,27 @@ fn tie_to_app(process: std::os::windows::io::RawHandle) {
     }
 }
 
+/// No Linux, o sistema encerra o mpv se o 7Hinos terminar de qualquer jeito
+/// (o mesmo que o "job" faz no Windows).
+///
+/// O aviso do sistema vem quando termina a *thread* que abriu o mpv: por isso
+/// `spawn` roda nas threads do runtime do app (vivem até o app fechar), nunca
+/// dentro de `spawn_blocking`.
+fn die_with_app(cmd: &mut std::process::Command) {
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::process::CommandExt;
+        // SAFETY: entre o fork e o exec só chamamos prctl, que é seguro ali.
+        unsafe {
+            cmd.pre_exec(|| {
+                libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGTERM);
+                Ok(())
+            });
+        }
+    }
+    let _ = cmd;
+}
+
 /// Nome do canal de controle de uma tela.
 pub fn ipc_name(tag: &str) -> String {
     let pid = std::process::id();
@@ -207,6 +228,7 @@ pub async fn spawn(
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
     hide_console(&mut std_cmd);
+    die_with_app(&mut std_cmd);
     let mut cmd = Command::from(std_cmd);
     cmd.kill_on_drop(true);
     let child = cmd.spawn()?;

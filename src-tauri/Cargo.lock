@@ -3816,12 +3816,13 @@ dependencies = [
 
 [[package]]
 name = "sete-hinos"
-version = "1.10.1"
+version = "1.10.2"
 dependencies = [
  "chrono",
  "fontdb",
  "futures-util",
  "image",
+ "libc",
  "local-ip-address",
  "log",
  "percent-encoding",

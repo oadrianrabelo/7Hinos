@@ -36,6 +36,17 @@
   .song { display: flex; gap: 8px; margin: 0 16px; }
   .song input { flex: 1; min-width: 0; font: inherit; font-size: 20px; padding: 14px; border-radius: var(--radius); border: 0; background: var(--surface); color: var(--text); }
   .song button { padding: 0 20px; font-size: 16px; }
+  .results li button { flex-direction: column; gap: 2px; }
+  .results small { color: var(--muted); font-size: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 16px; }
+  .chips button { font-size: 15px; padding: 12px 14px; font-weight: 600; }
+  .chips button.current { outline: 2px solid var(--accent); }
+  .roster { margin: 0 16px 8px; padding: 12px 14px; border-radius: var(--radius); background: var(--surface); }
+  .roster strong { display: block; margin-bottom: 6px; }
+  .roster dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; }
+  .roster dt { color: var(--muted); }
+  .roster dd { margin: 0; font-weight: 600; }
+  .link { background: none; padding: 6px 0; font-size: 14px; color: var(--accent); font-weight: 600; }
   footer { margin-top: auto; padding: 18px 16px max(18px, env(safe-area-inset-bottom)); font-size: 12px; color: var(--muted); text-align: center; }
   .error { margin: 12px 16px 0; padding: 12px 14px; border-radius: var(--radius); background: #5c1d1d; color: #ffd9d6; display: none; }
 </style>
@@ -64,17 +75,28 @@
   <button id="stop">Encerrar</button>
 </div>
 
-<h2>Hino pelo número</h2>
+<h2>Hino: número, nome ou letra</h2>
 <form class="song" id="song">
-  <input id="number" inputmode="numeric" pattern="[0-9]*" placeholder="Ex.: 18" autocomplete="off" />
-  <button type="submit">Tocar</button>
+  <input id="number" enterkeyhint="search" placeholder="Ex.: 18 ou Castelo forte" autocomplete="off" />
+  <button type="submit">Buscar</button>
 </form>
+<div id="searchBox" hidden>
+  <h2 id="searchTitle"></h2>
+  <ul class="results" id="results"></ul>
+  <div class="chips"><button class="link" id="clearSearch" type="button">Fechar a busca</button></div>
+</div>
+
+<h2 id="noticesTitle" hidden>Avisos</h2>
+<div class="chips" id="notices"></div>
 
 <h2 id="slidesTitle" hidden>Partes</h2>
 <ul id="slides"></ul>
 
 <h2 id="setlistTitle" hidden>Culto de hoje</h2>
 <ul id="setlist"></ul>
+
+<h2 id="rosterTitle" hidden>Escala de hoje</h2>
+<div id="roster"></div>
 
 <footer>Controle pelo Wi‑Fi da igreja · não precisa de internet</footer>
 
@@ -127,6 +149,64 @@
     $("play").textContent = s.playing ? "Pausar" : "Continuar";
     list($("slides"), $("slidesTitle"), s.slides || [], s.index, (i) => send("goto", { index: i }));
     list($("setlist"), $("setlistTitle"), (s.setlist || []).map((x) => x.title), s.setlistCurrent ?? -1, (i) => send("setlist", { index: i }));
+
+    // Busca por nome ou letra: o celular escolhe qual tocar.
+    $("searchBox").hidden = !s.search;
+    if (s.search) {
+      $("searchTitle").textContent = s.search.results.length ? `Resultados para “${s.search.query}”` : `Nada encontrado para “${s.search.query}”`;
+      const ul = $("results");
+      ul.innerHTML = "";
+      for (const r of s.search.results) {
+        const li = document.createElement("li");
+        const b = document.createElement("button");
+        const t = document.createElement("span");
+        t.textContent = r.title;
+        b.appendChild(t);
+        if (r.sub) { const sm = document.createElement("small"); sm.textContent = r.sub; b.appendChild(sm); }
+        b.onclick = () => send("song", { id: r.id });
+        li.appendChild(b);
+        ul.appendChild(li);
+      }
+    }
+
+    // Avisos e tela de espera.
+    const notices = s.notices || [];
+    $("noticesTitle").hidden = false;
+    const box = $("notices");
+    box.innerHTML = "";
+    notices.forEach((title, i) => {
+      const b = document.createElement("button");
+      b.textContent = title || "Aviso";
+      if (i === s.noticeCurrent) b.classList.add("current");
+      b.onclick = () => send("notice", { index: i });
+      box.appendChild(b);
+    });
+    const rest = document.createElement("button");
+    rest.textContent = "Tela de espera";
+    rest.onclick = () => send("idle");
+    box.appendChild(rest);
+
+    // Escala de hoje (só para consulta).
+    const services = s.roster || [];
+    $("rosterTitle").hidden = !services.length;
+    const rosterEl = $("roster");
+    rosterEl.innerHTML = "";
+    for (const x of services) {
+      const card = document.createElement("div");
+      card.className = "roster";
+      const st = document.createElement("strong");
+      st.textContent = x.title;
+      card.appendChild(st);
+      const dl = document.createElement("dl");
+      for (const r of x.rows) {
+        const dt = document.createElement("dt"); dt.textContent = r.role;
+        const dd = document.createElement("dd"); dd.textContent = r.who;
+        dl.append(dt, dd);
+      }
+      if (!x.rows.length) { const p = document.createElement("span"); p.textContent = "Ninguém escalado ainda."; card.appendChild(p); }
+      card.appendChild(dl);
+      rosterEl.appendChild(card);
+    }
   }
 
   async function poll() {
@@ -148,6 +228,7 @@
   $("black").onclick = () => send("blackout");
   $("play").onclick = () => send("togglePlay");
   $("stop").onclick = () => send("stop");
+  $("clearSearch").onclick = () => send("clearSearch");
   $("song").onsubmit = (e) => {
     e.preventDefault();
     const n = $("number").value.trim();

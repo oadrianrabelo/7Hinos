@@ -5,8 +5,9 @@
   import { drawFrame } from "../lib/draw";
   import { ensureFont, fontFamily } from "../lib/fonts";
   import { fileSrc, userMediaSrc } from "../lib/media";
+  import { currentIdlePage } from "../lib/idle";
   import { fitText } from "../lib/slides";
-  import type { IdleScreen, Scene, ScreenStyle, SlideStyle } from "../lib/types";
+  import type { Birthday, IdleScreen, Notice, Scene, ScreenStyle, SlideStyle } from "../lib/types";
   import PageView from "./PageView.svelte";
   import SlideView from "./SlideView.svelte";
 
@@ -17,11 +18,16 @@
     screen,
     plain = false,
     animate = true,
+    notices = [],
+    birthdays = [],
   }: {
     scene: Scene;
     style: SlideStyle;
     idle: IdleScreen;
     screen: ScreenStyle;
+    /** Avisos e aniversários que passam na tela de espera. */
+    notices?: Notice[];
+    birthdays?: Birthday[];
     /** Fundo preto e letra branca, sem a imagem ou a cor (retorno sem fundo). */
     plain?: boolean;
     /** Transições (desligadas nas prévias da projeção leve, para pesar menos). */
@@ -42,10 +48,20 @@
       tick();
       return () => cancelAnimationFrame(frame);
     }
-    if (scene.kind !== "clock" && !(scene.kind === "idle" && idle.showClock)) return;
+    if (scene.kind === "idle" && !idle.showClock) {
+      // Sem relógio, só acorda quando é a vez da próxima tela.
+      const next = currentIdlePage(idle, notices, birthdays, now).next;
+      if (next === null) return;
+      const timer = setTimeout(() => (now = Date.now()), next + 20);
+      return () => clearTimeout(timer);
+    }
+    if (scene.kind !== "clock" && scene.kind !== "idle") return;
     const timer = setInterval(() => (now = Date.now()), 250);
     return () => clearInterval(timer);
   });
+
+  const idlePage = $derived(scene.kind === "idle" ? currentIdlePage(idle, notices, birthdays, now).page : null);
+  const idleSize = $derived(idlePage?.kind === "text" ? fitText(idlePage.body, "text", style.textScale) : null);
 
   const logo = $derived(userMediaSrc(idle.image));
 
@@ -84,6 +100,14 @@
   <SlideView slide={scene.slide} {style} {animate} />
 {:else if scene.kind === "image"}
   <div class="screen page"><PageView src={fileSrc(scene.src)} overlay={scene.overlay} animate={animate && style.animations !== false} /></div>
+{:else if idlePage?.kind === "text" && idleSize}
+  {@const page = idlePage}
+  {#snippet idleTextBody()}
+    {#if page.title}<p class="label">{page.title}</p>{/if}
+    <p class="notice-text" style:font-size="min({idleSize.cqw}cqw, {idleSize.cqh}cqh)">{page.body}</p>
+    {#if idle.showClock}<p class="corner-clock">{clockText(new Date(now))}</p>{/if}
+  {/snippet}
+  {#key page.body}{@render themed(animate && style.animations !== false ? "notice idle-page" : "notice", idleTextBody)}{/key}
 {:else if scene.kind === "idle"}
   {#snippet idleBody()}
     {#if logo}<img src={logo} alt="" />{/if}
@@ -206,6 +230,17 @@
 
   .draw.still {
     animation: none;
+  }
+
+  .idle-page > :global(*) {
+    animation: idle-in 0.7s ease-out both;
+  }
+
+  @keyframes idle-in {
+    from {
+      opacity: 0;
+      transform: translateY(2cqh);
+    }
   }
 
   @keyframes land {

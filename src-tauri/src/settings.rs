@@ -161,6 +161,30 @@ impl Default for RemoteSettings {
     }
 }
 
+/// Cópia de segurança semanal do que a igreja montou.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct BackupSettings {
+    pub auto: bool,
+    /// Pasta escolhida (outro disco, pendrive). `None`: dentro do app.
+    pub folder: Option<String>,
+    /// Quantas cópias guardar.
+    pub keep: u32,
+    /// Epoch em segundos da última cópia.
+    pub last: Option<u64>,
+}
+
+impl Default for BackupSettings {
+    fn default() -> Self {
+        Self {
+            auto: true,
+            folder: None,
+            keep: 8,
+            last: None,
+        }
+    }
+}
+
 /// Uma combinação de telas salva com nome ("Culto normal", "Só retorno").
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -264,6 +288,20 @@ pub struct IdleScreen {
     pub image: Option<String>,
     pub text: String,
     pub show_clock: bool,
+    /// Passa os aniversariantes da semana entre as telas de espera.
+    pub birthdays: bool,
+    /// Segundos de cada tela quando há avisos ou aniversariantes passando.
+    pub rotate_secs: u32,
+}
+
+/// Aniversário de alguém da igreja (só dia e mês).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Birthday {
+    pub id: u32,
+    pub name: String,
+    pub day: u8,
+    pub month: u8,
 }
 
 /// Um aviso salvo para projetar quando precisar.
@@ -273,6 +311,8 @@ pub struct Notice {
     pub id: u32,
     pub title: String,
     pub body: String,
+    /// Também passa sozinho na tela de espera.
+    pub idle: bool,
 }
 
 /// Favorito da versão antiga, esperando o catálogo para virar um id.
@@ -305,6 +345,7 @@ pub struct Settings {
     /// Perfil aberto sozinho quando o app inicia.
     pub default_profile: Option<u32>,
     pub notices: Vec<Notice>,
+    pub birthdays: Vec<Birthday>,
     /// Versão da Bíblia escolhida por último.
     pub bible_version: Option<i64>,
     /// A programação do culto, na ordem em que será apresentada.
@@ -321,6 +362,7 @@ pub struct Settings {
     pub pending_favorites: Vec<LegacyFavorite>,
     /// Projeção leve (mpv) ou compatível (WebView).
     pub projection: Projection,
+    pub backup: BackupSettings,
 }
 
 impl Default for Settings {
@@ -342,6 +384,7 @@ impl Default for Settings {
             remote: RemoteSettings::default(),
             default_profile: None,
             notices: Vec::new(),
+            birthdays: Vec::new(),
             bible_version: None,
             setlist: Vec::new(),
             keep_played: true,
@@ -351,6 +394,7 @@ impl Default for Settings {
             legacy_migrated: false,
             pending_favorites: Vec::new(),
             projection: Projection::Auto,
+            backup: BackupSettings::default(),
         }
     }
 }
@@ -391,6 +435,11 @@ impl Settings {
         self.recent.retain(|&r| r != id);
         self.recent.insert(0, id);
         self.recent.truncate(RECENT_LIMIT);
+        self.backup.keep = self.backup.keep.clamp(1, 52);
+        if self.idle.rotate_secs == 0 {
+            self.idle.rotate_secs = 12;
+        }
+        self.idle.rotate_secs = self.idle.rotate_secs.clamp(4, 120);
     }
 
     /// Mantém valores dentro do que a interface sabe mostrar.

@@ -987,3 +987,99 @@ pub fn outputs_close_all(app: AppHandle) {
     displays::forget_lost(&app);
     displays::close_all(&app);
 }
+
+/// Pasta das cópias de segurança: a escolhida ou a de dentro do app.
+fn backup_dir(app: &AppHandle) -> Result<std::path::PathBuf> {
+    let chosen = app.state::<AppState>().settings.get().backup.folder;
+    Ok(match chosen {
+        Some(dir) if !dir.trim().is_empty() => std::path::PathBuf::from(dir),
+        _ => app.path().app_data_dir()?.join(crate::backup::DIR),
+    })
+}
+
+fn backup_items(app: &AppHandle) -> Result<Vec<crate::backup::Item>> {
+    Ok(crate::backup::items(
+        &app.path().app_config_dir()?,
+        &app.path().app_data_dir()?,
+    ))
+}
+
+/// Faz uma cópia agora e anota a data.
+async fn backup_create(app: &AppHandle, label: &'static str) -> Result<crate::backup::Info> {
+    let dir = backup_dir(app)?;
+    let items = backup_items(app)?;
+    let keep = app.state::<AppState>().settings.get().backup.keep as usize;
+    let made = tauri::async_runtime::spawn_blocking(move || {
+        crate::backup::create(&items, &dir, keep, label)
+    })
+    .await
+    .map_err(|e| Error::other(e.to_string()))??;
+    let saved = app
+        .state::<AppState>()
+        .settings
+        .update(|s| s.backup.last = Some(crate::backup::now_secs()))?;
+    let _ = app.emit(SETTINGS_EVENT, &saved);
+    log::info!("cópia de segurança: {} ({} bytes)", made.name, made.bytes);
+    Ok(made)
+}
+
+/// Cópia semanal sozinha: confere ao abrir (com folga para não pesar na
+/// abertura) e depois a cada poucas horas, para quem nunca fecha o app.
+pub async fn backup_schedule(app: AppHandle) {
+    tokio::time::sleep(std::time::Duration::from_secs(90)).await;
+    loop {
+        let backup = app.state::<AppState>().settings.get().backup;
+        if backup.auto && crate::backup::due(backup.last, crate::backup::now_secs()) {
+            if let Err(e) = backup_create(&app, "").await {
+                log::warn!("cópia de segurança automática falhou: {e}");
+            }
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(6 * 60 * 60)).await;
+    }
+}
+
+#[tauri::command]
+pub fn backup_list(app: AppHandle) -> Result<Vec<crate::backup::Info>> {
+    Ok(crate::backup::list(&backup_dir(&app)?))
+}
+
+#[tauri::command]
+pub async fn backup_now(app: AppHandle) -> Result<crate::backup::Info> {
+    backup_create(&app, "").await
+}
+
+/// Prepara a restauração e reinicia o app para ela valer. Antes, guarda o
+/// estado atual numa cópia, para dar para voltar atrás.
+#[tauri::command]
+pub async fn backup_restore(app: AppHandle, path: String) -> Result<()> {
+    let config_dir = app.path().app_config_dir()?;
+    let items = backup_items(&app)?;
+    let zip = std::path::PathBuf::from(&path);
+    let staged = {
+        let items = items.clone();
+        let config_dir = config_dir.clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            crate::backup::stage_restore(&zip, &config_dir, &items)
+        })
+        .await
+        .map_err(|e| Error::other(e.to_string()))??
+    };
+    // A cópia de "antes" não pode estragar a restauração se falhar.
+    if let Err(e) = backup_create(&app, "-antes-de-restaurar").await {
+        log::warn!("cópia de antes da restauração falhou: {e}");
+    }
+    log::info!("restaurando {path} ({staged} arquivos); reiniciando");
+    app.state::<AppState>().native.kill_all();
+    displays::close_all(&app);
+    app.restart();
+}
+
+#[tauri::command]
+pub fn backup_open_folder(app: AppHandle) -> Result<()> {
+    use tauri_plugin_opener::OpenerExt;
+    let dir = backup_dir(&app)?;
+    std::fs::create_dir_all(&dir)?;
+    app.opener()
+        .open_path(dir.to_string_lossy(), None::<&str>)
+        .map_err(|e| Error::other(e.to_string()))
+}

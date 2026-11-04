@@ -172,6 +172,7 @@ export interface Settings {
   remote: RemoteSettings;
   defaultProfile: number | null;
   notices: Notice[];
+  birthdays: Birthday[];
   bibleVersion: number | null;
   keepPlayed: boolean;
   autoUpdateCatalog: boolean;
@@ -182,6 +183,24 @@ export interface Settings {
   pendingFavorites: { title: string; album: string }[];
   /** Quem desenha as telas: leve (mpv), compatível (WebView) ou automático. */
   projection: "auto" | "light" | "web";
+  backup: BackupSettings;
+}
+
+/** Cópia de segurança semanal. */
+export interface BackupSettings {
+  auto: boolean;
+  /** Pasta escolhida; `null` guarda dentro do app. */
+  folder: string | null;
+  keep: number;
+  /** Epoch em segundos da última cópia. */
+  last: number | null;
+}
+
+export interface BackupInfo {
+  path: string;
+  name: string;
+  createdAt: number;
+  bytes: number;
 }
 
 /** Uma instalação do LouvorJA desktop encontrada no disco. */
@@ -214,7 +233,8 @@ export interface Diagnostics {
 }
 
 /** Mudança parcial nas preferências (objetos aninhados também parciais). */
-export type SettingsPatch = Partial<Omit<Settings, "slide" | "monitor" | "screenStyle">> & {
+export type SettingsPatch = Partial<Omit<Settings, "slide" | "monitor" | "screenStyle" | "backup">> & {
+  backup?: Partial<BackupSettings>;
   slide?: Partial<SlideStyle>;
   monitor?: Partial<MonitorOptions>;
   screenStyle?: Partial<ScreenStyle>;
@@ -287,12 +307,26 @@ export interface IdleScreen {
   image: string | null;
   text: string;
   showClock: boolean;
+  /** Passa os aniversariantes da semana na tela de espera. */
+  birthdays: boolean;
+  /** Segundos de cada tela quando há mais de uma passando. */
+  rotateSecs: number;
+}
+
+/** Aniversário de alguém da igreja (só dia e mês). */
+export interface Birthday {
+  id: number;
+  name: string;
+  day: number;
+  month: number;
 }
 
 export interface Notice {
   id: number;
   title: string;
   body: string;
+  /** Também passa sozinho na tela de espera. */
+  idle?: boolean;
 }
 
 export interface VideoState {
