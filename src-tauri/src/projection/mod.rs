@@ -10,6 +10,7 @@
 
 mod ass;
 mod background;
+mod idle;
 mod mpv;
 mod output;
 mod render;

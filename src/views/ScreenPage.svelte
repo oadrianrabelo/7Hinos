@@ -1,6 +1,6 @@
 <!-- Avisos, relógio, contagem regressiva, púlpito e a tela de espera. -->
 <script lang="ts">
-  import { Clock, ImagePlus, Megaphone, MonitorOff, Pencil, Plus, Presentation, Timer, Trash2, X } from "@lucide/svelte";
+  import { Cake, Clock, ImagePlus, RefreshCw, Megaphone, MonitorOff, Pencil, Plus, Presentation, Timer, Trash2, X } from "@lucide/svelte";
   import { ask, open } from "@tauri-apps/plugin-dialog";
   import PageHeader from "../components/PageHeader.svelte";
   import AppearancePanel from "../components/AppearancePanel.svelte";
@@ -13,7 +13,8 @@
   import { settings } from "../lib/state/settings.svelte";
   import { stage } from "../lib/state/stage.svelte";
   import { toasts } from "../lib/state/toasts.svelte";
-  import type { IdleScreen, Notice } from "../lib/types";
+  import { birthdaysOfWeek } from "../lib/idle";
+  import type { Birthday, IdleScreen, Notice } from "../lib/types";
 
   let { simple = false }: { simple?: boolean } = $props();
 
@@ -54,6 +55,48 @@
     const ok = await ask(`Apagar o aviso “${notice.title || notice.body.slice(0, 40)}”?`, { title: "Apagar aviso", kind: "warning" });
     if (ok) await screen.deleteNotice(notice.id);
   }
+
+  function toggleIdle(notice: Notice) {
+    return settings.save({ notices: s.notices.map((n) => (n.id === notice.id ? { ...n, idle: !n.idle } : n)) });
+  }
+
+  // Aniversariantes
+  let bName = $state("");
+  let bDate = $state("");
+  let showAllBirthdays = $state(false);
+  const weekBirthdays = $derived(birthdaysOfWeek(s.birthdays ?? [], new Date()));
+  const sortedBirthdays = $derived(
+    [...(s.birthdays ?? [])].sort((a, b) => a.month - b.month || a.day - b.day || a.name.localeCompare(b.name)),
+  );
+
+  /** "5/11", "05/11", "5-11" ou "5.11". */
+  function parseDayMonth(text: string): { day: number; month: number } | null {
+    const m = text.trim().match(/^(\d{1,2})\s*[/.\-]\s*(\d{1,2})/);
+    if (!m) return null;
+    const day = Number(m[1]);
+    const month = Number(m[2]);
+    const max = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+    return max && day >= 1 && day <= max ? { day, month } : null;
+  }
+
+  async function addBirthday() {
+    const name = bName.trim();
+    const date = parseDayMonth(bDate);
+    if (!name) return toasts.error("Escreva o nome");
+    if (!date) return toasts.error("Digite o dia e o mês assim: 05/11");
+    const list = s.birthdays ?? [];
+    const id = Math.max(0, ...list.map((b) => b.id)) + 1;
+    await settings.save({ birthdays: [...list, { id, name, ...date }] });
+    bName = "";
+    bDate = "";
+  }
+
+  function removeBirthday(b: Birthday) {
+    return settings.save({ birthdays: (s.birthdays ?? []).filter((x) => x.id !== b.id) });
+  }
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const rotations: [number, string][] = [[8, "8 segundos"], [12, "12 segundos"], [20, "20 segundos"], [30, "30 segundos"]];
 
   // Tela de espera
   function saveIdle(patch: Partial<IdleScreen>) {
@@ -146,6 +189,13 @@
               <strong class="truncate">{notice.title || "Aviso"}</strong>
               <span class="muted truncate">{notice.body}</span>
             </span>
+            <button
+              class="btn btn-plain btn-icon"
+              class:active={notice.idle}
+              aria-pressed={!!notice.idle}
+              aria-label="Passar na tela de espera"
+              title={notice.idle ? "Passa sozinho na tela de espera (clique para tirar)" : "Passar sozinho na tela de espera"}
+              onclick={() => toggleIdle(notice)}><RefreshCw size={15} /></button>
             <button class="btn btn-plain btn-icon" aria-label="Apagar" title="Apagar" onclick={() => removeNotice(notice)}><Trash2 size={15} /></button>
             <button class="btn btn-plain btn-icon" aria-label="Editar" title="Editar" onclick={() => (editing = { ...notice })}><Pencil size={15} /></button>
             {#if onAir}
@@ -166,7 +216,7 @@
     <p class="muted">Aparece no telão quando nada está sendo apresentado.</p>
     <div class="idle">
       <div class="preview">
-        <SceneView scene={{ kind: "idle" }} style={s.slide} idle={s.idle} screen={s.screenStyle} />
+        <SceneView scene={{ kind: "idle" }} style={s.slide} idle={s.idle} notices={s.notices} birthdays={s.birthdays} screen={s.screenStyle} />
       </div>
       <div class="idle-form">
         <label class="form-label">
@@ -183,8 +233,50 @@
           <span class="grow">Mostrar as horas no canto</span>
           <input type="checkbox" class="switch" checked={s.idle.showClock} onchange={(e) => saveIdle({ showClock: e.currentTarget.checked })} />
         </label>
+        <label class="line switch-row">
+          <span class="grow">Passar os aniversariantes da semana</span>
+          <input type="checkbox" class="switch" checked={s.idle.birthdays} onchange={(e) => saveIdle({ birthdays: e.currentTarget.checked })} />
+        </label>
+        <label class="line switch-row">
+          <span class="grow">Cada tela fica</span>
+          <select value={s.idle.rotateSecs || 12} onchange={(e) => saveIdle({ rotateSecs: Number(e.currentTarget.value) })}>
+            {#each rotations as [n, label] (n)}<option value={n}>{label}</option>{/each}
+          </select>
+        </label>
+        <p class="muted small">
+          Os avisos marcados com <RefreshCw size={12} /> e os aniversariantes passam um de cada vez, entre a tela de espera.
+        </p>
       </div>
     </div>
+  </section>
+
+  <section class="card panel">
+    <header class="line">
+      <h2 class="grow"><Cake size={18} /> Aniversariantes</h2>
+    </header>
+    <p class="muted">
+      {#if weekBirthdays.length}Nesta semana: {weekBirthdays.join(" · ")}{:else}Ninguém faz aniversário nesta semana.{/if}
+      {#if !s.idle.birthdays}<br /><button class="link" onclick={() => saveIdle({ birthdays: true })}>Passar na tela de espera</button>{/if}
+    </p>
+    <form class="line wrap add-birthday" onsubmit={(e) => (e.preventDefault(), void addBirthday())}>
+      <input class="input grow" bind:value={bName} placeholder="Nome" aria-label="Nome" />
+      <input class="input date" bind:value={bDate} placeholder="Dia/mês (05/11)" aria-label="Dia e mês" inputmode="numeric" />
+      <button class="btn" type="submit"><Plus size={15} /> Adicionar</button>
+    </form>
+    {#if sortedBirthdays.length}
+      <ul class="notices birthdays">
+        {#each showAllBirthdays ? sortedBirthdays : sortedBirthdays.slice(0, 8) as b (b.id)}
+          <li>
+            <span class="day">{pad(b.day)}/{pad(b.month)}</span>
+            <span class="grow truncate">{b.name}</span>
+            <button class="btn btn-plain btn-icon" aria-label="Apagar" title="Apagar" onclick={() => removeBirthday(b)}><Trash2 size={15} /></button>
+          </li>
+        {/each}
+      </ul>
+      {#if sortedBirthdays.length > 8}
+        <button class="link" onclick={() => (showAllBirthdays = !showAllBirthdays)}>{showAllBirthdays ? "Mostrar menos" : `Ver todos (${sortedBirthdays.length})`}</button>
+      {/if}
+    {/if}
   </section>
 
   <AppearancePanel />
@@ -276,6 +368,35 @@
   textarea {
     resize: vertical;
     line-height: 1.45;
+  }
+
+  .add-birthday .date {
+    width: 10rem;
+  }
+
+  .birthdays .day {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 3.2rem;
+  }
+
+  .btn-icon.active {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--accent);
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .small {
+    font-size: 0.85rem;
   }
 
   .notices {

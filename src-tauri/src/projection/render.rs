@@ -515,7 +515,39 @@ fn notice(ctx: &Ctx, slide: &Slide, area: Rect, opacity: f32, plain: bool, out: 
     stack(&blocks, area.cqh(4.0), area, 5, opacity, 0.6, out);
 }
 
+/// Dia de hoje no fuso do computador, a partir de `ctx.now`.
+fn today(ctx: &Ctx) -> chrono::NaiveDate {
+    use chrono::TimeZone;
+    chrono::Local
+        .timestamp_millis_opt(ctx.now as i64)
+        .single()
+        .map(|d| d.date_naive())
+        .unwrap_or_default()
+}
+
 fn idle(ctx: &Ctx, area: Rect, opacity: f32, plain: bool, f: &mut Frame) {
+    let (page, next) = super::idle::current(ctx.settings, today(ctx), ctx.now);
+    f.tick = next;
+    if let super::idle::Page::Text { title, body } = page {
+        let slide = Slide {
+            kind: SlideKind::Text,
+            text: body,
+            aux: (!title.is_empty()).then_some(title),
+            image: None,
+            image_position: 5,
+            repeat: false,
+            time_ms: None,
+            instrumental_time_ms: None,
+        };
+        notice(ctx, &slide, area, opacity, plain, &mut f.events);
+        if ctx.settings.idle.show_clock {
+            idle_clock(ctx, area, opacity, plain, f);
+        }
+        if !plain {
+            f.background = themed_background(ctx, None);
+        }
+        return;
+    }
     let idle = &ctx.settings.idle;
     let t = themed(ctx, plain);
     let mut blocks = Vec::new();
@@ -573,26 +605,7 @@ fn idle(ctx: &Ctx, area: Rect, opacity: f32, plain: bool, f: &mut Frame) {
         stack(&blocks, 0.0, text_area, 5, opacity, 0.6, &mut f.events);
     }
     if idle.show_clock {
-        let px = area.cqh(6.0);
-        let font = ctx.fonts.get(t.font, 600);
-        f.events.push(
-            Line {
-                text: &ctx.clock,
-                font: &font,
-                px,
-                x: area.x + area.w - area.cqw(4.0),
-                y: area.y + area.h - area.cqh(4.0) - px * 0.6,
-                align: 6,
-                color: t.text,
-                opacity: opacity * 0.8,
-                spacing: 0.0,
-                shadow: 0.6,
-                scale: 1.0,
-                glow: None,
-            }
-            .event(),
-        );
-        f.tick = Some(1000);
+        idle_clock(ctx, area, opacity, plain, f);
     }
     if !plain {
         f.background = themed_background(ctx, logo_rect);
@@ -604,6 +617,31 @@ fn idle(ctx: &Ctx, area: Rect, opacity: f32, plain: bool, f: &mut Frame) {
             logo: Some((path, rect)),
         });
     }
+}
+
+/// As horas no canto da tela de espera.
+fn idle_clock(ctx: &Ctx, area: Rect, opacity: f32, plain: bool, f: &mut Frame) {
+    let t = themed(ctx, plain);
+    let px = area.cqh(6.0);
+    let font = ctx.fonts.get(t.font, 600);
+    f.events.push(
+        Line {
+            text: &ctx.clock,
+            font: &font,
+            px,
+            x: area.x + area.w - area.cqw(4.0),
+            y: area.y + area.h - area.cqh(4.0) - px * 0.6,
+            align: 6,
+            color: t.text,
+            opacity: opacity * 0.8,
+            spacing: 0.0,
+            shadow: 0.6,
+            scale: 1.0,
+            glow: None,
+        }
+        .event(),
+    );
+    f.tick = Some(f.tick.map_or(1000, |t| t.min(1000)));
 }
 
 /// "04:59", "1:02:03" ou "00:00" quando acabou.
@@ -1781,6 +1819,33 @@ mod tests {
         };
         let f = frame(&ctx(&fonts, &settings), &idle, Role::Audience, 1.0);
         assert!(matches!(f.background, Background::Composed(_)));
+    }
+
+    #[test]
+    fn idle_passes_notices_by_the_clock() {
+        let fonts = fonts();
+        let mut settings = Settings::default();
+        settings.idle.text = "Bem-vindos".into();
+        settings.idle.rotate_secs = 10;
+        settings.notices = vec![crate::settings::Notice {
+            id: 1,
+            title: "Santa Ceia".into(),
+            body: "Sábado às 10h".into(),
+            idle: true,
+        }];
+        let idle = StageState {
+            scene: Scene::Idle,
+            ..Default::default()
+        };
+        let mut c = ctx(&fonts, &settings);
+        c.now = 2_000.0;
+        let f = frame(&c, &idle, Role::Audience, 1.0);
+        assert!(f.events.iter().any(|e| e.contains("Bem-vindos")));
+        assert_eq!(f.tick, Some(8_000));
+        c.now = 12_000.0;
+        let f = frame(&c, &idle, Role::Audience, 1.0);
+        assert!(f.events.iter().any(|e| e.contains("SANTA CEIA")));
+        assert!(f.events.iter().any(|e| e.contains("Sábado às 10h")));
     }
 
     #[test]

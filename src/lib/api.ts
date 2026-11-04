@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   Album,
+  BackupInfo,
   BibleBook,
   BibleHit,
   BibleVersion,
@@ -115,6 +116,10 @@ export const api = {
   displays: () => invoke<Display[]>("displays_list"),
   outputs: () => invoke<Output[]>("outputs_list"),
   projectionAvailable: () => invoke<boolean>("projection_available"),
+  backupList: () => invoke<BackupInfo[]>("backup_list"),
+  backupNow: () => invoke<BackupInfo>("backup_now"),
+  backupRestore: (path: string) => invoke<void>("backup_restore", { path }),
+  backupOpenFolder: () => invoke<void>("backup_open_folder"),
   rosterLoad: () => invoke<unknown>("roster_load"),
   rosterSave: (doc: unknown) => invoke<void>("roster_save", { doc }),
   saveTextFile: (path: string, contents: string) => invoke<void>("text_file_save", { path, contents }),

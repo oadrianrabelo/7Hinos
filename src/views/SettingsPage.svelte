@@ -9,12 +9,13 @@
   import ResetButton from "../components/ResetButton.svelte";
   import { SLIDE_DEFAULTS, UI_DEFAULTS } from "../lib/defaults";
   import TransferPanel from "../components/TransferPanel.svelte";
+  import BackupPanel from "../components/BackupPanel.svelte";
   import SlideView from "../components/SlideView.svelte";
   import { api } from "../lib/api";
 
   async function resetAll() {
     const ok = await ask(
-      "Apaga os hinos baixados ou importados, as músicas guardadas, a Bíblia, as músicas da igreja, os avisos, o culto montado e todos os ajustes. O 7Hinos reinicia como se fosse a primeira vez.\n\nSe quiser guardar algo, gere antes um pacote em “Levar para outro computador”.",
+      "Apaga os hinos baixados ou importados, as músicas guardadas, a Bíblia, as músicas da igreja, os avisos, o culto montado e todos os ajustes. O 7Hinos reinicia como se fosse a primeira vez.\n\nSe quiser guardar algo, faça antes uma “Cópia de segurança” ou gere um pacote em “Levar para outro computador”.",
       { title: "Apagar tudo e começar de novo?", kind: "warning", okLabel: "Apagar tudo", cancelLabel: "Cancelar" },
     );
     if (!ok) return;
@@ -326,6 +327,12 @@
   <section>
     <h2>Controle pelo celular</h2>
     <RemotePanel />
+  </section>
+
+  <section id="copia">
+    <h2>Cópia de segurança</h2>
+    <p class="muted">Se o computador da igreja estragar, nada do que vocês montaram se perde.</p>
+    <BackupPanel />
   </section>
 
   <section>

@@ -98,7 +98,7 @@
           <MonitorClock pulpit={stage.pulpit} options={prefs.monitor} />
         {/if}
       {:else}
-        <SceneView scene={stage.scene} style={prefs.slide} idle={prefs.idle} screen={prefs.screenStyle} />
+        <SceneView scene={stage.scene} style={prefs.slide} idle={prefs.idle} notices={prefs.notices} birthdays={prefs.birthdays} screen={prefs.screenStyle} />
       {/if}
     </ErrorBoundary>
   {/if}
