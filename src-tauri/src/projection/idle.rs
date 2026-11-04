@@ -12,7 +12,10 @@ use crate::settings::Settings;
 pub enum Page {
     /// A tela de espera de sempre.
     Base,
-    Text { title: String, body: String },
+    Text {
+        title: String,
+        body: String,
+    },
 }
 
 pub const BIRTHDAYS_TITLE: &str = "Aniversariantes da semana";
@@ -141,8 +144,14 @@ mod tests {
             birthdays_of_week(&s, date(2026, 12, 30)),
             vec!["01/01 · Réveillon"]
         );
-        assert_eq!(birthdays_of_week(&s, date(2027, 3, 1)), vec!["28/02 · Bissexto"]);
-        assert_eq!(birthdays_of_week(&s, date(2028, 2, 29)), vec!["29/02 · Bissexto"]);
+        assert_eq!(
+            birthdays_of_week(&s, date(2027, 3, 1)),
+            vec!["28/02 · Bissexto"]
+        );
+        assert_eq!(
+            birthdays_of_week(&s, date(2028, 2, 29)),
+            vec!["29/02 · Bissexto"]
+        );
     }
 
     #[test]

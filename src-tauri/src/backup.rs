@@ -90,11 +90,15 @@ fn write_zip(items: &[Item], to: &Path) -> Result<()> {
     // processador (que na igreja costuma ser fraco).
     let deflate = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated);
-    let stored = zip::write::SimpleFileOptions::default()
-        .compression_method(zip::CompressionMethod::Stored);
+    let stored =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
     for item in items {
         for (file, inside) in files_of(item) {
-            let options = if inside.ends_with(".json") { deflate } else { stored };
+            let options = if inside.ends_with(".json") {
+                deflate
+            } else {
+                stored
+            };
             zip.start_file(inside, options)?;
             let mut buf = Vec::new();
             fs::File::open(&file)?.read_to_end(&mut buf)?;
@@ -307,7 +311,10 @@ mod tests {
         fs::remove_file(data.join("apresentacoes/a/1.jpg")).unwrap();
 
         // …e restaura: nada muda até reabrir.
-        assert_eq!(stage_restore(Path::new(&made.path), &config, &items).unwrap(), 4);
+        assert_eq!(
+            stage_restore(Path::new(&made.path), &config, &items).unwrap(),
+            4
+        );
         assert_eq!(fs::read_to_string(data.join("escala.json")).unwrap(), "{}");
 
         assert!(apply_pending(&config, &items));
