@@ -467,6 +467,21 @@ export const ARTICLES: Article[] = [
     route: { name: "displays" },
   },
   {
+    id: "computador-da-igreja",
+    title: "Preparar o computador da igreja (sem internet ou antigo)",
+    summary: "Instalador certo, hinos pelo pendrive e o que fazer se a projeção leve não abrir.",
+    steps: [
+      "Em casa, com internet, baixe o instalador “_x64-offline-setup.exe” na página de versões: ele já traz tudo que o Windows precisa (WebView2).",
+      "Ainda em casa, em Ajustes → Levar para outro computador, salve o pacote no pendrive (hinos, áudios, Bíblia, vídeos).",
+      "Na igreja, instale e, na tela de boas-vindas, escolha Trazer de um pendrive.",
+      "Se a placa de vídeo não aceitar a projeção leve, o 7Hinos usa a compatível sozinho e avisa. Em Telas → Desenho das telas aparece o motivo.",
+      "Hino sem áudio baixado toca só a letra. Para ter o som sem internet, baixe antes (Ajustes → Todo o acervo no computador) e leve no pacote.",
+    ],
+    keywords: ["sem internet", "offline", "igreja", "computador antigo", "computador velho", "instalar", "pendrive", "vulkan", "dll", "erro do sistema", "nao abre", "webview2", "placa de video"],
+    category: "Problemas",
+    route: { name: "displays" },
+  },
+  {
     id: "sem-som",
     title: "O hino não tem som",
     summary: "Confira o volume, a internet e a saída de som.",

@@ -20,7 +20,7 @@ mod win;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::watch;
@@ -34,6 +34,11 @@ use output::{Handle, Shared, Snapshot};
 
 pub struct Native {
     shared: Option<Arc<Shared>>,
+    /// Se o mpv abre neste computador (conferido uma vez, ao iniciar).
+    probe: Arc<OnceLock<Result<String, String>>>,
+    /// Motivo de ter desistido da projeção leve nesta sessão (o mpv caiu ao
+    /// abrir uma tela).
+    broken: Mutex<Option<String>>,
     updates: watch::Sender<Arc<Snapshot>>,
     outputs: Mutex<HashMap<String, Arc<Handle>>>,
 }
@@ -67,15 +72,51 @@ impl Native {
             settings: Default::default(),
             identify_until: 0.0,
         }));
+        // Testa o mpv em segundo plano para não atrasar a abertura; quem
+        // precisar da resposta antes espera por ela.
+        let probe: Arc<OnceLock<Result<String, String>>> = Arc::default();
+        if let Some(shared) = &shared {
+            let (probe, bin) = (probe.clone(), shared.bin.clone());
+            std::thread::spawn(move || {
+                let result = probe.get_or_init(|| mpv::probe(&bin));
+                match result {
+                    Ok(v) => log::info!("projeção leve pronta: {v}"),
+                    Err(e) => log::warn!("projeção leve desligada: {e}; usando a compatível"),
+                }
+            });
+        }
         Native {
             shared,
+            probe,
+            broken: Mutex::default(),
             updates,
             outputs: Mutex::default(),
         }
     }
 
     pub fn available(&self) -> bool {
-        self.shared.is_some()
+        self.unavailable_reason().is_none()
+    }
+
+    /// Por que a projeção leve não está valendo (`None`: está tudo certo).
+    pub fn unavailable_reason(&self) -> Option<String> {
+        let Some(shared) = &self.shared else {
+            return Some("o mpv não foi encontrado".into());
+        };
+        if let Some(reason) = self.broken.locked().clone() {
+            return Some(reason);
+        }
+        self.probe
+            .get_or_init(|| mpv::probe(&shared.bin))
+            .as_ref()
+            .err()
+            .cloned()
+    }
+
+    /// O mpv caiu ao abrir uma tela: o resto da sessão usa a compatível.
+    pub fn give_up(&self, reason: &str) {
+        log::warn!("projeção leve desligada nesta sessão: {reason}");
+        *self.broken.locked() = Some(reason.to_owned());
     }
 
     pub fn is_native(&self, label: &str) -> bool {
@@ -89,7 +130,7 @@ impl Native {
         app: &AppHandle,
         label: &str,
         placement: Placement,
-        on_exit: impl FnOnce(String) + Send + 'static,
+        on_exit: impl FnOnce(String, Option<String>) + Send + 'static,
     ) -> Result<(), String> {
         let Some(shared) = self.shared.clone() else {
             return Err("O mpv não está instalado.".into());
@@ -394,6 +435,52 @@ mod e2e {
             .status();
     }
 
+    /// O mpv que não abre (DLL faltando, placa sem suporte) avisa a falha,
+    /// para o app reabrir a tela na projeção compatível.
+    #[cfg(unix)]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn broken_mpv_reports_failure() {
+        use std::os::unix::fs::PermissionsExt;
+        let tmp = tempfile::tempdir().unwrap();
+        let bin = tmp.path().join("mpv");
+        std::fs::write(&bin, "#!/bin/sh\nexit 1\n").unwrap();
+        std::fs::set_permissions(&bin, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let shared = Arc::new(Shared {
+            bin,
+            fonts: Arc::new(text::Fonts::new(tmp.path().join("fonts"))),
+            cache: tmp.path().join("cache"),
+            user_media: tmp.path().to_path_buf(),
+        });
+        let (_tx, rx) = watch::channel(Arc::new(Snapshot {
+            state: Default::default(),
+            settings: Default::default(),
+            identify_until: 0.0,
+        }));
+        let (done, mut got) = tokio::sync::mpsc::unbounded_channel();
+        let placement = Placement {
+            monitor: None,
+            role: Role::Audience,
+            name: "Tela 2".into(),
+            wid: None,
+        };
+        let _handle = output::start(
+            Arc::new(|_, _| {}),
+            "output-9".into(),
+            placement,
+            shared,
+            rx,
+            move |label, failed| {
+                let _ = done.send((label, failed));
+            },
+        );
+        let (label, failed) = tokio::time::timeout(std::time::Duration::from_secs(20), got.recv())
+            .await
+            .expect("on_exit deveria rodar")
+            .unwrap();
+        assert_eq!(label, "output-9");
+        assert!(failed.is_some(), "a falha deveria ser avisada");
+    }
+
     #[tokio::test(flavor = "multi_thread")]
     #[ignore]
     async fn e2e() {
@@ -432,9 +519,14 @@ mod e2e {
             name: "Tela 2".into(),
             wid: None,
         };
-        let handle = output::start(emit, "output-1".into(), placement, shared, rx, move |_| {
-            flag.store(true, std::sync::atomic::Ordering::SeqCst)
-        });
+        let handle = output::start(
+            emit,
+            "output-1".into(),
+            placement,
+            shared,
+            rx,
+            move |_, _| flag.store(true, std::sync::atomic::Ordering::SeqCst),
+        );
         tokio::time::sleep(Duration::from_millis(2500)).await;
         shot(&out, "e2e-1-hino");
 

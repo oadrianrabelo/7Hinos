@@ -5,6 +5,7 @@
 //! não carrega navegador nenhum: é o que deixa a projeção leve.
 
 use std::collections::BTreeSet;
+use std::io::Read as _;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::Duration;
@@ -100,6 +101,49 @@ pub fn find(resource_dir: Option<&Path>) -> Option<PathBuf> {
         .map(PathBuf::from),
     );
     candidates.into_iter().find(|p| p.is_file())
+}
+
+/// Confere se este mpv abre neste computador: falta de DLL (vulkan-1.dll num
+/// computador antigo, por exemplo) só aparece quando ele roda. Devolve o
+/// motivo quando não abre.
+pub fn probe(bin: &Path) -> Result<String, String> {
+    let mut cmd = std::process::Command::new(bin);
+    cmd.arg("--no-config")
+        .arg("--version")
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null());
+    hide_console(&mut cmd);
+    let mut child = cmd.spawn().map_err(|e| format!("o mpv não abriu ({e})"))?;
+    let started = std::time::Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                let mut out = String::new();
+                if let Some(mut stdout) = child.stdout.take() {
+                    let _ = stdout.read_to_string(&mut out);
+                }
+                let first = out.lines().next().unwrap_or("").trim().to_owned();
+                return if status.success() && first.starts_with("mpv") {
+                    Ok(first)
+                } else {
+                    Err(match status.code() {
+                        // STATUS_DLL_NOT_FOUND / STATUS_ENTRYPOINT_NOT_FOUND
+                        Some(-1073741515) => "falta um arquivo (DLL) que o mpv usa".to_owned(),
+                        Some(-1073741511) => "uma DLL do mpv é de versão incompatível".to_owned(),
+                        Some(c) => format!("o mpv fechou com erro ({c:#x})"),
+                        None => "o mpv fechou com erro".to_owned(),
+                    })
+                };
+            }
+            Ok(None) if started.elapsed() > Duration::from_secs(15) => {
+                let _ = child.kill();
+                return Err("o mpv não respondeu".into());
+            }
+            Ok(None) => std::thread::sleep(Duration::from_millis(50)),
+            Err(e) => return Err(format!("o mpv não abriu ({e})")),
+        }
+    }
 }
 
 /// As opções que este mpv conhece. Versões diferentes recusam opções novas
@@ -332,6 +376,33 @@ async fn connect(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    fn fake(dir: &Path, body: &str) -> PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let path = dir.join("mpv");
+        std::fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        path
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn probe_tells_a_working_mpv_from_a_broken_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let ok = fake(dir.path(), "echo 'mpv v0.39.0 Copyright'");
+        assert_eq!(probe(&ok).unwrap(), "mpv v0.39.0 Copyright");
+        // Como no computador da igreja: o programa não abre por falta de DLL.
+        let broken = fake(
+            dir.path(),
+            "echo 'error while loading vulkan-1' >&2; exit 127",
+        );
+        assert!(probe(&broken).unwrap_err().contains("erro"));
+        // Responde, mas não é o mpv.
+        let other = fake(dir.path(), "echo oi");
+        assert!(probe(&other).is_err());
+        assert!(probe(&dir.path().join("nao-existe")).is_err());
+    }
 
     #[test]
     fn reads_mpv_events() {

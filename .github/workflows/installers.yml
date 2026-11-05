@@ -84,22 +84,15 @@ jobs:
 
       - run: npm ci
 
-      # Projeção leve: o mpv vai junto no Windows. Build "x86_64" (sem o
-      # "-v3"), que não exige AVX2 e roda em processadores antigos (Pentium,
-      # Celeron). No Linux e no macOS a projeção usa o mpv do sistema.
+      # Projeção leve: o mpv vai junto no Windows, com o vulkan-1.dll e a
+      # conferência de que abre num Windows limpo e sem placa nova. No Linux
+      # e no macOS a projeção usa o mpv do sistema.
       - name: mpv (Windows)
         if: startsWith(matrix.platform, 'windows')
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release download --repo shinchiro/mpv-winbuild-cmake --pattern 'mpv-x86_64-2*.7z' --dir mpv-dl
-          sha256sum mpv-dl/*.7z
-          7z x -ompv-dl/x mpv-dl/*.7z > /dev/null
-          mkdir -p src-tauri/mpv
-          cp mpv-dl/x/mpv.exe src-tauri/mpv/
-          cp mpv-dl/x/*.dll src-tauri/mpv/ 2>/dev/null || true
-          ls -la src-tauri/mpv
+        run: scripts/windows-mpv.sh
 
       - uses: tauri-apps/tauri-action@v1
         env:
@@ -108,6 +101,12 @@ jobs:
           releaseId: ${{ needs.release.outputs.id }}
           uploadUpdaterJson: false
           args: ${{ matrix.args }}
+      # O 7Hinos também precisa abrir num Windows limpo (sem Visual C++).
+      - name: DLLs do 7Hinos (Windows)
+        if: startsWith(matrix.platform, 'windows')
+        shell: bash
+        run: python scripts/windows-deps.py src-tauri/target/release/*.exe
+
       # Instalador alternativo com o WebView2 embutido (~180 MB a mais), para
       # computadores sem internet que nunca tiveram o WebView2. O principal
       # fica pequeno: o Windows 10 atualizado e o 11 já trazem o WebView2.

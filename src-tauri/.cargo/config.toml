@@ -1,0 +1,5 @@
+# O 7Hinos não depende do Visual C++ instalado no computador (muitos
+# computadores de igreja, sem internet, não têm): a biblioteca do C vai
+# dentro do programa. O CI confere com scripts/windows-deps.py.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

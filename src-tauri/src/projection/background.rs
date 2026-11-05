@@ -210,7 +210,25 @@ pub fn thumbnail(path: &str, w: u32, h: u32, cache: &Path) -> std::io::Result<Pa
 /// Fundo que só existe na internet (hino ainda não baixado): baixa uma vez
 /// para a pasta da projeção e devolve o arquivo. Sem internet, `None` (e o
 /// fundo vira o degradê padrão).
+///
+/// Nunca segura a letra: espera o download no máximo um instante e, se não
+/// chegou, a letra entra com o fundo padrão enquanto ele continua baixando.
+/// Um endereço que falhou não é tentado de novo por um tempo (num Wi‑Fi sem
+/// saída para a internet, cada tentativa demoraria segundos).
 pub async fn fetch(url: &str, cache: &Path) -> Option<String> {
+    fetch_waiting(url, cache, std::time::Duration::from_millis(800)).await
+}
+
+async fn fetch_waiting(url: &str, cache: &Path, wait: std::time::Duration) -> Option<String> {
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex, OnceLock};
+    use std::time::{Duration, Instant};
+    use tokio::sync::Notify;
+
+    static IN_FLIGHT: OnceLock<Mutex<HashMap<String, Arc<Notify>>>> = OnceLock::new();
+    static FAILED: OnceLock<Mutex<HashMap<String, Instant>>> = OnceLock::new();
+    const RETRY_AFTER: Duration = Duration::from_secs(600);
+
     if !(url.starts_with("https://") || url.starts_with("http://")) {
         return None;
     }
@@ -222,10 +240,50 @@ pub async fn fetch(url: &str, cache: &Path) -> Option<String> {
     if out.is_file() {
         return Some(out.to_string_lossy().into_owned());
     }
+    let failed = FAILED.get_or_init(Mutex::default);
+    if failed
+        .lock()
+        .ok()?
+        .get(url)
+        .is_some_and(|t| t.elapsed() < RETRY_AFTER)
+    {
+        return None;
+    }
+    let notify = {
+        let mut map = IN_FLIGHT.get_or_init(Mutex::default).lock().ok()?;
+        match map.get(url) {
+            Some(n) => n.clone(),
+            None => {
+                let n = Arc::new(Notify::new());
+                map.insert(url.to_owned(), n.clone());
+                let (url, out, done) = (url.to_owned(), out.clone(), n.clone());
+                tokio::spawn(async move {
+                    let ok = download(&url, &out).await.is_some();
+                    if !ok {
+                        log::info!("fundo sem internet, usando o padrão: {url}");
+                        if let Ok(mut f) = FAILED.get_or_init(Mutex::default).lock() {
+                            f.insert(url.clone(), Instant::now());
+                        }
+                    }
+                    if let Ok(mut m) = IN_FLIGHT.get_or_init(Mutex::default).lock() {
+                        m.remove(&url);
+                    }
+                    done.notify_waiters();
+                });
+                n
+            }
+        }
+    };
+    let _ = tokio::time::timeout(wait, notify.notified()).await;
+    out.is_file().then(|| out.to_string_lossy().into_owned())
+}
+
+async fn download(url: &str, out: &Path) -> Option<()> {
     static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
     let client = CLIENT.get_or_init(|| {
         reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(6))
+            .connect_timeout(std::time::Duration::from_secs(4))
+            .timeout(std::time::Duration::from_secs(20))
             .build()
             .unwrap_or_default()
     });
@@ -242,8 +300,8 @@ pub async fn fetch(url: &str, cache: &Path) -> Option<String> {
     std::fs::create_dir_all(out.parent()?).ok()?;
     let tmp = out.with_extension("tmp");
     std::fs::write(&tmp, &bytes).ok()?;
-    std::fs::rename(&tmp, &out).ok()?;
-    Some(out.to_string_lossy().into_owned())
+    std::fs::rename(&tmp, out).ok()?;
+    Some(())
 }
 
 /// Largura e altura de uma imagem, lendo só o cabeçalho.
@@ -255,6 +313,30 @@ pub fn image_size(path: &str) -> Option<(u32, u32)> {
 mod tests {
     use super::*;
     use crate::projection::render::Rect;
+
+    /// Sem internet (endereço que não responde), a letra não espera.
+    #[tokio::test]
+    async fn never_holds_the_slide_without_internet() {
+        let dir = tempfile::tempdir().unwrap();
+        // Porta fechada no próprio computador: falha como sem rede.
+        let url = "http://127.0.0.1:9/fundo.jpg";
+        let started = std::time::Instant::now();
+        assert_eq!(fetch(url, dir.path()).await, None);
+        assert!(started.elapsed() < std::time::Duration::from_secs(2));
+        // Depois de falhar, nem tenta de novo por um tempo.
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        let again = std::time::Instant::now();
+        assert_eq!(fetch(url, dir.path()).await, None);
+        assert!(again.elapsed() < std::time::Duration::from_millis(50));
+        // Wi‑Fi sem saída para a internet: o endereço nem responde. A letra
+        // entra em menos de um segundo mesmo assim.
+        let started = std::time::Instant::now();
+        assert_eq!(
+            fetch("http://10.255.255.1/fundo.jpg", dir.path()).await,
+            None
+        );
+        assert!(started.elapsed() < std::time::Duration::from_millis(1500));
+    }
 
     #[test]
     fn composes_once_and_reuses() {

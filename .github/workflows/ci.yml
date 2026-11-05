@@ -49,3 +49,15 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - working-directory: src-tauri
         run: cargo test
+
+  # O pacote do Windows abre num computador limpo, sem internet e com placa
+  # de vídeo antiga? (DLL faltando = o mpv nem abre na igreja.)
+  windows-package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: mpv, vulkan-1.dll e conferência das DLLs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: scripts/windows-mpv.sh

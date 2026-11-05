@@ -534,6 +534,8 @@ export function install() {
             { id: "tv", name: "Tela 2", width: 1920, height: 1080, primary: false, hostsController: false, output: outputs.find((o) => o.displayId === "tv")?.label ?? null },
             { id: "stage", name: "Tela 3", width: 1920, height: 1080, primary: false, hostsController: false, output: outputs.find((o) => o.displayId === "stage")?.label ?? null },
           ];
+        case "projection_problem":
+          return params.get("native") === "1" ? null : "o mpv não foi encontrado";
         case "projection_available":
           return params.get("native") === "1";
         case "outputs_list":

@@ -113,6 +113,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
+            quiet_system_errors();
             let data_dir = app.path().app_data_dir()?;
             let config_dir = app.path().app_config_dir()?;
             if !reset::apply_pending(&config_dir, &[&config_dir, &data_dir]) {
@@ -246,6 +247,7 @@ pub fn run() {
             commands::video_tag,
             commands::displays_identify,
             commands::projection_available,
+            commands::projection_problem,
             commands::roster_load,
             commands::roster_save,
             commands::text_file_save,
@@ -257,4 +259,19 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("erro ao iniciar o 7Hinos");
+}
+
+/// No Windows, um programa que não acha uma DLL (o mpv sem `vulkan-1.dll`
+/// num computador antigo, por exemplo) abre uma janela de erro que trava tudo
+/// até alguém clicar. Com este modo, herdado pelos programas que o 7Hinos
+/// abre, o erro só volta como código e o app troca para a projeção
+/// compatível sozinho.
+fn quiet_system_errors() {
+    #[cfg(windows)]
+    unsafe {
+        use windows_sys::Win32::System::Diagnostics::Debug::{
+            SetErrorMode, SEM_FAILCRITICALERRORS, SEM_NOGPFAULTERRORBOX, SEM_NOOPENFILEERRORBOX,
+        };
+        SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+    }
 }

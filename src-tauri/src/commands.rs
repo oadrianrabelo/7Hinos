@@ -930,6 +930,12 @@ pub fn projection_available(state: State<AppState>) -> bool {
     state.native.available()
 }
 
+/// Por que a projeção leve não vale neste computador (`None`: vale).
+#[tauri::command]
+pub fn projection_problem(state: State<AppState>) -> Option<String> {
+    state.native.unavailable_reason()
+}
+
 /// Cada tela aberta mostra o próprio nome por alguns segundos.
 #[tauri::command]
 pub fn displays_identify(app: AppHandle) {
