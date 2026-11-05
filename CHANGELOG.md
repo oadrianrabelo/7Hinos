@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/oadrianrabelo/7Hinos/compare/v1.11.0...v1.11.1) (2026-11-05)
+
+
+### 🐛 Correções
+
+* **projeção:** abrir em computador antigo e sem internet, com volta automática para a compatível ([#61](https://github.com/oadrianrabelo/7Hinos/issues/61)) ([937d786](https://github.com/oadrianrabelo/7Hinos/commit/937d786a1b43154e19b8404c1c70b6d50b78f9aa))
+
 ## [1.11.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.10.2...v1.11.0) (2026-11-04)
 
 
