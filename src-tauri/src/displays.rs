@@ -305,21 +305,45 @@ fn open_native(
         role,
         name,
     };
-    state
-        .outputs
-        .open
-        .locked()
-        .insert(label.clone(), Placement { display_id, role });
+    state.outputs.open.locked().insert(
+        label.clone(),
+        Placement {
+            display_id: display_id.clone(),
+            role,
+        },
+    );
     state
         .native
         .open(app, &label, placement, {
             let app = app.clone();
-            move |label| {
+            let again = Placement {
+                display_id: display_id.clone(),
+                role,
+            };
+            move |label, failed: Option<String>| {
                 // O mpv fechou: a janela dele vai junto.
                 if let Some(host) = app.get_window(&host_label(&label)) {
                     let _ = host.destroy();
                 }
+                // A tela que estava aberta agora (pode ter mudado de papel).
+                let now = app
+                    .state::<AppState>()
+                    .outputs
+                    .open
+                    .locked()
+                    .get(&label)
+                    .cloned()
+                    .unwrap_or(again);
                 output_gone(&app, &label);
+                if let Some(reason) = failed {
+                    // Não deu certo neste computador: reabre a mesma tela com
+                    // a projeção compatível e avisa quem está no controle.
+                    app.state::<AppState>().native.give_up(&reason);
+                    let _ = app.emit(FALLBACK_EVENT, &reason);
+                    if let Err(e) = open(&app, now.display_id, now.role) {
+                        log::error!("não deu para reabrir a tela na projeção compatível: {e}");
+                    }
+                }
             }
         })
         .map_err(Error::other)?;
@@ -334,6 +358,9 @@ fn open_native(
     });
     Ok(label)
 }
+
+/// A projeção leve não funcionou e a tela foi reaberta na compatível.
+pub const FALLBACK_EVENT: &str = "projection://fallback";
 
 fn host_label(label: &str) -> String {
     format!("{label}-tela")

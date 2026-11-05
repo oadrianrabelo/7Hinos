@@ -160,7 +160,7 @@ pub fn start(
     placement: Placement,
     shared: Arc<Shared>,
     updates: watch::Receiver<Arc<Snapshot>>,
-    on_exit: impl FnOnce(String) + Send + 'static,
+    on_exit: impl FnOnce(String, Option<String>) + Send + 'static,
 ) -> Handle {
     let role = Arc::new(Mutex::new(placement.role));
     let slot: Arc<Mutex<Option<Arc<Mpv>>>> = Arc::default();
@@ -177,16 +177,17 @@ pub fn start(
             Ok(m) => Arc::new(m),
             Err(e) => {
                 log::error!("não deu para abrir o mpv da projeção {label}: {e}");
-                on_exit(label);
+                on_exit(label, Some(format!("o mpv não abriu ({e})")));
                 return;
             }
         };
         *slot.locked() = Some(mpv.clone());
         if closed.load(Ordering::SeqCst) {
             mpv.quit().await;
-            on_exit(label);
+            on_exit(label, None);
             return;
         }
+        let started = Instant::now();
         // Em janela, dois cliques ocupam a tela inteira (como antes).
         mpv.command(json!(["keybind", "MBTN_LEFT_DBL", "cycle fullscreen"]));
         if cfg!(windows) && placement.wid.is_none() {
@@ -224,7 +225,13 @@ pub fn start(
             message_since: 0.0,
         };
         screen.run(updates, events).await;
-        on_exit(label);
+        // Caiu sozinho logo depois de abrir (placa de vídeo sem suporte, DLL
+        // faltando…): quem chamou troca pela projeção compatível.
+        let failed = !closed.load(Ordering::SeqCst) && started.elapsed() < Duration::from_secs(10);
+        on_exit(
+            label,
+            failed.then(|| "o mpv fechou logo ao abrir a tela".to_owned()),
+        );
     });
     handle
 }

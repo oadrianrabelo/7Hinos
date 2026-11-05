@@ -14,6 +14,9 @@ class OutputsState {
       toasts.error("Uma tela de projeção foi desconectada. Ela volta sozinha quando for religada."),
     );
     await on("displays://restored", () => toasts.show("A tela de projeção voltou.", "success"));
+    await on("projection://fallback", () =>
+      toasts.show("A projeção leve não funcionou neste computador. A tela foi aberta no modo compatível.", "info"),
+    );
     await this.refresh();
   }
 

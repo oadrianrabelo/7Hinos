@@ -116,6 +116,7 @@ export const api = {
   displays: () => invoke<Display[]>("displays_list"),
   outputs: () => invoke<Output[]>("outputs_list"),
   projectionAvailable: () => invoke<boolean>("projection_available"),
+  projectionProblem: () => invoke<string | null>("projection_problem"),
   backupList: () => invoke<BackupInfo[]>("backup_list"),
   backupNow: () => invoke<BackupInfo>("backup_now"),
   backupRestore: (path: string) => invoke<void>("backup_restore", { path }),
@@ -139,6 +140,8 @@ export interface Events {
   "displays://changed": null;
   "displays://lost": null;
   "displays://restored": null;
+  /** A projeção leve não abriu neste computador; a tela foi reaberta na compatível. */
+  "projection://fallback": string;
   "displays://identify": null;
   /** Uma tela não conseguiu tocar o vídeo. */
   "video://failed": { path: string; title: string };

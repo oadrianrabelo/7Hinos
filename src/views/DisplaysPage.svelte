@@ -21,10 +21,14 @@
 
   // Projeção leve (mpv) ou compatível (WebView).
   let lightAvailable = $state<boolean | null>(null);
-  void api
-    .projectionAvailable()
-    .then((v) => (lightAvailable = v))
-    .catch(() => (lightAvailable = false));
+  let lightProblem = $state<string | null>(null);
+  $effect(() => {
+    void outputs.outputs.length; // confere de novo quando uma tela abre ou fecha
+    void api
+      .projectionProblem()
+      .then((p) => ((lightProblem = p), (lightAvailable = p === null)))
+      .catch(() => (lightAvailable = false));
+  });
   const engine = $derived(settings.current.projection === "web" ? "web" : "light");
 
   async function setEngine(value: "light" | "web") {
@@ -161,8 +165,8 @@
         Projeção
         <span class="muted block">
           {#if lightAvailable === false}
-            A projeção leve precisa do mpv, que não foi encontrado neste computador. No Linux e no macOS, instale o mpv
-            pelo sistema.
+            A projeção leve não funciona neste computador{lightProblem ? ` (${lightProblem})` : ""}, então as telas usam a
+            compatível. No Linux e no macOS, instale o mpv pelo sistema.
           {:else if engine === "light"}
             Leve: o telão e o retorno são desenhados pelo mpv, que usa a placa de vídeo e pesa bem menos.
           {:else}
