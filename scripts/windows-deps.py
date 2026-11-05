@@ -35,6 +35,7 @@ SYSTEM = {
     "wtsapi32.dll", "msvcp_win.dll", "combase.dll", "dhcpcsvc.dll", "credui.dll",
     "dinput8.dll", "xinput1_4.dll", "xinput9_1_0.dll", "dsound.dll", "mfplat.dll", "mf.dll",
     "mfreadwrite.dll", "evr.dll", "mfuuid.dll", "winusb.dll", "authz.dll", "wevtapi.dll",
+    "avicap32.dll", "avifil32.dll", "msvfw32.dll", "msacm32.drv", "ksproxy.ax", "mfcore.dll",
     "dxgidebug.dll", "d3d11on12.dll", "pdh.dll", "esent.dll", "cryptbase.dll", "uiautomationcore.dll",
 }
 # Faltam no Windows "N" (sem o pacote de mídia): avisa, mas não reprova.
