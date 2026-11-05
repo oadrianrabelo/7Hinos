@@ -155,6 +155,8 @@ def check(roots: list[Path]) -> int:
 
 
 if __name__ == "__main__":
+    # O console do Windows não é UTF-8 por padrão.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(2)
