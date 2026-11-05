@@ -25,19 +25,34 @@ echo "::endgroup::"
 # Khronos: sem driver Vulkan, ele só responde que não há placa compatível e
 # o mpv desenha com Direct3D 11 ou OpenGL.
 echo "::group::vulkan-1.dll"
+lunarg() {
+  # A versão atual do SDK; o arquivo dos componentes tem a versão no nome.
+  local v
+  v=$(curl -fsSL --retry 3 https://vulkan.lunarg.com/sdk/latest/windows.txt | tr -d '[:space:]') || return 1
+  echo "Vulkan SDK $v"
+  for name in "VulkanRT-X64-$v-Components.zip" "VulkanRT-$v-Components.zip"; do
+    if curl -fsSL --retry 3 -o "$work/vkrt.zip" "https://sdk.lunarg.com/sdk/download/$v/windows/$name?u="; then
+      7z x -o"$work/vkrt" "$work/vkrt.zip" > /dev/null || return 1
+      local dll
+      dll=$(find "$work/vkrt" -iname 'vulkan-1.dll' | grep -i -e x64 -e amd64 | head -1)
+      [ -z "$dll" ] && dll=$(find "$work/vkrt" -iname 'vulkan-1.dll' | head -1)
+      [ -n "$dll" ] && cp "$dll" "$out/vulkan-1.dll" && return 0
+    fi
+  done
+  return 1
+}
+msys2() {
+  local pacman=/c/msys64/usr/bin/pacman.exe
+  "$pacman" -S --noconfirm --needed mingw-w64-x86_64-vulkan-loader
+  local dll
+  dll=$("$pacman" -Ql mingw-w64-x86_64-vulkan-loader | awk '{print $2}' | grep -iE '/bin/(lib)?vulkan-1\.dll$' | head -1)
+  [ -n "$dll" ] || return 1
+  cp "/c/msys64${dll}" "$out/vulkan-1.dll"
+}
 if [ ! -f "$out/vulkan-1.dll" ]; then
-  if curl -fsSL --retry 3 -o "$work/vkrt.zip" \
-      "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-runtime-components.zip?u=" \
-    && 7z x -o"$work/vkrt" "$work/vkrt.zip" > /dev/null; then
-    dll=$(find "$work/vkrt" -ipath '*x64*' -iname 'vulkan-1.dll' | head -1)
-    [ -n "$dll" ] && cp "$dll" "$out/vulkan-1.dll"
-  fi
+  lunarg || { echo "LunarG indisponível; usando o carregador do MSYS2"; msys2; }
 fi
-if [ ! -f "$out/vulkan-1.dll" ]; then
-  echo "LunarG indisponível; usando o carregador do MSYS2"
-  /c/msys64/usr/bin/pacman.exe -S --noconfirm --needed mingw-w64-x86_64-vulkan-loader
-  cp /c/msys64/mingw64/bin/libvulkan-1.dll "$out/vulkan-1.dll"
-fi
+[ -f "$out/vulkan-1.dll" ] || { echo "::error::não consegui o vulkan-1.dll"; exit 1; }
 echo "::endgroup::"
 ls -la "$out"
 
