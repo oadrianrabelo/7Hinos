@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.2](https://github.com/oadrianrabelo/7Hinos/compare/v1.11.1...v1.11.2) (2026-11-08)
+
+
+### 🐛 Correções
+
+* **projeção:** telas nas TVs com mpv, fechar tela não fecha o app, vídeo volta ao fim ([#63](https://github.com/oadrianrabelo/7Hinos/issues/63)) ([22885f5](https://github.com/oadrianrabelo/7Hinos/commit/22885f51bdf59a5f80c3f6c29be0fb686e367586))
+
 ## [1.11.1](https://github.com/oadrianrabelo/7Hinos/compare/v1.11.0...v1.11.1) (2026-11-05)
 
 
