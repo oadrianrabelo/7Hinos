@@ -36,9 +36,6 @@ pub struct Native {
     shared: Option<Arc<Shared>>,
     /// Se o mpv abre neste computador (conferido uma vez, ao iniciar).
     probe: Arc<OnceLock<Result<String, String>>>,
-    /// Motivo de ter desistido da projeção leve nesta sessão (o mpv caiu ao
-    /// abrir uma tela).
-    broken: Mutex<Option<String>>,
     updates: watch::Sender<Arc<Snapshot>>,
     outputs: Mutex<HashMap<String, Arc<Handle>>>,
 }
@@ -51,6 +48,7 @@ impl Native {
         data_dir: &Path,
         cache_dir: &Path,
         user_media: PathBuf,
+        log_dir: Option<PathBuf>,
     ) -> Native {
         let bin = mpv::find(resource_dir);
         match &bin {
@@ -65,6 +63,7 @@ impl Native {
                 fonts: Arc::new(text::Fonts::new(fonts_dir)),
                 cache: cache_dir.join("projection"),
                 user_media,
+                logs: log_dir,
             })
         });
         let (updates, _) = watch::channel(Arc::new(Snapshot {
@@ -88,7 +87,6 @@ impl Native {
         Native {
             shared,
             probe,
-            broken: Mutex::default(),
             updates,
             outputs: Mutex::default(),
         }
@@ -103,20 +101,11 @@ impl Native {
         let Some(shared) = &self.shared else {
             return Some("o mpv não foi encontrado".into());
         };
-        if let Some(reason) = self.broken.locked().clone() {
-            return Some(reason);
-        }
         self.probe
             .get_or_init(|| mpv::probe(&shared.bin))
             .as_ref()
             .err()
             .cloned()
-    }
-
-    /// O mpv caiu ao abrir uma tela: o resto da sessão usa a compatível.
-    pub fn give_up(&self, reason: &str) {
-        log::warn!("projeção leve desligada nesta sessão: {reason}");
-        *self.broken.locked() = Some(reason.to_owned());
     }
 
     pub fn is_native(&self, label: &str) -> bool {
@@ -435,6 +424,79 @@ mod e2e {
             .status();
     }
 
+    /// Computador antigo: o mpv demora para abrir (antivírus, telão e
+    /// retorno abrindo juntos). Antes, passados 5 s, a tela caía no modo
+    /// compatível; agora espera. Precisa de tela (Xvfb) e do mpv instalado.
+    #[cfg(unix)]
+    #[tokio::test(flavor = "multi_thread")]
+    #[ignore]
+    async fn slow_mpv_still_opens() {
+        use std::os::unix::fs::PermissionsExt;
+        let Some(real) = mpv::find(None) else {
+            return;
+        };
+        let tmp = tempfile::tempdir().unwrap();
+        let bin = tmp.path().join("mpv");
+        std::fs::write(
+            &bin,
+            format!(
+                "#!/bin/sh\ncase \"$*\" in *--list-options*|*--version*) ;; *) sleep 8 ;; esac\nexec {} \"$@\"\n",
+                real.display()
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&bin, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let shared = Arc::new(Shared {
+            bin,
+            fonts: Arc::new(text::Fonts::new(
+                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fonts"),
+            )),
+            cache: tmp.path().join("cache"),
+            user_media: tmp.path().to_path_buf(),
+            logs: Some(tmp.path().to_path_buf()),
+        });
+        let (_tx, rx) = watch::channel(Arc::new(Snapshot {
+            state: Default::default(),
+            settings: Default::default(),
+            identify_until: 0.0,
+        }));
+        let (done, mut got) = tokio::sync::mpsc::unbounded_channel();
+        let placement = Placement {
+            monitor: None,
+            role: Role::Audience,
+            name: "Tela 2".into(),
+            wid: None,
+        };
+        let handle = output::start(
+            Arc::new(|_, _| {}),
+            "output-8".into(),
+            placement,
+            shared,
+            rx,
+            move |label, failed| {
+                let _ = done.send((label, failed));
+            },
+        );
+        // Aos 14 s ainda está aberta (não caiu nem desistiu).
+        let early = tokio::time::timeout(std::time::Duration::from_secs(14), got.recv()).await;
+        assert!(early.is_err(), "não deveria ter fechado: {early:?}");
+        let files: Vec<_> = std::fs::read_dir(tmp.path())
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name())
+            .collect();
+        assert!(
+            tmp.path().join("mpv-telao.log").is_file(),
+            "registro do mpv: {files:?}"
+        );
+        std::thread::spawn(move || handle.close()).join().unwrap();
+        let (_, failed) = tokio::time::timeout(std::time::Duration::from_secs(10), got.recv())
+            .await
+            .expect("fecha")
+            .unwrap();
+        assert_eq!(failed, None, "fechar de propósito não é falha");
+    }
+
     /// O mpv que não abre (DLL faltando, placa sem suporte) avisa a falha,
     /// para o app reabrir a tela na projeção compatível.
     #[cfg(unix)]
@@ -450,6 +512,7 @@ mod e2e {
             fonts: Arc::new(text::Fonts::new(tmp.path().join("fonts"))),
             cache: tmp.path().join("cache"),
             user_media: tmp.path().to_path_buf(),
+            logs: None,
         });
         let (_tx, rx) = watch::channel(Arc::new(Snapshot {
             state: Default::default(),
@@ -496,6 +559,7 @@ mod e2e {
             )),
             cache: tmp.path().join("cache"),
             user_media: tmp.path().to_path_buf(),
+            logs: None,
         });
         let snap = |state: StageState| {
             Arc::new(Snapshot {
@@ -641,7 +705,11 @@ mod e2e {
             shot(&out, "e2e-6-depois");
         }
 
-        handle.close();
+        // Fechar vem de um comando do Tauri ou de um evento de janela, fora
+        // do runtime do tokio (foi o que derrubava o app inteiro).
+        std::thread::spawn(move || handle.close())
+            .join()
+            .expect("fechar não pode dar pânico");
         tokio::time::sleep(Duration::from_millis(2000)).await;
         assert!(
             exited.load(std::sync::atomic::Ordering::SeqCst),

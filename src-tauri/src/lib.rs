@@ -140,6 +140,7 @@ pub fn run() {
                     .app_cache_dir()
                     .unwrap_or_else(|_| data_dir.join("cache")),
                 library.user().media_dir().to_path_buf(),
+                app.path().app_log_dir().ok(),
             );
             app.manage(AppState {
                 settings,

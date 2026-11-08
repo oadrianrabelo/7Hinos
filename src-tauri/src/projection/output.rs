@@ -38,6 +38,9 @@ pub struct Shared {
     pub fonts: Arc<Fonts>,
     pub cache: PathBuf,
     pub user_media: PathBuf,
+    /// Pasta dos registros do app: cada tela grava ali o registro do mpv
+    /// (mpv-telao.log, mpv-retorno.log), para descobrir o que houve.
+    pub logs: Option<PathBuf>,
 }
 
 /// Onde a tela abre.
@@ -62,10 +65,14 @@ pub struct Handle {
 
 impl Handle {
     /// Fecha a tela (agora ou assim que o mpv terminar de abrir).
+    ///
+    /// Pode ser chamado de qualquer lugar: comando do Tauri, evento de
+    /// janela (fora do runtime do tokio). `tokio::spawn` ali dava pânico e,
+    /// com `panic = "abort"`, fechava o 7Hinos inteiro.
     pub fn close(&self) {
         self.closed.store(true, Ordering::SeqCst);
         if let Some(mpv) = self.mpv.locked().clone() {
-            tokio::spawn(async move { mpv.quit().await });
+            tauri::async_runtime::spawn(async move { mpv.quit().await });
         }
     }
 
@@ -122,6 +129,13 @@ fn args(shared: &Shared, placement: &Placement) -> Vec<String> {
     .map(String::from)
     .to_vec();
     a.push(format!("--title={title}"));
+    if let Some(dir) = &shared.logs {
+        let file = match placement.role {
+            Role::Audience => "mpv-telao.log",
+            Role::Monitor => "mpv-retorno.log",
+        };
+        a.push(format!("--log-file={}", dir.join(file).display()));
+    }
     a.push(format!("--osd-fonts-dir={}", shared.fonts.dir().display()));
     if let Some(wid) = placement.wid {
         a.push(format!("--wid={wid}"));

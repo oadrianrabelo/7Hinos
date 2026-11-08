@@ -275,14 +275,14 @@ pub async fn spawn(
     die_with_app(&mut std_cmd);
     let mut cmd = Command::from(std_cmd);
     cmd.kill_on_drop(true);
-    let child = cmd.spawn()?;
+    let mut child = cmd.spawn()?;
     let pid = child.id();
     #[cfg(windows)]
     if let Some(handle) = child.raw_handle() {
         tie_to_app(handle);
     }
 
-    let (reader, mut writer) = connect(ipc).await?;
+    let (reader, mut writer) = connect(ipc, &mut child).await?;
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
     tokio::spawn(async move {
         while let Some(line) = rx.recv().await {
@@ -336,20 +336,45 @@ fn parse(line: &str) -> Option<Event> {
     }
 }
 
+/// Quanto esperar o mpv abrir o canal de controle. Num computador antigo,
+/// abrindo telão e retorno juntos (e com o antivírus olhando o mpv.exe pela
+/// primeira vez), passava dos 5 s de antes e a tela caía no modo compatível.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Antes de cada tentativa de conectar: espera um pouco (menos na primeira)
+/// e confere se ainda vale tentar. `Ok(false)`: passou do tempo. Erro: o mpv
+/// já fechou, não adianta esperar mais.
+async fn waiting(
+    child: &mut Child,
+    started: std::time::Instant,
+    tries: &mut u32,
+) -> std::io::Result<bool> {
+    if *tries > 0 {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    *tries += 1;
+    if let Ok(Some(status)) = child.try_wait() {
+        return Err(std::io::Error::other(format!(
+            "o mpv fechou ao abrir ({status})"
+        )));
+    }
+    Ok(started.elapsed() < CONNECT_TIMEOUT)
+}
+
 #[cfg(unix)]
 async fn connect(
     ipc: &str,
+    child: &mut Child,
 ) -> std::io::Result<(
     tokio::net::unix::OwnedReadHalf,
     tokio::net::unix::OwnedWriteHalf,
 )> {
-    let mut last = None;
-    for _ in 0..100 {
+    let (started, mut tries, mut last) = (std::time::Instant::now(), 0, None);
+    while waiting(child, started, &mut tries).await? {
         match tokio::net::UnixStream::connect(ipc).await {
             Ok(stream) => return Ok(stream.into_split()),
             Err(e) => last = Some(e),
         }
-        tokio::time::sleep(Duration::from_millis(50)).await;
     }
     Err(last.unwrap_or_else(|| std::io::Error::other("o mpv não respondeu")))
 }
@@ -357,18 +382,18 @@ async fn connect(
 #[cfg(windows)]
 async fn connect(
     ipc: &str,
+    child: &mut Child,
 ) -> std::io::Result<(
     tokio::io::ReadHalf<tokio::net::windows::named_pipe::NamedPipeClient>,
     tokio::io::WriteHalf<tokio::net::windows::named_pipe::NamedPipeClient>,
 )> {
     use tokio::net::windows::named_pipe::ClientOptions;
-    let mut last = None;
-    for _ in 0..100 {
+    let (started, mut tries, mut last) = (std::time::Instant::now(), 0, None);
+    while waiting(child, started, &mut tries).await? {
         match ClientOptions::new().open(ipc) {
             Ok(client) => return Ok(tokio::io::split(client)),
             Err(e) => last = Some(e),
         }
-        tokio::time::sleep(Duration::from_millis(50)).await;
     }
     Err(last.unwrap_or_else(|| std::io::Error::other("o mpv não respondeu")))
 }

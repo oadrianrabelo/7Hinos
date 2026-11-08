@@ -78,6 +78,21 @@
   }
 
   const showVideo = $derived(stage?.video?.targets.includes(label) ?? false);
+
+  // A primeira tela do vídeo conta ao controle onde ele está (o controle não
+  // toca o vídeo, para não pesar). Duas vezes por segundo basta.
+  let videoDuration = $state(0);
+  let videoPosition = $state(0);
+  let lastTold = 0;
+  $effect(() => {
+    const v = stage?.video;
+    const position = videoPosition;
+    if (!v || v.targets[0] !== label) return;
+    const now = Date.now();
+    if (now - lastTold < 500) return;
+    lastTold = now;
+    void tell("video://position", { position, duration: videoDuration });
+  });
 </script>
 
 <div class="output" class:idle onmousemove={wake} ondblclick={toggleFullscreen} role="presentation">
@@ -89,6 +104,8 @@
         {@const v = stage.video}
         <VideoLayer
           state={v}
+          bind:duration={videoDuration}
+          bind:position={videoPosition}
           muted={v.targets[0] !== label}
           onerror={() => void tell("video://failed", { path: v.path, title: v.title })}
           onended={() => v.targets[0] === label && void tell("video://ended", { path: v.path })}

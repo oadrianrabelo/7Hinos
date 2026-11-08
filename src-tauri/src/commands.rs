@@ -937,8 +937,10 @@ pub fn projection_problem(state: State<AppState>) -> Option<String> {
 }
 
 /// Cada tela aberta mostra o próprio nome por alguns segundos.
+// Assíncrono: cria janelas (as plaquinhas dos monitores sem projeção), e
+// criar janela num comando síncrono trava no Windows, como em `output_open`.
 #[tauri::command]
-pub fn displays_identify(app: AppHandle) {
+pub async fn displays_identify(app: AppHandle) {
     let _ = app.emit(displays::IDENTIFY_EVENT, ());
     app.state::<AppState>().native.identify(&app);
     if let Err(e) = displays::identify_monitors(&app) {
@@ -977,8 +979,9 @@ pub async fn output_open(
     displays::open(&app, display_id, role.unwrap_or_default())
 }
 
+// Assíncrono pelo mesmo motivo: fecha janelas.
 #[tauri::command]
-pub fn output_close(app: AppHandle, label: String) -> Result<()> {
+pub async fn output_close(app: AppHandle, label: String) -> Result<()> {
     displays::close(&app, &label)
 }
 
@@ -989,7 +992,7 @@ pub async fn outputs_reopen(app: AppHandle) -> Result<()> {
 }
 
 #[tauri::command]
-pub fn outputs_close_all(app: AppHandle) {
+pub async fn outputs_close_all(app: AppHandle) {
     displays::forget_lost(&app);
     displays::close_all(&app);
 }
