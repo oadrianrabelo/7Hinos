@@ -86,18 +86,15 @@ class VideoControl {
     this.#commit({ ...s, position: this.#now(s), updatedAt: Date.now(), targets });
   }
 
-  /** O vídeo terminou (sem repetição): fica parado no fim, ou segue a fila. */
+  /** O vídeo terminou (sem repetição): sai das telas, que voltam ao que
+   *  mostravam antes (tela de espera, hino…), ou segue a fila. */
   ended() {
     const s = this.state;
     if (!s?.playing || s.looping) return;
     const next = this.after;
-    if (next) {
-      this.after = null;
-      this.stop();
-      next.run();
-      return;
-    }
-    this.#commit({ ...s, playing: false, position: this.duration, updatedAt: Date.now() });
+    this.after = null;
+    this.stop();
+    next?.run();
   }
 
   /** Agenda algo para quando o vídeo acabar. */

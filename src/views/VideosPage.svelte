@@ -2,7 +2,6 @@
   import { open } from "@tauri-apps/plugin-dialog";
   import { Film, ListChecks, ListPlus, Pause, Play, Plus, Repeat, Square, Trash2, Volume2 } from "@lucide/svelte";
   import PageHeader from "../components/PageHeader.svelte";
-  import VideoLayer from "../components/VideoLayer.svelte";
   import { api, errorMessage } from "../lib/api";
   import { playVideo } from "../lib/actions";
   import { setlist } from "../lib/state/setlist.svelte";
@@ -29,10 +28,6 @@
     return picked.length ? picked : outputs.forVideo.map((o) => o.label);
   });
 
-  /** O vídeo toca em telas nativas (mpv): a prévia não precisa tocar também. */
-  const lightweight = $derived(
-    !!video.state?.targets.length && video.state.targets.every((l) => outputs.outputs.find((o) => o.label === l)?.native),
-  );
 
   async function addVideos() {
     const picked = await open({
@@ -104,24 +99,13 @@
 {#if live}
   <section class="player card">
     <div class="preview">
-      {#if lightweight}
-        <!-- Projeção leve: o mpv toca nas telas; aqui não se decodifica o vídeo
-             de novo (era o que travava computador fraco). -->
-        <div class="native">
-          <Film size={34} strokeWidth={1.5} />
-          <span>{live.playing ? "Tocando nas telas" : "Pausado"}</span>
-          <span class="muted small">{formatTime(video.position)} de {formatTime(video.duration)}</span>
-        </div>
-      {:else}
-        <VideoLayer
-          state={live}
-          muted
-          bind:duration={video.duration}
-          bind:position={video.position}
-          onended={() => video.ended()}
-          onerror={() => video.failed(live.path, live.title)}
-        />
-      {/if}
+      <!-- O vídeo toca só nas telas: decodificar de novo aqui pesava demais
+           em computador fraco. -->
+      <div class="native">
+        <Film size={34} strokeWidth={1.5} />
+        <span>{live.playing ? "Tocando nas telas" : "Pausado"}</span>
+        <span class="muted small">{formatTime(video.position)} de {formatTime(video.duration)}</span>
+      </div>
     </div>
     <div class="controls">
       <div class="title-row">

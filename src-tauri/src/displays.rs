@@ -180,7 +180,16 @@ pub fn open(app: &AppHandle, display_id: Option<String>, role: Role) -> Result<S
         }
     }
 
-    let monitor = match &display_id {
+    let monitor = find_monitor(app, &display_id)?;
+    let label = next_label(app);
+    if use_native(app) {
+        return open_native(app, label, monitor, display_id, role, 0);
+    }
+    open_web(app, label, monitor, display_id, role)
+}
+
+fn find_monitor(app: &AppHandle, display_id: &Option<String>) -> Result<Option<Monitor>> {
+    Ok(match display_id {
         Some(id) => Some(
             app.available_monitors()?
                 .into_iter()
@@ -188,18 +197,24 @@ pub fn open(app: &AppHandle, display_id: Option<String>, role: Role) -> Result<S
                 .ok_or_else(|| Error::other("Essa tela foi desconectada."))?,
         ),
         None => None,
-    };
+    })
+}
 
-    let label = {
-        let mut next = state.outputs.next.locked();
-        *next += 1;
-        format!("{OUTPUT_PREFIX}{next}")
-    };
+fn next_label(app: &AppHandle) -> String {
+    let state = app.state::<AppState>();
+    let mut next = state.outputs.next.locked();
+    *next += 1;
+    format!("{OUTPUT_PREFIX}{next}")
+}
 
-    if use_native(app) {
-        return open_native(app, label, monitor, display_id, role);
-    }
-
+/// Abre a tela como página (projeção compatível, WebView).
+fn open_web(
+    app: &AppHandle,
+    label: String,
+    monitor: Option<Monitor>,
+    display_id: Option<String>,
+    role: Role,
+) -> Result<String> {
     let title = match role {
         Role::Audience => "7Hinos — Projeção",
         Role::Monitor => "7Hinos — Retorno",
@@ -272,6 +287,7 @@ fn open_native(
     monitor: Option<Monitor>,
     display_id: Option<String>,
     role: Role,
+    attempt: u8,
 ) -> Result<String> {
     let state = app.state::<AppState>();
     let name = display_id
@@ -336,13 +352,7 @@ fn open_native(
                     .unwrap_or(again);
                 output_gone(&app, &label);
                 if let Some(reason) = failed {
-                    // Não deu certo neste computador: reabre a mesma tela com
-                    // a projeção compatível e avisa quem está no controle.
-                    app.state::<AppState>().native.give_up(&reason);
-                    let _ = app.emit(FALLBACK_EVENT, &reason);
-                    if let Err(e) = open(&app, now.display_id, now.role) {
-                        log::error!("não deu para reabrir a tela na projeção compatível: {e}");
-                    }
+                    reopen_after_failure(&app, now, &reason, attempt);
                 }
             }
         })
@@ -361,6 +371,51 @@ fn open_native(
 
 /// A projeção leve não funcionou e a tela foi reaberta na compatível.
 pub const FALLBACK_EVENT: &str = "projection://fallback";
+
+/// Copia o fim do registro do mpv daquela tela para o registro do 7Hinos:
+/// assim um arquivo só (Ajustes → Sobre → Registros) conta o que houve.
+fn log_mpv_tail(app: &AppHandle, role: Role) {
+    let file = match role {
+        Role::Audience => "mpv-telao.log",
+        Role::Monitor => "mpv-retorno.log",
+    };
+    let Ok(dir) = app.path().app_log_dir() else {
+        return;
+    };
+    let Ok(text) = std::fs::read_to_string(dir.join(file)) else {
+        return;
+    };
+    let lines: Vec<&str> = text.lines().collect();
+    let tail = lines[lines.len().saturating_sub(25)..].join("\n");
+    log::warn!("fim do registro do mpv ({file}):\n{tail}");
+}
+
+/// O mpv não abriu ou caiu logo ao abrir uma tela. Tenta de novo uma vez (o
+/// mais comum num computador antigo é só demora); se falhar outra vez, abre
+/// aquela tela na projeção compatível e avisa. As próximas telas continuam
+/// tentando a leve: uma TV com problema não desliga o mpv nas outras.
+fn reopen_after_failure(app: &AppHandle, screen: Placement, reason: &str, attempt: u8) {
+    let monitor = match find_monitor(app, &screen.display_id) {
+        Ok(m) => m,
+        Err(e) => {
+            log::warn!("tela da projeção leve sumiu antes de reabrir: {e}");
+            return;
+        }
+    };
+    log_mpv_tail(app, screen.role);
+    let label = next_label(app);
+    let reopened = if attempt == 0 {
+        log::warn!("projeção leve falhou ({reason}); tentando de novo");
+        open_native(app, label, monitor, screen.display_id, screen.role, 1)
+    } else {
+        log::warn!("projeção leve falhou de novo ({reason}); esta tela vai na compatível");
+        let _ = app.emit(FALLBACK_EVENT, reason);
+        open_web(app, label, monitor, screen.display_id, screen.role)
+    };
+    if let Err(e) = reopened {
+        log::error!("não deu para reabrir a tela: {e}");
+    }
+}
 
 fn host_label(label: &str) -> String {
     format!("{label}-tela")

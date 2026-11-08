@@ -58,5 +58,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 codegen-units = 1
 lto = true
 opt-level = "s"
-panic = "abort"
+# Um erro inesperado numa tarefa de fundo não pode fechar o 7Hinos no meio
+# do culto (com "abort" fechava tudo).
+panic = "unwind"
 strip = true
