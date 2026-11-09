@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/oadrianrabelo/7Hinos/compare/v1.11.2...v1.12.0) (2026-11-09)
+
+
+### ✨ Novas Funcionalidades
+
+* teste do computador, modo leve, tela acesa e correções achadas na varredura ([#67](https://github.com/oadrianrabelo/7Hinos/issues/67)) ([2830182](https://github.com/oadrianrabelo/7Hinos/commit/283018276e84f952625bb1f7f23d94acda927058))
+
 ## [1.11.2](https://github.com/oadrianrabelo/7Hinos/compare/v1.11.1...v1.11.2) (2026-11-08)
 
 
