@@ -78,6 +78,11 @@ impl Native {
             let (probe, bin) = (probe.clone(), shared.bin.clone());
             std::thread::spawn(move || {
                 let result = probe.get_or_init(|| mpv::probe(&bin));
+                // Já lista as opções que este mpv conhece (antes era feito ao
+                // abrir a primeira tela, que demorava mais num computador lento).
+                if result.is_ok() {
+                    let _ = mpv::supported(&bin, Vec::new());
+                }
                 match result {
                     Ok(v) => log::info!("projeção leve pronta: {v}"),
                     Err(e) => log::warn!("projeção leve desligada: {e}; usando a compatível"),

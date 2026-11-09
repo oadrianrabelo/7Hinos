@@ -6,6 +6,8 @@ import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   Album,
   BackupInfo,
+  HealthCheck,
+  Machine,
   BibleBook,
   BibleHit,
   BibleVersion,
@@ -116,6 +118,9 @@ export const api = {
   displays: () => invoke<Display[]>("displays_list"),
   outputs: () => invoke<Output[]>("outputs_list"),
   projectionAvailable: () => invoke<boolean>("projection_available"),
+  systemMachine: () => invoke<Machine>("system_machine"),
+  systemCheck: () => invoke<HealthCheck[]>("system_check"),
+  diagnosticSave: (dir: string) => invoke<string>("diagnostic_save", { dir }),
   projectionProblem: () => invoke<string | null>("projection_problem"),
   backupList: () => invoke<BackupInfo[]>("backup_list"),
   backupNow: () => invoke<BackupInfo>("backup_now"),

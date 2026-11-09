@@ -184,6 +184,20 @@ export interface Settings {
   /** Quem desenha as telas: leve (mpv), compatível (WebView) ou automático. */
   projection: "auto" | "light" | "web";
   backup: BackupSettings;
+  /** Modo leve da janela de controle: sozinho em computador fraco, ligado ou desligado. */
+  lowPower: "auto" | "on" | "off";
+}
+
+export interface Machine {
+  ramMb: number | null;
+  cores: number;
+  weak: boolean;
+}
+
+export interface HealthCheck {
+  title: string;
+  level: "ok" | "warn" | "fail";
+  detail: string;
 }
 
 /** Cópia de segurança semanal. */

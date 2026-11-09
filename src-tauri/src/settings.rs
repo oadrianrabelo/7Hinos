@@ -28,6 +28,17 @@ pub enum Theme {
     Dark,
 }
 
+/// Modo leve da janela de controle (sem animações nem efeitos).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum LowPower {
+    /// Liga sozinho em computador fraco (até 4 GB ou 2 núcleos).
+    #[default]
+    Auto,
+    On,
+    Off,
+}
+
 /// Quem desenha as telas de projeção.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -363,6 +374,7 @@ pub struct Settings {
     /// Projeção leve (mpv) ou compatível (WebView).
     pub projection: Projection,
     pub backup: BackupSettings,
+    pub low_power: LowPower,
 }
 
 impl Default for Settings {
@@ -395,6 +407,7 @@ impl Default for Settings {
             pending_favorites: Vec::new(),
             projection: Projection::Auto,
             backup: BackupSettings::default(),
+            low_power: LowPower::Auto,
         }
     }
 }

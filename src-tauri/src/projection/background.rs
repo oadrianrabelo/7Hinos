@@ -49,15 +49,32 @@ pub fn compose(c: &Compose, w: u32, h: u32, cache: &Path) -> std::io::Result<Pat
         paste_logo(&mut canvas, path, rect.x, rect.y, rect.w, rect.h);
     }
 
-    let tmp = out.with_extension("tmp");
+    // Temporário só desta chamada: telão, retorno e a pré-carga do próximo
+    // slide podem montar o mesmo fundo ao mesmo tempo.
+    let tmp = unique_tmp(&out);
     let file = std::fs::File::create(&tmp)?;
     let mut encoder =
         image::codecs::jpeg::JpegEncoder::new_with_quality(std::io::BufWriter::new(file), 90);
-    encoder
+    let written = encoder
         .encode_image(&canvas)
-        .map_err(|e| std::io::Error::other(e.to_string()))?;
-    std::fs::rename(&tmp, &out)?;
+        .map_err(|e| std::io::Error::other(e.to_string()))
+        .and_then(|_| std::fs::rename(&tmp, &out));
+    if let Err(e) = written {
+        let _ = std::fs::remove_file(&tmp);
+        // Outra chamada terminou o mesmo fundo primeiro: serve igual.
+        if !out.is_file() {
+            return Err(e);
+        }
+    }
     Ok(out)
+}
+
+/// Nome de arquivo temporário que nenhuma outra chamada usa ao mesmo tempo.
+fn unique_tmp(out: &Path) -> PathBuf {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    let n = NEXT.fetch_add(1, Ordering::Relaxed);
+    out.with_extension(format!("{}-{n}.tmp", std::process::id()))
 }
 
 /// A foto cortada para cobrir a tela (o `background-size: cover`), ancorada
@@ -201,9 +218,13 @@ pub fn thumbnail(path: &str, w: u32, h: u32, cache: &Path) -> std::io::Result<Pa
         let m = |c: u8| ((u16::from(c) * a) / 255) as u8;
         raw.extend_from_slice(&[m(p.0[2]), m(p.0[1]), m(p.0[0]), p.0[3]]);
     }
-    let tmp = out.with_extension("tmp");
-    std::fs::write(&tmp, raw)?;
-    std::fs::rename(&tmp, &out)?;
+    let tmp = unique_tmp(&out);
+    if let Err(e) = std::fs::write(&tmp, raw).and_then(|_| std::fs::rename(&tmp, &out)) {
+        let _ = std::fs::remove_file(&tmp);
+        if !out.is_file() {
+            return Err(e);
+        }
+    }
     Ok(out)
 }
 
@@ -298,10 +319,14 @@ async fn download(url: &str, out: &Path) -> Option<()> {
         .await
         .ok()?;
     std::fs::create_dir_all(out.parent()?).ok()?;
-    let tmp = out.with_extension("tmp");
-    std::fs::write(&tmp, &bytes).ok()?;
-    std::fs::rename(&tmp, out).ok()?;
-    Some(())
+    let tmp = unique_tmp(out);
+    if std::fs::write(&tmp, &bytes)
+        .and_then(|_| std::fs::rename(&tmp, out))
+        .is_err()
+    {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    out.is_file().then_some(())
 }
 
 /// Largura e altura de uma imagem, lendo só o cabeçalho.
@@ -336,6 +361,30 @@ mod tests {
             None
         );
         assert!(started.elapsed() < std::time::Duration::from_millis(1500));
+    }
+
+    /// Telão e retorno (e a pré-carga do próximo slide) montam o mesmo fundo
+    /// ao mesmo tempo: nenhum pode falhar (antes um apagava o temporário do
+    /// outro e a tela ficava sem fundo).
+    #[test]
+    fn same_background_at_the_same_time() {
+        let dir = tempfile::tempdir().unwrap();
+        let cache = dir.path().join("cache");
+        let c = Compose {
+            image: None,
+            position: 5,
+            shade: Shade::Slide,
+            logo: None,
+        };
+        let results: Vec<_> = std::thread::scope(|s| {
+            let jobs: Vec<_> = (0..8)
+                .map(|_| s.spawn(|| compose(&c, 1280, 720, &cache)))
+                .collect();
+            jobs.into_iter().map(|j| j.join().unwrap()).collect()
+        });
+        for r in &results {
+            assert!(r.is_ok(), "{r:?}");
+        }
     }
 
     #[test]
