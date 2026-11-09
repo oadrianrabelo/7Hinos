@@ -233,6 +233,7 @@ export function install() {
     legacyMigrated: true,
     pendingFavorites: [],
     projection: (params.get("projection") as Settings["projection"]) ?? "auto",
+    lowPower: "auto",
     backup: { auto: true, folder: null, keep: 8, last: Date.now() / 1000 - 3 * 86400 },
   };
   const backups = [
@@ -481,6 +482,19 @@ export function install() {
               { number: "04", title: "A fé de Abraão", src: "" },
             ],
           };
+        case "system_machine":
+          return { ramMb: 3980, cores: 2, weak: params.get("weak") !== "0" };
+        case "system_check":
+          return [
+            { title: "Computador", level: "warn", detail: "3,9 GB de memória e 2 núcleos: computador fraco. O 7Hinos fica no modo leve." },
+            { title: "Projeção leve (mpv)", level: "ok", detail: "Funciona neste computador: vídeo e letra pesam pouco." },
+            { title: "Telas", level: "ok", detail: "3 monitores ligados." },
+            { title: "Hinos", level: "ok", detail: "4.812 músicas no computador; letras funcionam sem internet." },
+            { title: "Áudios", level: "warn", detail: "Quase nenhum áudio guardado: sem internet, os hinos tocam só a letra." },
+            { title: "Data e hora", level: "fail", detail: "A data do computador está atrasada (bateria da placa-mãe fraca?)." },
+          ];
+        case "diagnostic_save":
+          return "/pendrive/7Hinos-diagnostico.zip";
         case "backup_list":
           return backups;
         case "backup_now": {

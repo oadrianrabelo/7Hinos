@@ -129,7 +129,15 @@ impl MediaCache {
         if !response.status().is_success() {
             return Err(Error::Http(response.status().as_u16()));
         }
-        let partial = target.with_extension("part");
+        // `.part` só deste download: dois downloads do mesmo arquivo ao mesmo
+        // tempo (tocar e "baixar tudo") escreviam juntos no mesmo e podiam
+        // deixar um áudio corrompido no lugar do certo.
+        let partial = {
+            use std::sync::atomic::{AtomicU64, Ordering};
+            static NEXT: AtomicU64 = AtomicU64::new(0);
+            let n = NEXT.fetch_add(1, Ordering::Relaxed);
+            target.with_extension(format!("{n}.part"))
+        };
         let mut file = tokio::fs::File::create(&partial).await?;
         let mut stream = response.bytes_stream();
         while let Some(chunk) = stream.next().await {
@@ -137,7 +145,12 @@ impl MediaCache {
         }
         file.flush().await?;
         drop(file);
-        tokio::fs::rename(&partial, &target).await?;
+        if let Err(e) = tokio::fs::rename(&partial, &target).await {
+            let _ = tokio::fs::remove_file(&partial).await;
+            if !target.is_file() {
+                return Err(e.into());
+            }
+        }
         Ok(target)
     }
 

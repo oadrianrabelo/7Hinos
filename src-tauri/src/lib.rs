@@ -1,3 +1,4 @@
+mod awake;
 mod backup;
 mod bible;
 mod catalog;
@@ -9,6 +10,7 @@ mod displays;
 mod downloads;
 mod error;
 mod fonts;
+mod health;
 mod legacy;
 mod lessons;
 mod library;
@@ -163,6 +165,7 @@ pub fn run() {
             tauri::async_runtime::spawn(updates::run(app.handle().clone()));
             tauri::async_runtime::spawn(commands::backup_schedule(app.handle().clone()));
             displays::watch(app.handle().clone());
+            awake::keep_screens_on(app.handle().clone());
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -249,6 +252,9 @@ pub fn run() {
             commands::displays_identify,
             commands::projection_available,
             commands::projection_problem,
+            commands::system_machine,
+            commands::system_check,
+            commands::diagnostic_save,
             commands::roster_load,
             commands::roster_save,
             commands::text_file_save,

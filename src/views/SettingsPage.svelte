@@ -10,6 +10,7 @@
   import { SLIDE_DEFAULTS, UI_DEFAULTS } from "../lib/defaults";
   import TransferPanel from "../components/TransferPanel.svelte";
   import BackupPanel from "../components/BackupPanel.svelte";
+  import HealthPanel from "../components/HealthPanel.svelte";
   import SlideView from "../components/SlideView.svelte";
   import { api } from "../lib/api";
 
@@ -327,6 +328,12 @@
   <section>
     <h2>Controle pelo celular</h2>
     <RemotePanel />
+  </section>
+
+  <section id="computador">
+    <h2>Este computador</h2>
+    <p class="muted">Para computador antigo ou sem internet: confira antes do culto se está tudo pronto.</p>
+    <HealthPanel />
   </section>
 
   <section id="copia">

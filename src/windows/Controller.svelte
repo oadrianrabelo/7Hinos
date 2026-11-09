@@ -54,6 +54,15 @@
     }
   }
 
+  // Modo leve: sem animações nem efeitos na janela de controle. Sozinho em
+  // computador fraco (até 4 GB ou 2 núcleos).
+  let weak = $state(false);
+  void api.systemMachine().then((m) => (weak = m.weak)).catch(() => {});
+  $effect(() => {
+    const mode = settings.value?.lowPower ?? "auto";
+    document.documentElement.classList.toggle("low-power", mode === "on" || (mode === "auto" && weak));
+  });
+
   // Tema e tamanho do texto valem para a janela inteira.
   $effect(() => {
     const s = settings.value;

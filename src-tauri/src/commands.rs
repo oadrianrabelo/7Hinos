@@ -925,15 +925,199 @@ pub fn text_file_save(path: String, contents: String) -> Result<()> {
 }
 
 /// A projeção leve (mpv) está disponível neste computador.
+// Assíncronos: na primeira vez esperam o teste do mpv (segundos num
+// computador lento); síncronos, travavam a janela de controle no Windows.
 #[tauri::command]
-pub fn projection_available(state: State<AppState>) -> bool {
-    state.native.available()
+pub async fn projection_available(app: AppHandle) -> bool {
+    tauri::async_runtime::spawn_blocking(move || app.state::<AppState>().native.available())
+        .await
+        .unwrap_or(false)
 }
 
 /// Por que a projeção leve não vale neste computador (`None`: vale).
 #[tauri::command]
-pub fn projection_problem(state: State<AppState>) -> Option<String> {
-    state.native.unavailable_reason()
+pub async fn projection_problem(app: AppHandle) -> Option<String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        app.state::<AppState>().native.unavailable_reason()
+    })
+    .await
+    .unwrap_or_else(|e| Some(e.to_string()))
+}
+
+/// Memória e processador (para ligar o modo leve sozinho).
+#[tauri::command]
+pub fn system_machine() -> crate::health::Machine {
+    crate::health::machine()
+}
+
+/// "Testar este computador": o que costuma dar problema no culto.
+#[tauri::command]
+pub async fn system_check(app: AppHandle) -> Vec<crate::health::Check> {
+    use crate::health::{gb, Check, Level};
+    let state = app.state::<AppState>();
+    let mut checks = Vec::new();
+
+    let m = crate::health::machine();
+    let ram = m
+        .ram_mb
+        .map_or("memória desconhecida".to_owned(), |mb| gb(mb * 1_048_576));
+    checks.push(Check::new(
+        "Computador",
+        if m.weak { Level::Warn } else { Level::Ok },
+        if m.weak {
+            format!("{ram} de memória e {} núcleos: computador fraco. O 7Hinos fica no modo leve (sem animações na janela de controle). Feche navegador e WhatsApp durante o culto.", m.cores)
+        } else {
+            format!("{ram} de memória e {} núcleos.", m.cores)
+        },
+    ));
+
+    let native = app.clone();
+    let problem = tauri::async_runtime::spawn_blocking(move || {
+        native.state::<AppState>().native.unavailable_reason()
+    })
+    .await
+    .unwrap_or_else(|e| Some(e.to_string()));
+    checks.push(match problem {
+        None => Check::new(
+            "Projeção leve (mpv)",
+            Level::Ok,
+            "Funciona neste computador: vídeo e letra pesam pouco.",
+        ),
+        Some(reason) => Check::new(
+            "Projeção leve (mpv)",
+            Level::Fail,
+            format!("Não funciona neste computador ({reason}). As telas usam a projeção compatível, bem mais pesada. Mande o diagnóstico para quem ajuda."),
+        ),
+    });
+
+    match app.available_monitors() {
+        Ok(monitors) if monitors.len() > 1 => checks.push(Check::new(
+            "Telas",
+            Level::Ok,
+            format!("{} monitores ligados.", monitors.len()),
+        )),
+        Ok(_) => checks.push(Check::new(
+            "Telas",
+            Level::Warn,
+            "Só um monitor ligado. Ligue o telão (e a TV do retorno) antes de abrir as telas; o 7Hinos encontra sozinho quando ligar.",
+        )),
+        Err(e) => checks.push(Check::new("Telas", Level::Warn, e.to_string())),
+    }
+
+    let catalog = state.library.status();
+    checks.push(if catalog.installed && catalog.songs > 0 {
+        Check::new(
+            "Hinos",
+            Level::Ok,
+            format!("{} músicas no computador; letras funcionam sem internet.", catalog.songs),
+        )
+    } else {
+        Check::new(
+            "Hinos",
+            Level::Fail,
+            "Nenhum hino neste computador. Traga pelo pendrive (Ajustes → Levar para outro computador) ou baixe com internet.",
+        )
+    });
+
+    let media = state.library.media().clone();
+    let usage = tauri::async_runtime::spawn_blocking(move || media.disk_usage())
+        .await
+        .unwrap_or(0);
+    checks.push(if usage > 50 * 1_048_576 {
+        Check::new(
+            "Áudios",
+            Level::Ok,
+            format!("{} de áudios e fundos guardados para tocar sem internet.", gb(usage)),
+        )
+    } else {
+        Check::new(
+            "Áudios",
+            Level::Warn,
+            "Quase nenhum áudio guardado: sem internet, os hinos tocam só a letra. Baixe antes (Ajustes → Todo o acervo no computador) e traga no pacote.",
+        )
+    });
+
+    let lang = state.settings.get().language;
+    checks.push(match state.bible.versions(lang) {
+        Ok(v) if !v.is_empty() => Check::new("Bíblia", Level::Ok, format!("{} versões no computador.", v.len())),
+        _ => Check::new(
+            "Bíblia",
+            Level::Warn,
+            "A Bíblia não está no computador. Abra Bíblia com internet uma vez, ou traga no pacote do pendrive.",
+        ),
+    });
+
+    let backup = state.settings.get().backup;
+    let now = crate::backup::now_secs();
+    checks.push(match backup.last {
+        Some(t) if now.saturating_sub(t) < 15 * 86_400 => Check::new(
+            "Cópia de segurança",
+            if backup.folder.is_some() { Level::Ok } else { Level::Warn },
+            if backup.folder.is_some() {
+                "Feita nos últimos dias.".to_owned()
+            } else {
+                "Feita, mas guardada no próprio computador. Escolha um pendrive ou outro disco em Ajustes → Cópia de segurança.".to_owned()
+            },
+        ),
+        _ => Check::new(
+            "Cópia de segurança",
+            Level::Warn,
+            "Nenhuma cópia recente. Em Ajustes → Cópia de segurança, clique em Fazer agora.",
+        ),
+    });
+
+    if let Ok(dir) = app.path().app_data_dir() {
+        let probe = if dir.exists() {
+            dir
+        } else {
+            std::env::temp_dir()
+        };
+        if let Some(free) = crate::health::free_space(&probe) {
+            checks.push(if free < 2 * 1_073_741_824 {
+                Check::new(
+                    "Espaço em disco",
+                    Level::Warn,
+                    format!(
+                        "Só {} livres. Com o disco cheio, ajustes e cópias não são gravados.",
+                        gb(free)
+                    ),
+                )
+            } else {
+                Check::new(
+                    "Espaço em disco",
+                    Level::Ok,
+                    format!("{} livres.", gb(free)),
+                )
+            });
+        }
+    }
+
+    checks.push(crate::health::clock_check(now));
+
+    match tauri::webview_version() {
+        Ok(v) => checks.push(Check::new("WebView2", Level::Ok, format!("Versão {v}."))),
+        Err(e) => checks.push(Check::new(
+            "WebView2",
+            Level::Warn,
+            format!("Não deu para ver a versão ({e})."),
+        )),
+    }
+    checks
+}
+
+/// Salva num `.zip` (no pendrive, por exemplo) os registros e o resultado do
+/// teste, para mandar a quem ajuda.
+#[tauri::command]
+pub async fn diagnostic_save(app: AppHandle, dir: String) -> Result<String> {
+    let checks = system_check(app.clone()).await;
+    let report = crate::health::report_text(&app.package_info().version.to_string(), &checks);
+    let logs = app.path().app_log_dir()?;
+    let path = tauri::async_runtime::spawn_blocking(move || {
+        crate::health::save_report(&logs, std::path::Path::new(&dir), &report)
+    })
+    .await
+    .map_err(|e| Error::other(e.to_string()))??;
+    Ok(path.to_string_lossy().into_owned())
 }
 
 /// Cada tela aberta mostra o próprio nome por alguns segundos.
